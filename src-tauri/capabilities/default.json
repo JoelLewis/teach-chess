@@ -1,0 +1,20 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for ChessMentor",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-spawn",
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "stockfish",
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}

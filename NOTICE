@@ -1,0 +1,13 @@
+ChessMentor
+Copyright 2026 Joel Lewis
+
+This application includes the following third-party components:
+
+chessground
+  License: GPL-3.0-or-later
+  Copyright: lichess.org contributors
+  Source: https://github.com/lichess-org/chessground
+  Used for: Interactive chessboard UI component
+
+Because chessground is licensed under GPL-3.0, this entire application
+is distributed under the GPL-3.0-only license. See LICENSE for details.

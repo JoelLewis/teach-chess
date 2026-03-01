@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(npx svelte-check:*)"
+    ]
+  },
+  "enabledPlugins": [
+    "@anthropic/rust-analyzer-lsp"
+  ]
+}
