@@ -34,6 +34,7 @@ pub fn run() {
             commands::game::new_game,
             commands::game::make_move,
             commands::game::resign,
+            commands::game::save_completed_game,
             commands::game::get_position,
             commands::engine::start_engine,
             commands::engine::stop_engine,

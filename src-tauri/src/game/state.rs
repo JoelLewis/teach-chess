@@ -98,6 +98,29 @@ impl GameState {
         Ok(self.build_game_record(result.to_string()))
     }
 
+    pub fn complete_game(&self) -> Result<GameRecord, AppError> {
+        self.config
+            .as_ref()
+            .ok_or(GameError::NoActiveGame)?;
+
+        if !self.is_game_over() {
+            return Err(GameError::GameNotOver.into());
+        }
+
+        let result = match self.outcome() {
+            Some(GameOutcome::Checkmate { winner }) | Some(GameOutcome::Resignation { winner }) => {
+                match winner {
+                    Color::White => "1-0".to_string(),
+                    Color::Black => "0-1".to_string(),
+                }
+            }
+            Some(_) => "1/2-1/2".to_string(),
+            None => "1/2-1/2".to_string(),
+        };
+
+        Ok(self.build_game_record(result))
+    }
+
     pub fn to_position(&self) -> Position {
         let turn: Color = self.chess.turn().into();
         let dests = self.legal_moves_as_dests();

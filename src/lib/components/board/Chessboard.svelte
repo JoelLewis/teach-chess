@@ -13,7 +13,6 @@
     lastMove?: [string, string] | null;
     isCheck?: boolean;
     onMove?: (from: string, to: string) => void;
-    onPromotion?: (from: string, to: string) => Promise<string>;
   };
 
   let {
@@ -25,7 +24,6 @@
     lastMove = null,
     isCheck = false,
     onMove,
-    onPromotion,
   }: Props = $props();
 
   let boardEl: HTMLDivElement;

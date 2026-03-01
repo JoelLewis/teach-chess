@@ -6,8 +6,11 @@ use tauri_plugin_shell::ShellExt;
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 
+use tauri::Emitter;
+
+use crate::engine::eval;
 use crate::error::{AppError, EngineError};
-use crate::models::engine::{EngineEvaluation, EngineMove, MoveEvaluation};
+use crate::models::engine::{EngineEvaluation, EngineMove, MoveEvaluation, Score};
 use crate::models::game::GameRecord;
 
 use super::uci;
@@ -113,6 +116,7 @@ impl EngineProcess {
         depth: Option<u32>,
         elo: Option<u32>,
         skill_level: Option<u8>,
+        app: Option<&AppHandle>,
     ) -> Result<EngineMove, AppError> {
         if !self.is_running {
             return Err(EngineError::NotRunning.into());
@@ -132,8 +136,8 @@ impl EngineProcess {
         };
         self.send(&go_cmd).await?;
 
-        // Read until bestmove
-        self.wait_for_bestmove().await
+        // Read until bestmove, emitting info events along the way
+        self.wait_for_bestmove_with_info(app).await
     }
 
     pub async fn analyze(
@@ -174,17 +178,66 @@ impl EngineProcess {
         &mut self,
         game: &GameRecord,
         depth: u32,
+        app: Option<&AppHandle>,
     ) -> Result<Vec<MoveEvaluation>, AppError> {
         if !self.is_running {
             return Err(EngineError::NotRunning.into());
         }
 
-        // Parse PGN to get positions — for now, return empty
-        // Full implementation requires replaying moves and analyzing each position
-        let _ = game;
-        let _ = depth;
+        // Replay the PGN to extract positions and moves
+        let replay = replay_pgn(&game.pgn)?;
+        let total = replay.len();
 
-        Ok(Vec::new())
+        if total == 0 {
+            return Ok(Vec::new());
+        }
+
+        // Disable strength limits for analysis
+        self.send("setoption name UCI_LimitStrength value false")
+            .await?;
+
+        let mut evaluations = Vec::new();
+
+        // Analyze position before each move
+        for (i, step) in replay.iter().enumerate() {
+            // Emit progress
+            if let Some(app) = app {
+                let _ = app.emit("review-progress", ReviewProgressPayload {
+                    current: (i + 1) as u32,
+                    total: total as u32,
+                });
+            }
+
+            // Analyze position before the move
+            let eval_before = self.analyze(&step.fen_before, depth).await?;
+
+            // Analyze position after the move
+            let eval_after = self.analyze(&step.fen_after, depth).await?;
+
+            let is_white = step.is_white;
+            let classification = eval::classify_move(
+                &eval_before.score,
+                &eval_after.score,
+                is_white,
+            );
+
+            evaluations.push(MoveEvaluation {
+                move_number: step.move_number,
+                is_white,
+                fen_before: step.fen_before.clone(),
+                player_move_uci: step.uci.clone(),
+                player_move_san: step.san.clone(),
+                engine_best_uci: Some(eval_before.best_move.clone()),
+                engine_best_san: None, // Would need shakmaty to convert
+                eval_before: Some(eval_before.score),
+                eval_after: Some(eval_after.score),
+                classification: Some(classification),
+                depth,
+                pv: eval_before.pv,
+            });
+        }
+
+        Ok(evaluations)
     }
 
     async fn send(&mut self, cmd: &str) -> Result<(), AppError> {
@@ -232,4 +285,111 @@ impl EngineProcess {
             }
         }
     }
+
+    async fn wait_for_bestmove_with_info(
+        &mut self,
+        app: Option<&AppHandle>,
+    ) -> Result<EngineMove, AppError> {
+        loop {
+            let line = self.read_line().await?;
+
+            if let Some(info) = uci::parse_info(&line) {
+                if (info.multipv.is_none() || info.multipv == Some(1)) && info.score.is_some() {
+                    if let Some(app) = app {
+                        let _ = app.emit("engine-info", EngineInfoPayload {
+                            depth: info.depth.unwrap_or(0),
+                            score: info.score.clone().unwrap(),
+                            nodes: info.nodes.unwrap_or(0),
+                            pv: info.pv.clone(),
+                        });
+                    }
+                }
+            }
+
+            if let Some(bestmove) = uci::parse_bestmove(&line) {
+                return Ok(bestmove);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EngineInfoPayload {
+    depth: u32,
+    score: Score,
+    nodes: u64,
+    pv: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ReviewProgressPayload {
+    current: u32,
+    total: u32,
+}
+
+struct ReplayStep {
+    move_number: u32,
+    is_white: bool,
+    fen_before: String,
+    fen_after: String,
+    uci: String,
+    san: String,
+}
+
+/// Replay a PGN string to extract positions and moves
+fn replay_pgn(pgn: &str) -> Result<Vec<ReplayStep>, AppError> {
+    use shakmaty::{fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
+
+    let mut chess = Chess::default();
+    let mut steps = Vec::new();
+
+    // Strip result from end of PGN
+    let pgn_clean = pgn
+        .replace("1-0", "")
+        .replace("0-1", "")
+        .replace("1/2-1/2", "")
+        .replace('*', "");
+
+    // Parse SAN tokens from the PGN
+    for token in pgn_clean.split_whitespace() {
+        // Skip move numbers like "1." or "2."
+        if token.ends_with('.') || token.is_empty() {
+            continue;
+        }
+
+        let fen_before = Fen::from_position(chess.clone(), EnPassantMode::Legal).to_string();
+        let is_white = chess.turn() == shakmaty::Color::White;
+        let move_number = chess.fullmoves().get();
+
+        // Parse SAN
+        let san: San = match token.parse() {
+            Ok(s) => s,
+            Err(_) => continue, // Skip unparseable tokens
+        };
+
+        let legal_move = match san.to_move(&chess) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let san_str = token.to_string();
+        let uci = UciMove::from_move(&legal_move, CastlingMode::Standard).to_string();
+
+        chess.play_unchecked(&legal_move);
+
+        let fen_after = Fen::from_position(chess.clone(), EnPassantMode::Legal).to_string();
+
+        steps.push(ReplayStep {
+            move_number,
+            is_white,
+            fen_before,
+            fen_after,
+            uci,
+            san: san_str,
+        });
+    }
+
+    Ok(steps)
 }

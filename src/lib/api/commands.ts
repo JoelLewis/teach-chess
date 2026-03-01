@@ -17,6 +17,10 @@ export function resign(): Promise<GameRecord> {
   return invoke<GameRecord>("resign");
 }
 
+export function saveCompletedGame(): Promise<GameRecord> {
+  return invoke<GameRecord>("save_completed_game");
+}
+
 export function getPosition(): Promise<Position> {
   return invoke<Position>("get_position");
 }

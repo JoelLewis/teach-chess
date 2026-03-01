@@ -5,7 +5,9 @@
   import GameOverDialog from "./GameOverDialog.svelte";
   import { gameStore } from "../../stores/game.svelte";
   import * as api from "../../api/commands";
+  import { onEngineInfo } from "../../api/events";
   import type { Position } from "../../types/chess";
+  import type { UnlistenFn } from "@tauri-apps/api/event";
 
   type Props = {
     onReview?: (gameId: string) => void;
@@ -31,7 +33,7 @@
 
       // Check if game is over after player move
       if (newPosition.isGameOver) {
-        gameStore.phase = "game-over";
+        await saveGame();
         return;
       }
 
@@ -62,13 +64,23 @@
       gameStore.position = newPosition;
 
       if (newPosition.isGameOver) {
-        gameStore.phase = "game-over";
+        await saveGame();
       }
     } catch (err) {
       console.error("Engine move failed:", err);
     } finally {
       gameStore.engineThinking = false;
     }
+  }
+
+  async function saveGame() {
+    try {
+      const record = await api.saveCompletedGame();
+      gameStore.lastGameRecord = record;
+    } catch (err) {
+      console.error("Failed to save game:", err);
+    }
+    gameStore.phase = "game-over";
   }
 
   async function handleResign() {
@@ -80,6 +92,16 @@
       console.error("Resign failed:", err);
     }
   }
+
+  // Listen for engine evaluation updates to drive the eval bar
+  $effect(() => {
+    let unlisten: UnlistenFn | undefined;
+    onEngineInfo((info) => {
+      gameStore.currentScore = info.score;
+    }).then((fn) => (unlisten = fn));
+
+    return () => unlisten?.();
+  });
 
   // If player is black, request engine's first move
   $effect(() => {

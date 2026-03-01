@@ -3,7 +3,9 @@
   import EvalBar from "../board/EvalBar.svelte";
   import MoveAnnotation from "./MoveAnnotation.svelte";
   import * as api from "../../api/commands";
+  import { onReviewProgress } from "../../api/events";
   import type { MoveEvaluation } from "../../types/engine";
+  import type { UnlistenFn } from "@tauri-apps/api/event";
 
   type Props = {
     gameId: string;
@@ -63,7 +65,14 @@
   });
 
   $effect(() => {
+    let unlisten: UnlistenFn | undefined;
+    onReviewProgress((p) => {
+      progress = { current: p.current, total: p.total };
+    }).then((fn) => (unlisten = fn));
+
     loadReview();
+
+    return () => unlisten?.();
   });
 </script>
 

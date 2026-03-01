@@ -1,4 +1,4 @@
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, State};
 
 use crate::engine::process::EngineProcess;
 use crate::error::AppError;
@@ -29,10 +29,13 @@ pub async fn get_engine_move(
     depth: Option<u32>,
     elo: Option<u32>,
     skill_level: Option<u8>,
+    app: AppHandle,
     state: State<'_, tokio::sync::Mutex<EngineProcess>>,
 ) -> Result<EngineMove, AppError> {
+    let _ = app.emit("engine-thinking", true);
     let mut engine = state.lock().await;
-    let engine_move = engine.get_move(&fen, depth, elo, skill_level).await?;
+    let engine_move = engine.get_move(&fen, depth, elo, skill_level, Some(&app)).await?;
+    let _ = app.emit("engine-thinking", false);
     Ok(engine_move)
 }
 

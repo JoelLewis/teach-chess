@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::connection::Database;
 use crate::engine::process::EngineProcess;
@@ -12,6 +12,7 @@ use crate::models::game::GameRecord;
 pub async fn get_game_review(
     game_id: String,
     depth: u32,
+    app: AppHandle,
     db: State<'_, Mutex<Database>>,
     engine: State<'_, tokio::sync::Mutex<EngineProcess>>,
 ) -> Result<Vec<MoveEvaluation>, AppError> {
@@ -21,7 +22,14 @@ pub async fn get_game_review(
     };
 
     let mut engine = engine.lock().await;
-    let evals = engine.review_game(&game, depth).await?;
+    let evals = engine.review_game(&game, depth, Some(&app)).await?;
+
+    // Save annotations to database
+    {
+        let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
+        let _ = db.save_move_annotations(&game_id, &evals);
+    }
+
     Ok(evals)
 }
 

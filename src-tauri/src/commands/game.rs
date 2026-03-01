@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use tauri::State;
 
+use crate::db::connection::Database;
 use crate::error::AppError;
 use crate::game::state::GameState;
 use crate::models::chess::Position;
@@ -31,9 +32,30 @@ pub fn make_move(
 #[tauri::command]
 pub fn resign(
     state: State<'_, Mutex<GameState>>,
+    db: State<'_, Mutex<Database>>,
 ) -> Result<GameRecord, AppError> {
     let mut game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let record = game.resign()?;
+    let mut record = game.resign()?;
+    record.player_id = "default".to_string();
+
+    let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
+    let _ = db.save_game(&record);
+
+    Ok(record)
+}
+
+#[tauri::command]
+pub fn save_completed_game(
+    state: State<'_, Mutex<GameState>>,
+    db: State<'_, Mutex<Database>>,
+) -> Result<GameRecord, AppError> {
+    let game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
+    let mut record = game.complete_game()?;
+    record.player_id = "default".to_string();
+
+    let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
+    db.save_game(&record)?;
+
     Ok(record)
 }
 

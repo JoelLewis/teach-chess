@@ -23,6 +23,9 @@ pub enum GameError {
     #[error("Game is already over")]
     GameOver,
 
+    #[error("Game is not over yet")]
+    GameNotOver,
+
     #[error("Not your turn")]
     NotYourTurn,
 
