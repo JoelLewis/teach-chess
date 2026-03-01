@@ -7,6 +7,9 @@ dist/
 # Rust
 src-tauri/target/
 
+# Tauri auto-generated code
+src-tauri/gen/
+
 # Stockfish sidecar binaries (download via scripts/fetch-stockfish.sh)
 src-tauri/binaries/stockfish*
 
