@@ -54,7 +54,7 @@
   }
 
   // Summary stats
-  let summary = $derived(() => {
+  let summary = $derived.by(() => {
     const counts = { best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 };
     for (const ev of evaluations) {
       if (ev.classification) {
@@ -107,7 +107,7 @@
       </div>
     {:else}
       <div class="summary">
-        {#each Object.entries(summary()) as [classification, count]}
+        {#each Object.entries(summary) as [classification, count]}
           {#if count > 0}
             <span class="summary-item">
               {count} {classification}{count !== 1 ? "s" : ""}

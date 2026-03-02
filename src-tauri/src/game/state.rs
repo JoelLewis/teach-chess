@@ -55,22 +55,34 @@ impl GameState {
             return Err(GameError::GameOver.into());
         }
 
-        let uci_move: UciMove = uci_str
-            .parse()
-            .map_err(|_| GameError::IllegalMove(uci_str.to_string()))?;
+        // Try parsing as-is first; if it fails, try adding queen promotion suffix
+        let (uci_move, effective_uci) = match uci_str.parse::<UciMove>() {
+            Ok(m) => match m.to_move(&self.chess) {
+                Ok(_) => (m, uci_str.to_string()),
+                Err(_) => {
+                    // Might be a promotion without suffix — try with queen
+                    let with_promo = format!("{uci_str}q");
+                    let promo_uci: UciMove = with_promo
+                        .parse()
+                        .map_err(|_| GameError::IllegalMove(uci_str.to_string()))?;
+                    (promo_uci, with_promo)
+                }
+            },
+            Err(_) => return Err(GameError::IllegalMove(uci_str.to_string()).into()),
+        };
 
         let legal_move = uci_move
             .to_move(&self.chess)
-            .map_err(|_| GameError::IllegalMove(uci_str.to_string()))?;
+            .map_err(|_| GameError::IllegalMove(effective_uci.clone()))?;
 
         // Convert to SAN before applying the move
         let san = San::from_move(&self.chess, &legal_move);
         self.san_history.push(san.to_string());
-        self.uci_history.push(uci_str.to_string());
+        self.uci_history.push(effective_uci.clone());
 
         // Extract from/to squares for last_move highlight
-        let from = uci_str[..2].to_string();
-        let to = uci_str[2..4].to_string();
+        let from = effective_uci[..2].to_string();
+        let to = effective_uci[2..4].to_string();
         self.last_move = Some([from, to]);
 
         // Apply the move
@@ -193,6 +205,7 @@ impl GameState {
         }
     }
 
+    #[allow(dead_code)]
     pub fn fen(&self) -> String {
         Fen::from_position(self.chess.clone(), EnPassantMode::Legal).to_string()
     }
@@ -222,14 +235,17 @@ impl GameState {
         pgn.trim().to_string()
     }
 
+    #[allow(dead_code)]
     pub fn config(&self) -> Option<&GameConfig> {
         self.config.as_ref()
     }
 
+    #[allow(dead_code)]
     pub fn fen_history(&self) -> &[String] {
         &self.fen_history
     }
 
+    #[allow(dead_code)]
     pub fn san_history(&self) -> &[String] {
         &self.san_history
     }

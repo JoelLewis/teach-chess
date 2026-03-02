@@ -26,12 +26,14 @@ pub enum GameError {
     #[error("Game is not over yet")]
     GameNotOver,
 
+    #[allow(dead_code)]
     #[error("Not your turn")]
     NotYourTurn,
 
     #[error("Illegal move: {0}")]
     IllegalMove(String),
 
+    #[allow(dead_code)]
     #[error("Invalid FEN: {0}")]
     InvalidFen(String),
 }
@@ -47,6 +49,7 @@ pub enum EngineError {
     #[error("Engine process failed: {0}")]
     ProcessError(String),
 
+    #[allow(dead_code)]
     #[error("UCI protocol error: {0}")]
     UciError(String),
 

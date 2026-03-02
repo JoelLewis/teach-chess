@@ -12,6 +12,7 @@ pub struct EngineStrength {
 }
 
 impl EngineStrength {
+    #[cfg(test)]
     pub fn beginner() -> Self {
         Self {
             elo: 1350,
@@ -19,6 +20,7 @@ impl EngineStrength {
         }
     }
 
+    #[cfg(test)]
     pub fn intermediate() -> Self {
         Self {
             elo: 1800,
@@ -26,6 +28,7 @@ impl EngineStrength {
         }
     }
 
+    #[cfg(test)]
     pub fn advanced() -> Self {
         Self {
             elo: 2200,
@@ -33,6 +36,7 @@ impl EngineStrength {
         }
     }
 
+    #[cfg(test)]
     pub fn maximum() -> Self {
         Self {
             elo: 3190,

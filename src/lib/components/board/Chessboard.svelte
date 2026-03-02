@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Chessground } from "@lichess-org/chessground";
+  import { untrack } from "svelte";
   import type { Api } from "@lichess-org/chessground/api";
   import type { Key } from "@lichess-org/chessground/types";
   import type { Color } from "../../types/chess";
@@ -29,7 +30,6 @@
   let boardEl: HTMLDivElement;
   let cg: Api | undefined = $state();
 
-  // Convert Record<string, string[]> to Map<Key, Key[]> for chessground
   function destsToMap(d: Record<string, string[]>): Map<Key, Key[]> {
     const map = new Map<Key, Key[]>();
     for (const [from, tos] of Object.entries(d)) {
@@ -38,46 +38,50 @@
     return map;
   }
 
-  // Mount chessground when element is ready
+  // Mount chessground once — use untrack so prop changes don't recreate it
   $effect(() => {
     if (!boardEl) return;
 
-    cg = Chessground(boardEl, {
-      fen,
-      orientation,
-      turnColor,
-      viewOnly,
-      movable: {
-        free: false,
-        color: turnColor,
-        dests: destsToMap(dests),
-        showDests: true,
-      },
-      highlight: {
-        lastMove: true,
-        check: true,
-      },
-      animation: {
-        enabled: true,
-        duration: 200,
-      },
-      draggable: {
-        enabled: true,
-        showGhost: true,
-      },
-      events: {
-        move: (orig: Key, dest: Key) => {
-          onMove?.(orig, dest);
+    const instance = untrack(() =>
+      Chessground(boardEl, {
+        fen,
+        orientation,
+        turnColor,
+        viewOnly,
+        movable: {
+          free: false,
+          color: turnColor,
+          dests: destsToMap(dests),
+          showDests: true,
         },
-      },
-    });
+        highlight: {
+          lastMove: true,
+          check: true,
+        },
+        animation: {
+          enabled: true,
+          duration: 200,
+        },
+        draggable: {
+          enabled: true,
+          showGhost: true,
+        },
+        events: {
+          move: (orig: Key, dest: Key) => {
+            onMove?.(orig, dest);
+          },
+        },
+      }),
+    );
+    cg = instance;
 
     return () => {
-      cg?.destroy();
+      instance.destroy();
+      cg = undefined;
     };
   });
 
-  // Sync props to chessground when they change
+  // Sync props to chessground when they change (without recreating)
   $effect(() => {
     if (!cg) return;
 

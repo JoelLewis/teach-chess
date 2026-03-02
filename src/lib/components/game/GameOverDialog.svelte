@@ -11,7 +11,7 @@
 
   let { outcome, playerColor, moveCount, onReview, onNewGame }: Props = $props();
 
-  let resultText = $derived(() => {
+  let resultText = $derived.by(() => {
     if (!outcome) return "Game Over";
 
     if ("checkmate" in outcome) {
@@ -31,7 +31,7 @@
     return "Draw";
   });
 
-  let isWin = $derived(() => {
+  let isWin = $derived.by(() => {
     if (!outcome) return false;
     if ("checkmate" in outcome) return outcome.checkmate.winner === playerColor;
     if ("resignation" in outcome) return outcome.resignation.winner === playerColor;
@@ -41,8 +41,8 @@
 
 <div class="overlay">
   <div class="dialog">
-    <div class="result" class:win={isWin()} class:loss={!isWin()}>
-      {resultText()}
+    <div class="result" class:win={isWin} class:loss={!isWin}>
+      {resultText}
     </div>
     <p class="move-count">{moveCount} moves played</p>
     <div class="actions">

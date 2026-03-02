@@ -7,6 +7,9 @@ mod models;
 
 use tauri::Manager;
 
+/// Stores the current player's ID so game commands can reference it.
+pub struct CurrentPlayerId(pub std::sync::Mutex<Option<String>>);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tracing_subscriber::fmt()
@@ -28,6 +31,7 @@ pub fn run() {
             app.manage(tokio::sync::Mutex::new(
                 engine::process::EngineProcess::default(),
             ));
+            app.manage(CurrentPlayerId(std::sync::Mutex::new(None)));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

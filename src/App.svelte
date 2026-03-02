@@ -1,13 +1,16 @@
 <script lang="ts">
   import Sidebar from "./lib/components/layout/Sidebar.svelte";
   import Header from "./lib/components/layout/Header.svelte";
+  import ErrorToast from "./lib/components/layout/ErrorToast.svelte";
   import GameConfigForm from "./lib/components/game/GameConfig.svelte";
   import PlayScreen from "./lib/components/game/PlayScreen.svelte";
   import GameHistory from "./lib/components/history/GameHistory.svelte";
   import ReviewScreen from "./lib/components/review/ReviewScreen.svelte";
   import { gameStore } from "./lib/stores/game.svelte";
   import { playerStore } from "./lib/stores/player.svelte";
+  import { errorStore } from "./lib/stores/error.svelte";
   import * as api from "./lib/api/commands";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { GameConfig } from "./lib/types/game";
 
   type Page = "home" | "play" | "history" | "review";
@@ -28,6 +31,7 @@
       page = "play";
     } catch (err) {
       console.error("Failed to start game:", err);
+      errorStore.show(`Failed to start game: ${err}`);
     }
   }
 
@@ -40,6 +44,39 @@
     gameStore.reset();
     page = "home";
   }
+
+  // Initialize player on startup
+  $effect(() => {
+    api.getOrCreatePlayer("Player").then((player) => {
+      playerStore.id = player.id;
+      playerStore.displayName = player.displayName;
+      playerStore.gamesPlayed = player.gamesPlayed;
+    }).catch((err) => {
+      console.error("Failed to initialize player:", err);
+      errorStore.show("Failed to initialize player profile");
+    });
+  });
+
+  // Clean up engine when window closes
+  $effect(() => {
+    let closing = false;
+    const appWindow = getCurrentWindow();
+    const unlistenPromise = appWindow.onCloseRequested(async (event) => {
+      if (closing) return;
+      event.preventDefault();
+      closing = true;
+      try {
+        await api.stopEngine();
+      } catch {
+        // Ignore cleanup errors
+      }
+      await appWindow.close();
+    });
+
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  });
 </script>
 
 <div class="app-layout">
@@ -76,6 +113,8 @@
     </main>
   </div>
 </div>
+
+<ErrorToast />
 
 <style>
   .app-layout {

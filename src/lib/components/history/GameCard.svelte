@@ -8,7 +8,7 @@
 
   let { game, onReview }: Props = $props();
 
-  let resultLabel = $derived(() => {
+  let resultLabel = $derived.by(() => {
     switch (game.result) {
       case "1-0":
         return game.playerColor === "white" ? "Win" : "Loss";
@@ -19,10 +19,9 @@
     }
   });
 
-  let resultColor = $derived(() => {
-    const label = resultLabel();
-    if (label === "Win") return "text-green-600";
-    if (label === "Loss") return "text-red-600";
+  let resultColor = $derived.by(() => {
+    if (resultLabel === "Win") return "text-green-600";
+    if (resultLabel === "Loss") return "text-red-600";
     return "text-gray-600";
   });
 </script>
@@ -30,7 +29,7 @@
 <div class="game-card">
   <div class="flex justify-between items-start">
     <div>
-      <span class="font-semibold {resultColor()}">{resultLabel()}</span>
+      <span class="font-semibold {resultColor}">{resultLabel}</span>
       <span class="text-sm text-gray-500 ml-2">vs Engine ({game.engineElo})</span>
     </div>
     <span class="text-xs text-gray-400">{game.result}</span>

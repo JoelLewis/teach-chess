@@ -5,14 +5,22 @@ use tauri::State;
 use crate::db::connection::Database;
 use crate::error::AppError;
 use crate::models::player::{Player, PlayerSettings};
+use crate::CurrentPlayerId;
 
 #[tauri::command]
 pub fn get_or_create_player(
     display_name: String,
     db: State<'_, Mutex<Database>>,
+    current_player: State<'_, CurrentPlayerId>,
 ) -> Result<Player, AppError> {
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let player = db.get_or_create_player(&display_name)?;
+
+    // Store current player ID for game commands
+    if let Ok(mut id) = current_player.0.lock() {
+        *id = Some(player.id.clone());
+    }
+
     Ok(player)
 }
 

@@ -4,6 +4,7 @@
   import MoveList from "../board/MoveList.svelte";
   import GameOverDialog from "./GameOverDialog.svelte";
   import { gameStore } from "../../stores/game.svelte";
+  import { errorStore } from "../../stores/error.svelte";
   import * as api from "../../api/commands";
   import { onEngineInfo } from "../../api/events";
   import type { Position } from "../../types/chess";
@@ -23,7 +24,6 @@
     if (!config || !position) return;
     if (gameStore.engineThinking) return;
 
-    // Check if this is a promotion (pawn reaching last rank)
     const uci = `${from}${to}`;
 
     try {
@@ -41,7 +41,7 @@
       await requestEngineMove(newPosition);
     } catch (err) {
       console.error("Move failed:", err);
-      // Refresh position to reset the board
+      errorStore.show(`Move failed: ${err}`);
       const currentPos = await api.getPosition();
       gameStore.position = currentPos;
     }
@@ -68,6 +68,7 @@
       }
     } catch (err) {
       console.error("Engine move failed:", err);
+      errorStore.show(`Engine error: ${err}`);
     } finally {
       gameStore.engineThinking = false;
     }

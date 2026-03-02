@@ -36,6 +36,7 @@ impl From<Color> for shakmaty::Color {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PieceRole {
@@ -88,6 +89,7 @@ pub struct Position {
     pub san_history: Vec<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LegalMove {

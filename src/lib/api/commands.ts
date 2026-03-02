@@ -58,8 +58,15 @@ export function analyzePosition(
 
 // ─── Player Commands ─────────────────────────────────────────
 
-export function getOrCreatePlayer(displayName: string) {
-  return invoke("get_or_create_player", { displayName });
+type Player = {
+  id: string;
+  displayName: string;
+  createdAt: string;
+  gamesPlayed: number;
+};
+
+export function getOrCreatePlayer(displayName: string): Promise<Player> {
+  return invoke<Player>("get_or_create_player", { displayName });
 }
 
 export function updatePlayerSettings(playerId: string, settings: unknown) {

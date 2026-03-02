@@ -8,6 +8,7 @@ use crate::game::state::GameState;
 use crate::models::chess::Position;
 use crate::models::game::GameConfig;
 use crate::models::game::GameRecord;
+use crate::CurrentPlayerId;
 
 #[tauri::command]
 pub fn new_game(
@@ -33,10 +34,18 @@ pub fn make_move(
 pub fn resign(
     state: State<'_, Mutex<GameState>>,
     db: State<'_, Mutex<Database>>,
+    current_player: State<'_, CurrentPlayerId>,
 ) -> Result<GameRecord, AppError> {
+    let player_id = current_player
+        .0
+        .lock()
+        .ok()
+        .and_then(|id| id.clone())
+        .unwrap_or_default();
+
     let mut game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let mut record = game.resign()?;
-    record.player_id = "default".to_string();
+    record.player_id = player_id;
 
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let _ = db.save_game(&record);
@@ -48,10 +57,18 @@ pub fn resign(
 pub fn save_completed_game(
     state: State<'_, Mutex<GameState>>,
     db: State<'_, Mutex<Database>>,
+    current_player: State<'_, CurrentPlayerId>,
 ) -> Result<GameRecord, AppError> {
+    let player_id = current_player
+        .0
+        .lock()
+        .ok()
+        .and_then(|id| id.clone())
+        .unwrap_or_default();
+
     let game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let mut record = game.complete_game()?;
-    record.player_id = "default".to_string();
+    record.player_id = player_id;
 
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     db.save_game(&record)?;

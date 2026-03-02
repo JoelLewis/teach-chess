@@ -33,8 +33,8 @@
   <h2 class="text-xl font-semibold mb-6">New Game</h2>
 
   <div class="mb-4">
-    <label class="block text-sm font-medium mb-2">Play as</label>
-    <div class="flex gap-2">
+    <span class="block text-sm font-medium mb-2">Play as</span>
+    <div class="flex gap-2" role="group" aria-label="Play as">
       <button
         class="btn"
         class:active={playerColor === "white"}
@@ -53,7 +53,7 @@
   </div>
 
   <div class="mb-4">
-    <label class="block text-sm font-medium mb-2">Engine Strength</label>
+    <span class="block text-sm font-medium mb-2">Engine Strength</span>
     {#if !useCustom}
       <div class="flex flex-wrap gap-2">
         {#each Object.keys(ENGINE_PRESETS) as preset}

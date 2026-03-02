@@ -8,7 +8,7 @@
   let { moves, currentMoveIndex, onMoveClick }: Props = $props();
 
   // Group moves into pairs (white, black)
-  let movePairs = $derived(() => {
+  let movePairs = $derived.by(() => {
     const pairs: { number: number; white: string; black?: string }[] = [];
     for (let i = 0; i < moves.length; i += 2) {
       pairs.push({
@@ -31,7 +31,7 @@
 </script>
 
 <div bind:this={listEl} class="move-list">
-  {#each movePairs() as pair}
+  {#each movePairs as pair}
     <div class="move-row">
       <span class="move-number">{pair.number}.</span>
       <button

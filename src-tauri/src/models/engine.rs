@@ -20,11 +20,13 @@ impl Score {
     }
 
     /// Normalize to white's perspective (always positive = good for white)
+    #[allow(dead_code)]
     pub fn from_white_perspective(&self) -> Self {
         self.clone()
     }
 
     /// Normalize to a specific side's perspective
+    #[allow(dead_code)]
     pub fn from_perspective(&self, is_white: bool) -> Self {
         if is_white {
             self.clone()

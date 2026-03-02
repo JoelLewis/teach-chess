@@ -277,6 +277,7 @@ impl EngineProcess {
         }
     }
 
+    #[allow(dead_code)]
     async fn wait_for_bestmove(&mut self) -> Result<EngineMove, AppError> {
         loop {
             let line = self.read_line().await?;

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use shakmaty::{uci::UciMove, Chess, Position as _};
 
 use crate::models::chess::{LegalMove, PieceRole};
