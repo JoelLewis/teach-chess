@@ -2,10 +2,14 @@
   import Sidebar from "./lib/components/layout/Sidebar.svelte";
   import Header from "./lib/components/layout/Header.svelte";
   import ErrorToast from "./lib/components/layout/ErrorToast.svelte";
+  import Dashboard from "./lib/components/dashboard/Dashboard.svelte";
   import GameConfigForm from "./lib/components/game/GameConfig.svelte";
   import PlayScreen from "./lib/components/game/PlayScreen.svelte";
   import GameHistory from "./lib/components/history/GameHistory.svelte";
   import ReviewScreen from "./lib/components/review/ReviewScreen.svelte";
+  import ModelManager from "./lib/components/settings/ModelManager.svelte";
+  import ProblemScreen from "./lib/components/problems/ProblemScreen.svelte";
+  import OpeningsScreen from "./lib/components/openings/OpeningsScreen.svelte";
   import { gameStore } from "./lib/stores/game.svelte";
   import { playerStore } from "./lib/stores/player.svelte";
   import { errorStore } from "./lib/stores/error.svelte";
@@ -13,7 +17,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { GameConfig } from "./lib/types/game";
 
-  type Page = "home" | "play" | "history" | "review";
+  type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
   let page = $state<Page>("home");
   let reviewGameId = $state("");
 
@@ -24,6 +28,30 @@
   async function startGame(config: GameConfig) {
     try {
       await api.startEngine();
+
+      // Resolve opponent personality before the first move
+      try {
+        const resolved = await api.resolvePersonality(
+          config.opponentMode,
+          config.personality ?? undefined,
+        );
+        gameStore.resolvedPersonality = resolved;
+      } catch (err) {
+        console.error("Personality resolution failed (non-blocking):", err);
+        gameStore.resolvedPersonality = null;
+      }
+
+      // Load weak categories for teaching mode
+      if (config.teachingMode) {
+        try {
+          const profile = await api.getSkillProfile();
+          const sorted = [...profile.ratings].sort((a, b) => a.rating - b.rating);
+          gameStore.weakCategories = sorted.slice(0, 2).map((r) => r.category);
+        } catch {
+          // Non-blocking — teaching mode still works without weak categories
+        }
+      }
+
       const position = await api.newGame(config);
       gameStore.config = config;
       gameStore.position = position;
@@ -87,15 +115,7 @@
 
     <main class="content">
       {#if page === "home"}
-        <div class="home">
-          <div class="hero">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Welcome to ChessMentor</h1>
-            <p class="text-gray-600 mb-8">Your AI chess coach. Play, learn, improve.</p>
-            <button class="cta-btn" onclick={() => navigate("play")}>
-              Start a Game
-            </button>
-          </div>
-        </div>
+        <Dashboard onNavigate={(p) => navigate(p as Page)} onReview={handleReview} />
       {:else if page === "play" && gameStore.phase === "idle"}
         <GameConfigForm onStart={startGame} />
       {:else if page === "play" && (gameStore.phase === "playing" || gameStore.phase === "game-over")}
@@ -103,10 +123,16 @@
           onReview={handleReview}
           onNewGame={handleNewGame}
         />
+      {:else if page === "problems"}
+        <ProblemScreen />
+      {:else if page === "openings"}
+        <OpeningsScreen />
       {:else if page === "history"}
         <GameHistory onReview={handleReview} />
       {:else if page === "review" && reviewGameId}
         <ReviewScreen gameId={reviewGameId} onBack={() => navigate("history")} />
+      {:else if page === "settings"}
+        <ModelManager />
       {:else}
         <GameConfigForm onStart={startGame} />
       {/if}
@@ -134,31 +160,4 @@
     overflow-y: auto;
   }
 
-  .home {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 400px;
-  }
-
-  .hero {
-    text-align: center;
-  }
-
-  .cta-btn {
-    padding: 14px 36px;
-    background: #1e40af;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .cta-btn:hover {
-    background: #1e3a8a;
-  }
 </style>

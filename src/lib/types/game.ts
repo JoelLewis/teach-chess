@@ -1,4 +1,5 @@
 import type { Color } from "./chess";
+import type { CoachingLevel } from "./engine";
 
 export type EngineStrength = {
   elo: number;
@@ -10,10 +11,29 @@ export type TimeControl = {
   incrementSecs: number;
 };
 
+// ─── Opponent Personality Types ───────────────────────────────
+
+export type PersonalityProfile = "aggressive" | "positional" | "trappy" | "solid";
+
+export type OpponentMode = "choose" | "surprise" | "coachPicks";
+
+export type SelectedMove = {
+  uci: string;
+  personality: PersonalityProfile;
+  personalityScore: number;
+  teachingScore: number;
+};
+
+// ─── Game Configuration ───────────────────────────────────────
+
 export type GameConfig = {
   playerColor: Color;
   engineStrength: EngineStrength;
   timeControl: TimeControl;
+  coachingLevel: CoachingLevel;
+  opponentMode: OpponentMode;
+  personality: PersonalityProfile | null;
+  teachingMode: boolean;
 };
 
 export type GameRecord = {
@@ -27,6 +47,8 @@ export type GameRecord = {
   startedAt: string;
   endedAt: string | null;
   timeControl: string;
+  opponentPersonality: string | null;
+  teachingMode: boolean;
 };
 
 export const ENGINE_PRESETS = {

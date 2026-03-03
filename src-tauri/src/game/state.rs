@@ -266,6 +266,11 @@ impl GameState {
                 "{}+{}",
                 config.time_control.initial_secs, config.time_control.increment_secs
             ),
+            opponent_personality: config
+                .personality
+                .as_ref()
+                .map(|p| serde_json::to_string(p).unwrap_or_default()),
+            teaching_mode: config.teaching_mode,
         }
     }
 }
@@ -290,6 +295,10 @@ mod tests {
             player_color: Color::White,
             engine_strength: EngineStrength::beginner(),
             time_control: TimeControl::default(),
+            coaching_level: Default::default(),
+            opponent_mode: Default::default(),
+            personality: None,
+            teaching_mode: false,
         }
     }
 

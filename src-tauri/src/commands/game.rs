@@ -36,12 +36,7 @@ pub fn resign(
     db: State<'_, Mutex<Database>>,
     current_player: State<'_, CurrentPlayerId>,
 ) -> Result<GameRecord, AppError> {
-    let player_id = current_player
-        .0
-        .lock()
-        .ok()
-        .and_then(|id| id.clone())
-        .unwrap_or_default();
+    let player_id = current_player.get()?;
 
     let mut game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let mut record = game.resign()?;
@@ -59,12 +54,7 @@ pub fn save_completed_game(
     db: State<'_, Mutex<Database>>,
     current_player: State<'_, CurrentPlayerId>,
 ) -> Result<GameRecord, AppError> {
-    let player_id = current_player
-        .0
-        .lock()
-        .ok()
-        .and_then(|id| id.clone())
-        .unwrap_or_default();
+    let player_id = current_player.get()?;
 
     let game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let mut record = game.complete_game()?;

@@ -1,4 +1,12 @@
+pub mod assessment;
+pub mod coaching;
+pub mod dashboard;
 pub mod engine;
 pub mod game;
+pub mod heuristics;
+pub mod llm;
+pub mod opponent;
 pub mod player;
+pub mod puzzle;
+pub mod repertoire;
 pub mod review;

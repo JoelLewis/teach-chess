@@ -2,10 +2,11 @@ use std::sync::Mutex;
 
 use tauri::{AppHandle, State};
 
+use crate::coaching;
 use crate::db::connection::Database;
-use crate::engine::process::EngineProcess;
+use crate::engine::{eval, process::EngineProcess};
 use crate::error::AppError;
-use crate::models::engine::MoveEvaluation;
+use crate::models::engine::{CriticalMoment, MoveEvaluation, PatternSummary, StudySuggestion};
 use crate::models::game::GameRecord;
 
 #[tauri::command]
@@ -42,4 +43,25 @@ pub fn get_game_history(
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let games = db.get_game_history(limit, offset)?;
     Ok(games)
+}
+
+#[tauri::command]
+pub fn get_critical_moments(
+    evaluations: Vec<MoveEvaluation>,
+    is_player_white: bool,
+) -> Vec<CriticalMoment> {
+    eval::find_critical_moments(&evaluations, is_player_white)
+}
+
+#[tauri::command]
+pub fn get_pattern_summary(
+    evaluations: Vec<MoveEvaluation>,
+    is_player_white: bool,
+) -> PatternSummary {
+    coaching::generate_pattern_summary(&evaluations, is_player_white)
+}
+
+#[tauri::command]
+pub fn get_study_suggestions(summary: PatternSummary) -> Vec<StudySuggestion> {
+    coaching::generate_study_suggestions(&summary)
 }

@@ -11,8 +11,50 @@ pub enum AppError {
     #[error(transparent)]
     Database(#[from] DatabaseError),
 
+    #[error(transparent)]
+    Llm(#[from] crate::llm::LlmError),
+
+    #[error(transparent)]
+    Puzzle(#[from] PuzzleError),
+
+    #[error(transparent)]
+    Repertoire(#[from] RepertoireError),
+
     #[error("Lock poisoned: {0}")]
     Lock(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RepertoireError {
+    #[error("Opening not found: {0}")]
+    OpeningNotFound(String),
+
+    #[error("No active drill session")]
+    NoDrillActive,
+
+    #[error("No repertoire entries for drilling")]
+    NoRepertoireEntries,
+
+    #[error("Import error: {0}")]
+    ImportError(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum PuzzleError {
+    #[error("No active puzzle session")]
+    NoPuzzleActive,
+
+    #[error("Puzzle already complete")]
+    PuzzleComplete,
+
+    #[error("No puzzles available matching filter")]
+    NoPuzzlesAvailable,
+
+    #[error("Invalid move: {0}")]
+    InvalidMove(String),
+
+    #[error("Import error: {0}")]
+    ImportError(String),
 }
 
 #[derive(Debug, thiserror::Error)]

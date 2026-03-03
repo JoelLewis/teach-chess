@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Color } from "../../types/chess";
-  import type { GameConfig, EngineStrength } from "../../types/game";
+  import type { GameConfig, EngineStrength, PersonalityProfile, OpponentMode } from "../../types/game";
+  import type { CoachingLevel } from "../../types/engine";
   import { ENGINE_PRESETS } from "../../types/game";
 
   type Props = {
@@ -13,6 +14,10 @@
   let strengthPreset = $state<keyof typeof ENGINE_PRESETS>("beginner");
   let customElo = $state(1350);
   let useCustom = $state(false);
+  let coachingLevel = $state<CoachingLevel>("fullCoach");
+  let opponentMode = $state<OpponentMode>("choose");
+  let personality = $state<PersonalityProfile>("solid");
+  let teachingMode = $state(false);
 
   let engineStrength = $derived<EngineStrength>(
     useCustom
@@ -20,11 +25,35 @@
       : ENGINE_PRESETS[strengthPreset],
   );
 
+  const COACHING_OPTIONS: { value: CoachingLevel; label: string; desc: string }[] = [
+    { value: "fullCoach", label: "Full Coach", desc: "Pre-move hints + post-move feedback for all moves" },
+    { value: "lightTouch", label: "Light Touch", desc: "Post-move feedback for errors and best moves only" },
+    { value: "minimal", label: "Minimal", desc: "Only alerts you about blunders" },
+    { value: "silent", label: "Silent", desc: "No in-game coaching" },
+  ];
+
+  const PERSONALITY_OPTIONS: { value: PersonalityProfile; label: string; desc: string }[] = [
+    { value: "aggressive", label: "Aggressive", desc: "Sharp, tactical play with king attacks" },
+    { value: "positional", label: "Positional", desc: "Clean pawn structure and piece harmony" },
+    { value: "trappy", label: "Trappy", desc: "Sets subtle traps and complications" },
+    { value: "solid", label: "Solid", desc: "Prioritizes safety and avoids risk" },
+  ];
+
+  const MODE_OPTIONS: { value: OpponentMode; label: string; desc: string }[] = [
+    { value: "choose", label: "Choose", desc: "Pick your opponent's style" },
+    { value: "surprise", label: "Surprise me", desc: "Random personality each game" },
+    { value: "coachPicks", label: "Coach picks", desc: "Targets your weak areas" },
+  ];
+
   function handleStart() {
     onStart({
       playerColor,
       engineStrength,
       timeControl: { initialSecs: 0, incrementSecs: 0 },
+      coachingLevel,
+      opponentMode,
+      personality: opponentMode === "choose" ? personality : null,
+      teachingMode,
     });
   }
 </script>
@@ -87,6 +116,63 @@
     </label>
   </div>
 
+  <div class="mb-4">
+    <span class="block text-sm font-medium mb-2">In-Game Coaching</span>
+    <div class="coaching-options">
+      {#each COACHING_OPTIONS as option}
+        <button
+          class="coaching-btn"
+          class:active={coachingLevel === option.value}
+          onclick={() => (coachingLevel = option.value)}
+        >
+          <span class="coaching-label">{option.label}</span>
+          <span class="coaching-desc">{option.desc}</span>
+        </button>
+      {/each}
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <span class="block text-sm font-medium mb-2">Opponent Style</span>
+    <div class="flex gap-2 mb-2" role="group" aria-label="Opponent mode">
+      {#each MODE_OPTIONS as option}
+        <button
+          class="btn text-xs"
+          class:active={opponentMode === option.value}
+          onclick={() => (opponentMode = option.value)}
+          title={option.desc}
+        >
+          {option.label}
+        </button>
+      {/each}
+    </div>
+    {#if opponentMode === "choose"}
+      <div class="coaching-options">
+        {#each PERSONALITY_OPTIONS as option}
+          <button
+            class="coaching-btn"
+            class:active={personality === option.value}
+            onclick={() => (personality = option.value)}
+          >
+            <span class="coaching-label">{option.label}</span>
+            <span class="coaching-desc">{option.desc}</span>
+          </button>
+        {/each}
+      </div>
+    {:else}
+      <p class="text-xs text-gray-500 mt-1">
+        {opponentMode === "surprise"
+          ? "A random personality will be assigned at game start."
+          : "The coach will pick a style that challenges your weaknesses."}
+      </p>
+    {/if}
+    <label class="flex items-center gap-2 mt-3 text-sm">
+      <input type="checkbox" bind:checked={teachingMode} />
+      Teaching mode
+      <span class="text-xs text-gray-500">— engine steers into positions that challenge your weak areas</span>
+    </label>
+  </div>
+
   <button class="btn-primary mt-4" onclick={handleStart}>
     Start Game
   </button>
@@ -132,5 +218,48 @@
 
   .btn-primary:hover {
     background: #1e3a8a;
+  }
+
+  .coaching-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .coaching-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+
+  .coaching-btn:hover {
+    border-color: #9ca3af;
+  }
+
+  .coaching-btn.active {
+    background: #eff6ff;
+    border-color: #1e40af;
+  }
+
+  .coaching-label {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .coaching-desc {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 1px;
+  }
+
+  .coaching-btn.active .coaching-label {
+    color: #1e40af;
   }
 </style>

@@ -23,6 +23,134 @@ export type MoveClassification =
   | "mistake"
   | "blunder";
 
+export type Side = "white" | "black";
+
+export type GamePhase = "opening" | "middlegame" | "endgame";
+
+export type PieceCounts = {
+  pawns: number;
+  knights: number;
+  bishops: number;
+  rooks: number;
+  queens: number;
+};
+
+export type MaterialImbalance =
+  | { type: "bishopPair"; side: Side }
+  | { type: "exchangeUp"; side: Side }
+  | { type: "exchangeDown"; side: Side }
+  | { type: "queenVsPieces"; side: Side };
+
+export type MaterialBalance = {
+  white: PieceCounts;
+  black: PieceCounts;
+  balanceCp: number;
+  imbalances: MaterialImbalance[];
+};
+
+export type SidePawnStructure = {
+  isolated: string[];
+  doubled: string[];
+  passed: string[];
+  backward: string[];
+};
+
+export type PawnChain = {
+  side: Side;
+  squares: string[];
+};
+
+export type PawnStructure = {
+  white: SidePawnStructure;
+  black: SidePawnStructure;
+  chains: PawnChain[];
+  openFiles: string[];
+  halfOpenFilesWhite: string[];
+  halfOpenFilesBlack: string[];
+};
+
+export type PieceActivityDetail = {
+  square: string;
+  piece: string;
+  mobility: number;
+  isCentralized: boolean;
+  isOnRim: boolean;
+};
+
+export type SideActivity = {
+  totalMobility: number;
+  developedMinors: number;
+  totalMinors: number;
+  rookOnOpenFile: boolean;
+  rookOnSeventh: boolean;
+  pieces: PieceActivityDetail[];
+};
+
+export type PieceActivity = {
+  white: SideActivity;
+  black: SideActivity;
+};
+
+export type SideKingSafety = {
+  kingSquare: string;
+  pawnShieldCount: number;
+  pawnShieldMax: number;
+  hasCastled: boolean;
+  canCastle: boolean;
+  openFilesNearKing: number;
+  kingZoneAttacks: number;
+};
+
+export type KingSafety = {
+  white: SideKingSafety;
+  black: SideKingSafety;
+};
+
+export type TacticType =
+  | "pin"
+  | "fork"
+  | "skewer"
+  | "hangingPiece"
+  | "backRankThreat"
+  | "discoveredAttack";
+
+export type TacticalMotif = {
+  tacticType: TacticType;
+  side: Side;
+  square: string;
+  description: string;
+};
+
+export type PositionalTheme =
+  | "knightOnRim"
+  | "bishopPairAdvantage"
+  | "isolatedQueenPawn"
+  | "passedPawn"
+  | "doubledPawns"
+  | "backwardPawn"
+  | "openFile"
+  | "rookOnSeventh"
+  | "kingSafetyCompromised"
+  | "undevelopedPieces"
+  | "centralControl"
+  | "pawnChainTension"
+  | "materialImbalance"
+  | "backRankWeakness"
+  | "pinnedPiece"
+  | "forkAvailable"
+  | "hangingMaterial";
+
+export type CoachingContext = {
+  fen: string;
+  phase: GamePhase;
+  material: MaterialBalance;
+  pawns: PawnStructure;
+  activity: PieceActivity;
+  kingSafety: KingSafety;
+  tactics: TacticalMotif[];
+  themes: PositionalTheme[];
+};
+
 export type MoveEvaluation = {
   moveNumber: number;
   isWhite: boolean;
@@ -36,6 +164,8 @@ export type MoveEvaluation = {
   classification: MoveClassification | null;
   depth: number;
   pv: string[];
+  coachingContext: CoachingContext | null;
+  coachingText: string | null;
 };
 
 /** Convert a Score to a display string */
@@ -66,3 +196,79 @@ export const CLASSIFICATION_COLORS: Record<MoveClassification, string> = {
   mistake: "#e5534b",
   blunder: "#da3633",
 } as const;
+
+// ─── In-Game Coaching Types ──────────────────────────────────────
+
+export type CoachingLevel = "fullCoach" | "lightTouch" | "minimal" | "silent";
+
+export type InGameCoachingFeedback = {
+  classification: MoveClassification;
+  coachingText: string;
+  evalBefore: Score;
+  evalAfter: Score;
+  engineBestUci: string;
+  coachingContext: CoachingContext | null;
+  moveNumber: number;
+};
+
+export type PreMoveHintType =
+  | "tacticalAlert"
+  | "phaseTransition"
+  | "strategicReminder"
+  | "none";
+
+export type PreMoveHint = {
+  hintText: string | null;
+  hintType: PreMoveHintType;
+  themes: PositionalTheme[];
+};
+
+// ─── Post-Game Review Enhancement Types ──────────────────────────
+
+export type CriticalMoment = {
+  moveIndex: number;
+  evalSwingCp: number;
+  description: string;
+  isPlayerMove: boolean;
+};
+
+export type PatternSummary = {
+  totalErrors: number;
+  errorThemes: [PositionalTheme, number][];
+  missedTactics: [TacticType, number][];
+  errorsByPhase: Record<string, number>;
+  strengths: string[];
+};
+
+export type StudySuggestion = {
+  topic: string;
+  description: string;
+  priority: number;
+};
+
+// ─── LLM Coaching Types ────────────────────────────────────────
+
+export type PlayerLevel = "beginner" | "intermediate" | "upperIntermediate";
+
+export type CoachingSource = "cache" | "llm" | "template";
+
+export type CoachingResponse = {
+  text: string;
+  source: CoachingSource;
+};
+
+export type LlmStatus = {
+  available: boolean;
+  modelLoaded: boolean;
+  modelId: string | null;
+  mode: "llm" | "template";
+};
+
+export type ModelStatus = {
+  id: string;
+  displayName: string;
+  downloaded: boolean;
+  fileSizeMb: number;
+  ramRequirementMb: number;
+  systemMemoryMb: number;
+};

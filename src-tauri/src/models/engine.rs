@@ -1,4 +1,8 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
+
+use super::heuristics::{CoachingContext, GamePhase, PositionalTheme, TacticType};
 
 /// Engine evaluation score
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,6 +88,35 @@ impl MoveClassification {
             _ => MoveClassification::Blunder,
         }
     }
+
+    /// Whether this classification represents a player error
+    pub fn is_error(&self) -> bool {
+        matches!(
+            self,
+            MoveClassification::Inaccuracy | MoveClassification::Mistake | MoveClassification::Blunder
+        )
+    }
+
+    /// Whether this classification represents a strong move
+    pub fn is_positive(&self) -> bool {
+        matches!(
+            self,
+            MoveClassification::Best | MoveClassification::Excellent
+        )
+    }
+
+    /// Parse from a lowercase string (e.g. "best", "blunder")
+    pub fn from_str_loose(s: &str) -> Self {
+        match s {
+            "best" => MoveClassification::Best,
+            "excellent" => MoveClassification::Excellent,
+            "good" => MoveClassification::Good,
+            "inaccuracy" => MoveClassification::Inaccuracy,
+            "mistake" => MoveClassification::Mistake,
+            "blunder" => MoveClassification::Blunder,
+            _ => MoveClassification::Good,
+        }
+    }
 }
 
 /// Per-move evaluation for game review
@@ -102,4 +135,106 @@ pub struct MoveEvaluation {
     pub classification: Option<MoveClassification>,
     pub depth: u32,
     pub pv: Vec<String>,
+    pub coaching_context: Option<CoachingContext>,
+    pub coaching_text: Option<String>,
+}
+
+// ─── In-Game Coaching Types ──────────────────────────────────────
+
+/// How much coaching feedback to show during play
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CoachingLevel {
+    /// All feedback: pre-move hints + post-move for every classification
+    FullCoach,
+    /// Post-move for inaccuracy+ and best; no pre-move hints
+    LightTouch,
+    /// Only blunders
+    Minimal,
+    /// No in-game coaching
+    Silent,
+}
+
+impl Default for CoachingLevel {
+    fn default() -> Self {
+        Self::FullCoach
+    }
+}
+
+/// Post-move coaching feedback during gameplay
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InGameCoachingFeedback {
+    pub classification: MoveClassification,
+    pub coaching_text: String,
+    pub eval_before: Score,
+    pub eval_after: Score,
+    pub engine_best_uci: String,
+    pub coaching_context: Option<CoachingContext>,
+    pub move_number: u32,
+}
+
+/// Pre-move hint shown before the player's next move
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreMoveHint {
+    pub hint_text: Option<String>,
+    pub hint_type: PreMoveHintType,
+    pub themes: Vec<PositionalTheme>,
+}
+
+impl Default for PreMoveHint {
+    fn default() -> Self {
+        Self {
+            hint_text: None,
+            hint_type: PreMoveHintType::None,
+            themes: vec![],
+        }
+    }
+}
+
+/// Category of pre-move hint
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PreMoveHintType {
+    /// Tactic available or hanging piece detected
+    TacticalAlert,
+    /// Entering middlegame/endgame
+    PhaseTransition,
+    /// Positional theme to consider
+    StrategicReminder,
+    /// No hint to show
+    None,
+}
+
+// ─── Post-Game Review Enhancement Types ──────────────────────────
+
+/// A pivotal moment in the game where the evaluation swung significantly
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CriticalMoment {
+    pub move_index: usize,
+    pub eval_swing_cp: i32,
+    pub description: String,
+    pub is_player_move: bool,
+}
+
+/// Summary of recurring patterns across a game's errors
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatternSummary {
+    pub total_errors: u32,
+    pub error_themes: Vec<(PositionalTheme, u32)>,
+    pub missed_tactics: Vec<(TacticType, u32)>,
+    pub errors_by_phase: HashMap<GamePhase, u32>,
+    pub strengths: Vec<String>,
+}
+
+/// A recommended study topic based on game weaknesses
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StudySuggestion {
+    pub topic: String,
+    pub description: String,
+    pub priority: u8,
 }

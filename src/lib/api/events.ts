@@ -1,5 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { Score } from "../types/engine";
+import type { Score, InGameCoachingFeedback } from "../types/engine";
 
 export type EngineInfoPayload = {
   depth: number;
@@ -43,4 +43,32 @@ export function onReviewProgress(
   return listen<ReviewProgressPayload>("review-progress", (event) => {
     callback(event.payload);
   });
+}
+
+// ─── In-Game Coaching Events ─────────────────────────────────────
+
+export function onInGameCoaching(
+  callback: (feedback: InGameCoachingFeedback) => void,
+): Promise<UnlistenFn> {
+  return listen<InGameCoachingFeedback>("in-game-coaching", (event) => {
+    callback(event.payload);
+  });
+}
+
+// ─── LLM Events ─────────────────────────────────────────────────
+
+export type LlmDownloadProgressPayload = {
+  downloadedBytes: number;
+  totalBytes: number;
+};
+
+export function onLlmDownloadProgress(
+  callback: (progress: LlmDownloadProgressPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<LlmDownloadProgressPayload>(
+    "llm-download-progress",
+    (event) => {
+      callback(event.payload);
+    },
+  );
 }

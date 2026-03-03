@@ -1,5 +1,5 @@
 <script lang="ts">
-  type Page = "home" | "play" | "history" | "review";
+  type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
 
   type Props = {
     currentPage: Page;
@@ -11,7 +11,10 @@
   const navItems: { page: Page; label: string; icon: string }[] = [
     { page: "home", label: "Home", icon: "\u2302" },
     { page: "play", label: "Play", icon: "\u265A" },
+    { page: "problems", label: "Problems", icon: "\u2617" },
+    { page: "openings", label: "Openings", icon: "\u2655" },
     { page: "history", label: "History", icon: "\u2630" },
+    { page: "settings", label: "Settings", icon: "\u2699" },
   ];
 </script>
 

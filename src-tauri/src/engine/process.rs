@@ -174,6 +174,75 @@ impl EngineProcess {
         }
     }
 
+    /// Run multi-PV analysis at full strength to get the top N candidate moves.
+    ///
+    /// Returns up to `num_pvs` candidate lines sorted by PV index (best first).
+    /// Strength limits are disabled so evaluations are accurate for candidate scoring.
+    pub async fn get_multi_pv(
+        &mut self,
+        fen: &str,
+        depth: u32,
+        num_pvs: u32,
+    ) -> Result<Vec<uci::MultiPvLine>, AppError> {
+        if !self.is_running {
+            return Err(EngineError::NotRunning.into());
+        }
+
+        // Disable strength limits — we need accurate evals for candidate filtering
+        self.send("setoption name UCI_LimitStrength value false")
+            .await?;
+        self.send(&format!("setoption name MultiPV value {num_pvs}"))
+            .await?;
+
+        self.send(&uci::position_command(fen)).await?;
+        self.send(&uci::go_depth_command(depth)).await?;
+
+        // Collect the highest-depth info line for each PV index
+        let mut best_lines: std::collections::HashMap<u32, uci::InfoLine> =
+            std::collections::HashMap::new();
+
+        loop {
+            let line = self.read_line().await?;
+
+            if let Some(info) = uci::parse_info(&line) {
+                if let Some(idx) = info.multipv {
+                    let existing_depth = best_lines
+                        .get(&idx)
+                        .and_then(|i| i.depth)
+                        .unwrap_or(0);
+                    if info.depth.unwrap_or(0) >= existing_depth {
+                        best_lines.insert(idx, info);
+                    }
+                }
+            }
+
+            if uci::parse_bestmove(&line).is_some() {
+                break;
+            }
+        }
+
+        // Reset MultiPV to default
+        self.send("setoption name MultiPV value 1").await?;
+
+        // Convert to MultiPvLine, sorted by PV index
+        let mut result: Vec<uci::MultiPvLine> = best_lines
+            .into_iter()
+            .filter_map(|(idx, info)| {
+                let uci_move = info.pv.first()?.clone();
+                let score = info.score?;
+                Some(uci::MultiPvLine {
+                    pv_index: idx,
+                    uci_move,
+                    score,
+                    depth: info.depth.unwrap_or(0),
+                })
+            })
+            .collect();
+
+        result.sort_by_key(|l| l.pv_index);
+        Ok(result)
+    }
+
     pub async fn review_game(
         &mut self,
         game: &GameRecord,
@@ -198,6 +267,10 @@ impl EngineProcess {
 
         let mut evaluations = Vec::new();
 
+        // Cache: eval_after from the previous move is eval_before for the next move,
+        // since the position after move N is the position before move N+1.
+        let mut cached_eval: Option<EngineEvaluation> = None;
+
         // Analyze position before each move
         for (i, step) in replay.iter().enumerate() {
             // Emit progress
@@ -208,11 +281,15 @@ impl EngineProcess {
                 });
             }
 
-            // Analyze position before the move
-            let eval_before = self.analyze(&step.fen_before, depth).await?;
+            // Reuse cached eval_after from previous move as eval_before, or analyze fresh
+            let eval_before = match cached_eval.take() {
+                Some(cached) => cached,
+                None => self.analyze(&step.fen_before, depth).await?,
+            };
 
             // Analyze position after the move
             let eval_after = self.analyze(&step.fen_after, depth).await?;
+            cached_eval = Some(eval_after.clone());
 
             let is_white = step.is_white;
             let classification = eval::classify_move(
@@ -220,6 +297,15 @@ impl EngineProcess {
                 &eval_after.score,
                 is_white,
             );
+
+            // Compute coaching context from the position before the move
+            let coaching_context = crate::game::parse_fen(&step.fen_before)
+                .ok()
+                .map(|pos| crate::heuristics::analyze_position(&pos));
+
+            let coaching_text = coaching_context.as_ref().map(|ctx| {
+                crate::coaching::generate_coaching_text(&classification, ctx)
+            });
 
             evaluations.push(MoveEvaluation {
                 move_number: step.move_number,
@@ -234,6 +320,8 @@ impl EngineProcess {
                 classification: Some(classification),
                 depth,
                 pv: eval_before.pv,
+                coaching_context,
+                coaching_text,
             });
         }
 

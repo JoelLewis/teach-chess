@@ -1,0 +1,2 @@
+ALTER TABLE game ADD COLUMN opponent_personality TEXT;
+ALTER TABLE game ADD COLUMN teaching_mode INTEGER NOT NULL DEFAULT 0;

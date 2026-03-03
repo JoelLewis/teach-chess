@@ -26,6 +26,8 @@
   }
 
   $effect(() => {
+    // Reactively re-runs when `page` changes (read inline to track dependency)
+    void page;
     loadGames();
   });
 </script>
@@ -46,10 +48,10 @@
 
     <div class="pagination">
       {#if page > 0}
-        <button onclick={() => { page--; loadGames(); }}>Previous</button>
+        <button onclick={() => page--}>Previous</button>
       {/if}
       {#if games.length === pageSize}
-        <button onclick={() => { page++; loadGames(); }}>Next</button>
+        <button onclick={() => page++}>Next</button>
       {/if}
     </div>
   {/if}

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::engine::CoachingLevel;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
@@ -28,6 +30,15 @@ pub struct PlayerSettings {
     /// Analysis depth for post-game review
     #[serde(default = "default_review_depth")]
     pub review_depth: u32,
+
+    /// Override coaching level (beginner/intermediate/upperIntermediate).
+    /// If None, derived from game statistics.
+    #[serde(default)]
+    pub coaching_level: Option<String>,
+
+    /// In-game coaching intrusiveness level
+    #[serde(default)]
+    pub in_game_coaching: CoachingLevel,
 }
 
 fn default_engine_elo() -> u32 {
@@ -47,6 +58,8 @@ impl Default for PlayerSettings {
             auto_flip_board: true,
             show_eval_bar: true,
             review_depth: default_review_depth(),
+            coaching_level: None,
+            in_game_coaching: CoachingLevel::default(),
         }
     }
 }

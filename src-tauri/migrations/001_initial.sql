@@ -37,5 +37,6 @@ CREATE TABLE IF NOT EXISTS move_annotation (
     classification  TEXT,
     depth           INTEGER,
     pv_json         TEXT,
+    coaching_text   TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );

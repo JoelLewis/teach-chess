@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::chess::Color;
+use super::engine::CoachingLevel;
+use crate::opponent::personality::{OpponentMode, PersonalityProfile};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -69,6 +71,14 @@ pub struct GameConfig {
     pub player_color: Color,
     pub engine_strength: EngineStrength,
     pub time_control: TimeControl,
+    #[serde(default)]
+    pub coaching_level: CoachingLevel,
+    #[serde(default)]
+    pub opponent_mode: OpponentMode,
+    #[serde(default)]
+    pub personality: Option<PersonalityProfile>,
+    #[serde(default)]
+    pub teaching_mode: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,4 +94,6 @@ pub struct GameRecord {
     pub started_at: String,
     pub ended_at: Option<String>,
     pub time_control: String,
+    pub opponent_personality: Option<String>,
+    pub teaching_mode: bool,
 }

@@ -2,6 +2,7 @@
   import Chessboard from "../board/Chessboard.svelte";
   import EvalBar from "../board/EvalBar.svelte";
   import MoveList from "../board/MoveList.svelte";
+  import InGameCoachingPanel from "./InGameCoachingPanel.svelte";
   import GameOverDialog from "./GameOverDialog.svelte";
   import { gameStore } from "../../stores/game.svelte";
   import { errorStore } from "../../stores/error.svelte";
@@ -20,10 +21,30 @@
   let position = $derived(gameStore.position);
   let config = $derived(gameStore.config);
 
+  // Personality feedback badge (for CoachPicks/Surprise modes)
+  let personalityLabel = $derived.by(() => {
+    if (!config || config.opponentMode === "choose" || !gameStore.resolvedPersonality) return null;
+    const name = gameStore.resolvedPersonality.charAt(0).toUpperCase() + gameStore.resolvedPersonality.slice(1);
+    return `Playing against: ${name}`;
+  });
+
+  let showPersonalityBadge = $state(false);
+
+  $effect(() => {
+    if (personalityLabel) {
+      showPersonalityBadge = true;
+      const timer = setTimeout(() => {
+        showPersonalityBadge = false;
+      }, 10_000);
+      return () => clearTimeout(timer);
+    }
+  });
+
   async function handlePlayerMove(from: string, to: string) {
     if (!config || !position) return;
     if (gameStore.engineThinking) return;
 
+    const fenBefore = position.fen;
     const uci = `${from}${to}`;
 
     try {
@@ -35,6 +56,34 @@
       if (newPosition.isGameOver) {
         await saveGame();
         return;
+      }
+
+      // Evaluate the player's move (coaching — never blocks the game)
+      try {
+        if (config.coachingLevel !== "silent") {
+          const isPlayerWhite = config.playerColor === "white";
+          const moveNumber = Math.ceil(newPosition.sanHistory.length / 2);
+
+          const feedback = await api.evaluatePlayerMove(
+            fenBefore,
+            newPosition.fen,
+            isPlayerWhite,
+            moveNumber,
+            config.coachingLevel,
+          );
+
+          gameStore.latestCoaching = feedback;
+          // Keep only the last 20 coaching entries to avoid unbounded memory growth
+          const history = [...gameStore.coachingHistory, feedback];
+          gameStore.coachingHistory = history.length > 20 ? history.slice(-20) : history;
+
+          // Track game phase from coaching context
+          if (feedback.coachingContext?.phase) {
+            gameStore.currentChessPhase = feedback.coachingContext.phase;
+          }
+        }
+      } catch (err) {
+        console.error("Coaching evaluation failed (non-blocking):", err);
       }
 
       // Request engine move
@@ -52,19 +101,53 @@
 
     gameStore.engineThinking = true;
     try {
-      const engineMove = await api.getEngineMove(
-        currentPosition.fen,
-        undefined,
-        config.engineStrength.elo,
-        config.engineStrength.skillLevel,
-      );
+      let moveUci: string;
+
+      // Branch: use personality-based move selection if a personality is active
+      if (gameStore.resolvedPersonality) {
+        const selected = await api.getOpponentMove(
+          currentPosition.fen,
+          gameStore.resolvedPersonality,
+          config.teachingMode,
+          gameStore.weakCategories.length > 0 ? gameStore.weakCategories : undefined,
+        );
+        moveUci = selected.uci;
+      } else {
+        const engineMove = await api.getEngineMove(
+          currentPosition.fen,
+          undefined,
+          config.engineStrength.elo,
+          config.engineStrength.skillLevel,
+        );
+        moveUci = engineMove.uci;
+      }
 
       // Apply engine's move
-      const newPosition = await api.makeMove(engineMove.uci);
+      const newPosition = await api.makeMove(moveUci);
       gameStore.position = newPosition;
 
       if (newPosition.isGameOver) {
         await saveGame();
+        return;
+      }
+
+      // Analyze pre-move hints for the player's next turn
+      try {
+        if (config.coachingLevel === "fullCoach") {
+          const isPlayerWhite = config.playerColor === "white";
+          const hint = await api.analyzePreMoveHints(
+            newPosition.fen,
+            gameStore.currentChessPhase,
+            config.coachingLevel,
+            isPlayerWhite,
+            gameStore.resolvedPersonality,
+          );
+          gameStore.preMoveHint = hint;
+        } else {
+          gameStore.preMoveHint = null;
+        }
+      } catch (err) {
+        console.error("Pre-move hint failed (non-blocking):", err);
       }
     } catch (err) {
       console.error("Engine move failed:", err);
@@ -142,7 +225,16 @@
           <span>{position?.turn === config?.playerColor ? "Your turn" : "Opponent's turn"}</span>
         {/if}
       </div>
+      {#if showPersonalityBadge && personalityLabel}
+        <div class="personality-badge">{personalityLabel}</div>
+      {/if}
     </div>
+
+    {#if config?.coachingLevel !== "silent"}
+      <div class="coaching-section">
+        <InGameCoachingPanel />
+      </div>
+    {/if}
 
     <MoveList moves={position?.sanHistory ?? []} />
 
@@ -215,6 +307,13 @@
     margin-top: auto;
   }
 
+  .coaching-section {
+    padding: 4px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
   .btn-resign {
     width: 100%;
     padding: 8px;
@@ -229,5 +328,20 @@
 
   .btn-resign:hover {
     background: #fecaca;
+  }
+
+  .personality-badge {
+    margin-top: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    color: #6366f1;
+    background: #eef2ff;
+    border-radius: 4px;
+    animation: fade-out 10s forwards;
+  }
+
+  @keyframes fade-out {
+    0%, 80% { opacity: 1; }
+    100% { opacity: 0; }
   }
 </style>

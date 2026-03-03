@@ -35,11 +35,51 @@ impl Database {
         self.conn
             .execute_batch(migration_sql)
             .map_err(DatabaseError::Sqlite)?;
+
+        // 002: Add coaching_text column (safe to re-run — ignore "duplicate column" error)
+        let m002 = include_str!("../../migrations/002_coaching_text.sql");
+        if let Err(e) = self.conn.execute_batch(m002) {
+            let msg = e.to_string();
+            if !msg.contains("duplicate column") {
+                return Err(DatabaseError::Sqlite(e));
+            }
+        }
+
+        // 003: Coaching cache table (IF NOT EXISTS — safe to re-run)
+        let m003 = include_str!("../../migrations/003_coaching_cache.sql");
+        self.conn
+            .execute_batch(m003)
+            .map_err(DatabaseError::Sqlite)?;
+
+        // 004: Puzzle tables (IF NOT EXISTS — safe to re-run)
+        let m004 = include_str!("../../migrations/004_problems.sql");
+        self.conn
+            .execute_batch(m004)
+            .map_err(DatabaseError::Sqlite)?;
+
+        // 005: Repertoire tables (IF NOT EXISTS — safe to re-run)
+        let m005 = include_str!("../../migrations/005_repertoire.sql");
+        self.conn
+            .execute_batch(m005)
+            .map_err(DatabaseError::Sqlite)?;
+
+        // 006: Skill rating table (IF NOT EXISTS — safe to re-run)
+        let m006 = include_str!("../../migrations/006_assessment.sql");
+        self.conn
+            .execute_batch(m006)
+            .map_err(DatabaseError::Sqlite)?;
+
         info!("Database migrations applied");
         Ok(())
     }
 
     pub fn conn(&self) -> &Connection {
         &self.conn
+    }
+
+    /// Create a Database from an existing connection (for testing).
+    #[cfg(test)]
+    pub fn from_connection(conn: Connection) -> Self {
+        Self { conn }
     }
 }

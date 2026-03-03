@@ -127,6 +127,20 @@ pub struct InfoLine {
     pub multipv: Option<u32>,
 }
 
+/// A single line from multi-PV engine output.
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct MultiPvLine {
+    /// 1-based PV index (1 = best move)
+    pub pv_index: u32,
+    /// The first move of this PV line in UCI notation
+    pub uci_move: String,
+    /// Engine evaluation score
+    pub score: Score,
+    /// Search depth for this line
+    pub depth: u32,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -165,5 +179,34 @@ mod tests {
     #[test]
     fn parse_info_not_info_line() {
         assert!(parse_info("readyok").is_none());
+    }
+
+    #[test]
+    fn parse_info_with_multipv() {
+        let line = "info depth 14 multipv 2 score cp -15 nodes 50000 pv d7d5 e4d5";
+        let info = parse_info(line).unwrap();
+        assert_eq!(info.multipv, Some(2));
+        assert_eq!(info.depth, Some(14));
+        assert!(matches!(info.score, Some(Score::Cp { value: -15 })));
+        assert_eq!(info.pv, vec!["d7d5", "e4d5"]);
+    }
+
+    #[test]
+    fn multi_pv_line_from_info() {
+        let line = "info depth 14 multipv 3 score cp 25 pv c2c4";
+        let info = parse_info(line).unwrap();
+        if let (Some(idx), Some(score)) = (info.multipv, info.score) {
+            let mpv = MultiPvLine {
+                pv_index: idx,
+                uci_move: info.pv.first().unwrap_or(&String::new()).clone(),
+                score,
+                depth: info.depth.unwrap_or(0),
+            };
+            assert_eq!(mpv.pv_index, 3);
+            assert_eq!(mpv.uci_move, "c2c4");
+            assert_eq!(mpv.depth, 14);
+        } else {
+            panic!("Expected multipv and score");
+        }
     }
 }

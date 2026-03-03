@@ -1,0 +1,362 @@
+[
+  {
+    "name": "Italian Game",
+    "eco": "C50",
+    "color": "white",
+    "description": "A classical opening aiming for rapid development and control of the center. Bc4 targets the f7 pawn.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 f1c4",
+    "themes": "open,classical",
+    "difficulty": 1000
+  },
+  {
+    "name": "Italian Game: Giuoco Piano",
+    "eco": "C53",
+    "color": "white",
+    "description": "After Bc4 Bc5, both sides develop naturally. White aims for d4 to open the center.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 c2c3",
+    "themes": "open,classical",
+    "difficulty": 1100
+  },
+  {
+    "name": "Ruy Lopez",
+    "eco": "C60",
+    "color": "white",
+    "description": "One of the oldest and most respected openings. Bb5 puts pressure on the knight defending e5.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 f1b5",
+    "themes": "classical,strategic",
+    "difficulty": 1200
+  },
+  {
+    "name": "Ruy Lopez: Morphy Defense",
+    "eco": "C65",
+    "color": "white",
+    "description": "After a6, White usually retreats Ba4. The main line leads to complex strategic play.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 f5a4 g8f6 e1g1",
+    "themes": "classical,strategic",
+    "difficulty": 1300
+  },
+  {
+    "name": "Scotch Game",
+    "eco": "C45",
+    "color": "white",
+    "description": "An aggressive alternative to the quiet Italian. White immediately strikes in the center with d4.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 d2d4",
+    "themes": "open,aggressive",
+    "difficulty": 1000
+  },
+  {
+    "name": "Vienna Game",
+    "eco": "C25",
+    "color": "white",
+    "description": "Nc3 before Nf3, keeping options open for an f4 pawn push (Vienna Gambit).",
+    "moves": "e2e4 e7e5 b1c3",
+    "themes": "open,flexible",
+    "difficulty": 1000
+  },
+  {
+    "name": "King's Gambit",
+    "eco": "C30",
+    "color": "white",
+    "description": "A romantic-era gambit offering the f-pawn for rapid development and open lines toward the king.",
+    "moves": "e2e4 e7e5 f2f4",
+    "themes": "gambit,aggressive",
+    "difficulty": 1200
+  },
+  {
+    "name": "Queen's Gambit",
+    "eco": "D06",
+    "color": "white",
+    "description": "The most popular d4 opening. White offers the c-pawn to gain central control.",
+    "moves": "d2d4 d7d5 c2c4",
+    "themes": "closed,strategic",
+    "difficulty": 1100
+  },
+  {
+    "name": "Queen's Gambit: Exchange Variation",
+    "eco": "D35",
+    "color": "white",
+    "description": "After cxd5, White aims for a minority attack on the queenside.",
+    "moves": "d2d4 d7d5 c2c4 e7e6 b1c3 g8f6 c4d5 e6d5",
+    "themes": "closed,strategic",
+    "difficulty": 1200
+  },
+  {
+    "name": "London System",
+    "eco": "D00",
+    "color": "white",
+    "description": "A solid, low-theory system. Bf4 before e3 creates a sturdy pawn structure.",
+    "moves": "d2d4 d7d5 c1f4 g8f6 e2e3 e7e6 b1d2",
+    "themes": "system,solid",
+    "difficulty": 900
+  },
+  {
+    "name": "King's Indian Attack",
+    "eco": "A07",
+    "color": "white",
+    "description": "A flexible system where White fianchettoes the kingside bishop and castles before committing to a pawn structure.",
+    "moves": "g1f3 d7d5 g2g3 g8f6 f1g2 e7e6 e1g1",
+    "themes": "system,flexible",
+    "difficulty": 1000
+  },
+  {
+    "name": "English Opening",
+    "eco": "A10",
+    "color": "white",
+    "description": "A flank opening that controls the center from the side. Transposes into many other openings.",
+    "moves": "c2c4",
+    "themes": "flank,flexible",
+    "difficulty": 1100
+  },
+  {
+    "name": "Catalan Opening",
+    "eco": "E01",
+    "color": "white",
+    "description": "Combines d4 and c4 with a kingside fianchetto. The g2 bishop exerts long-term pressure on the queenside.",
+    "moves": "d2d4 g8f6 c2c4 e7e6 g2g3 d7d5 f1g2",
+    "themes": "closed,strategic",
+    "difficulty": 1300
+  },
+  {
+    "name": "Four Knights Game",
+    "eco": "C46",
+    "color": "white",
+    "description": "A symmetrical opening where both sides develop knights first. Leads to balanced positions.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 b1c3 g8f6",
+    "themes": "open,symmetrical",
+    "difficulty": 900
+  },
+  {
+    "name": "Bishop's Opening",
+    "eco": "C23",
+    "color": "white",
+    "description": "Develops the bishop early to c4 before the knight. Can transpose into the Italian or Vienna.",
+    "moves": "e2e4 e7e5 f1c4",
+    "themes": "open,flexible",
+    "difficulty": 900
+  },
+  {
+    "name": "Sicilian Defense: Open",
+    "eco": "B20",
+    "color": "black",
+    "description": "The most popular response to 1.e4. Creates asymmetric positions with chances for both sides.",
+    "moves": "e2e4 c7c5",
+    "themes": "asymmetric,sharp",
+    "difficulty": 1100
+  },
+  {
+    "name": "Sicilian Defense: Najdorf Variation",
+    "eco": "B96",
+    "color": "black",
+    "description": "The most theoretically dense Sicilian line. a6 prevents Bb5 and prepares e5 or b5 expansions.",
+    "moves": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6",
+    "themes": "sharp,theoretical",
+    "difficulty": 1400
+  },
+  {
+    "name": "Sicilian Defense: Dragon Variation",
+    "eco": "B70",
+    "color": "black",
+    "description": "Black fianchettoes the dark-squared bishop, aiming it at the center and queenside. Leads to exciting play.",
+    "moves": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 g7g6",
+    "themes": "sharp,fianchetto",
+    "difficulty": 1300
+  },
+  {
+    "name": "French Defense",
+    "eco": "C00",
+    "color": "black",
+    "description": "A solid defense creating a pawn chain. Black's light-squared bishop is often blocked but the structure is resilient.",
+    "moves": "e2e4 e7e6",
+    "themes": "solid,strategic",
+    "difficulty": 1000
+  },
+  {
+    "name": "French Defense: Advance Variation",
+    "eco": "C02",
+    "color": "black",
+    "description": "After e5, Black attacks the pawn chain base with c5 and gains queenside counterplay.",
+    "moves": "e2e4 e7e6 d2d4 d7d5 e4e5 c7c5",
+    "themes": "solid,pawn-chain",
+    "difficulty": 1100
+  },
+  {
+    "name": "Caro-Kann Defense",
+    "eco": "B10",
+    "color": "black",
+    "description": "A solid alternative to the French. c6 supports d5 without blocking the light-squared bishop.",
+    "moves": "e2e4 c7c6",
+    "themes": "solid,strategic",
+    "difficulty": 1000
+  },
+  {
+    "name": "Caro-Kann: Classical Variation",
+    "eco": "B18",
+    "color": "black",
+    "description": "After exd5 cxd5 Nc3, Black develops Bf5 before e6, solving the light-squared bishop problem.",
+    "moves": "e2e4 c7c6 d2d4 d7d5 b1c3 d5e4 c3e4 c8f5",
+    "themes": "solid,classical",
+    "difficulty": 1100
+  },
+  {
+    "name": "Scandinavian Defense",
+    "eco": "B01",
+    "color": "black",
+    "description": "An aggressive response to 1.e4 — Black immediately challenges the center pawn.",
+    "moves": "e2e4 d7d5",
+    "themes": "open,aggressive",
+    "difficulty": 900
+  },
+  {
+    "name": "Pirc Defense",
+    "eco": "B07",
+    "color": "black",
+    "description": "A hypermodern defense where Black allows White to build a center, planning to undermine it later.",
+    "moves": "e2e4 d7d6 d2d4 g8f6 b1c3 g7g6",
+    "themes": "hypermodern,fianchetto",
+    "difficulty": 1100
+  },
+  {
+    "name": "King's Indian Defense",
+    "eco": "E60",
+    "color": "black",
+    "description": "Black allows White a broad center, then counterattacks with e5 or c5. Highly dynamic play.",
+    "moves": "d2d4 g8f6 c2c4 g7g6 b1c3 f8g7",
+    "themes": "dynamic,counterattack",
+    "difficulty": 1200
+  },
+  {
+    "name": "King's Indian: Classical Variation",
+    "eco": "E92",
+    "color": "black",
+    "description": "Both sides develop fully before the central tension breaks. Black aims for e5 and kingside play.",
+    "moves": "d2d4 g8f6 c2c4 g7g6 b1c3 f8g7 e2e4 d7d6 g1f3 e8g8 f1e2 e7e5",
+    "themes": "dynamic,kingside-attack",
+    "difficulty": 1300
+  },
+  {
+    "name": "Nimzo-Indian Defense",
+    "eco": "E20",
+    "color": "black",
+    "description": "One of Black's most respected defenses against d4. Bb4 pins the knight and fights for e4 control.",
+    "moves": "d2d4 g8f6 c2c4 e7e6 b1c3 f8b4",
+    "themes": "strategic,pin",
+    "difficulty": 1200
+  },
+  {
+    "name": "Queen's Indian Defense",
+    "eco": "E15",
+    "color": "black",
+    "description": "If White avoids Nc3, Black plays b6 and Bb7 for long-diagonal control.",
+    "moves": "d2d4 g8f6 c2c4 e7e6 g1f3 b7b6",
+    "themes": "solid,fianchetto",
+    "difficulty": 1200
+  },
+  {
+    "name": "Queen's Gambit Declined",
+    "eco": "D30",
+    "color": "black",
+    "description": "Black solidly defends d5 with e6. A classical approach leading to rich middlegame play.",
+    "moves": "d2d4 d7d5 c2c4 e7e6",
+    "themes": "solid,classical",
+    "difficulty": 1100
+  },
+  {
+    "name": "Slav Defense",
+    "eco": "D10",
+    "color": "black",
+    "description": "c6 supports d5 while keeping the light-squared bishop unblocked. Combines solidity with flexibility.",
+    "moves": "d2d4 d7d5 c2c4 c7c6",
+    "themes": "solid,flexible",
+    "difficulty": 1100
+  },
+  {
+    "name": "Grunfeld Defense",
+    "eco": "D80",
+    "color": "black",
+    "description": "Black gives up the center early, then attacks it with c5 and the fianchettoed bishop. Sharp and dynamic.",
+    "moves": "d2d4 g8f6 c2c4 g7g6 b1c3 d7d5",
+    "themes": "dynamic,counterattack",
+    "difficulty": 1300
+  },
+  {
+    "name": "Dutch Defense",
+    "eco": "A80",
+    "color": "black",
+    "description": "An aggressive response to d4. f5 fights for e4 control but weakens the kingside.",
+    "moves": "d2d4 f7f5",
+    "themes": "aggressive,unbalanced",
+    "difficulty": 1100
+  },
+  {
+    "name": "Benoni Defense",
+    "eco": "A60",
+    "color": "black",
+    "description": "Black plays c5 early against d4, creating an asymmetric pawn structure with queenside play.",
+    "moves": "d2d4 g8f6 c2c4 c7c5 d4d5 e7e6",
+    "themes": "dynamic,asymmetric",
+    "difficulty": 1200
+  },
+  {
+    "name": "Alekhine Defense",
+    "eco": "B02",
+    "color": "black",
+    "description": "A provocative defense — the knight invites White to advance pawns, then attacks the overextended center.",
+    "moves": "e2e4 g8f6",
+    "themes": "hypermodern,provocative",
+    "difficulty": 1100
+  },
+  {
+    "name": "Petroff Defense",
+    "eco": "C42",
+    "color": "black",
+    "description": "A symmetrical response to 1.e4 e5 2.Nf3. Black immediately counterattacks the e4 pawn.",
+    "moves": "e2e4 e7e5 g1f3 g8f6",
+    "themes": "symmetrical,solid",
+    "difficulty": 1100
+  },
+  {
+    "name": "Philidor Defense",
+    "eco": "C41",
+    "color": "black",
+    "description": "d6 supports e5 solidly. A reliable but somewhat passive defense.",
+    "moves": "e2e4 e7e5 g1f3 d7d6",
+    "themes": "solid,defensive",
+    "difficulty": 900
+  },
+  {
+    "name": "Italian Game: Two Knights Defense",
+    "eco": "C55",
+    "color": "black",
+    "description": "A sharp response to the Italian. Black develops Nf6 attacking e4 instead of the quieter Bc5.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 g8f6",
+    "themes": "sharp,tactical",
+    "difficulty": 1100
+  },
+  {
+    "name": "Ruy Lopez: Berlin Defense",
+    "eco": "C65",
+    "color": "black",
+    "description": "Made famous by Kramnik vs Kasparov. The endgame after Bxc6 dxc6 Nxe5 is solid for Black.",
+    "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 g8f6",
+    "themes": "solid,endgame",
+    "difficulty": 1200
+  },
+  {
+    "name": "Sicilian Defense: Accelerated Dragon",
+    "eco": "B34",
+    "color": "black",
+    "description": "Black plays g6 before d6, aiming for the Maroczy Bind structure with possible d5 break.",
+    "moves": "e2e4 c7c5 g1f3 b8c6 d2d4 c5d4 f3d4 g7g6",
+    "themes": "sharp,fianchetto",
+    "difficulty": 1200
+  },
+  {
+    "name": "English Defense",
+    "eco": "A40",
+    "color": "black",
+    "description": "A flexible response to d4/c4 with b6, fianchettoing the queen's bishop early.",
+    "moves": "d2d4 e7e6 c2c4 b7b6",
+    "themes": "flexible,fianchetto",
+    "difficulty": 1000
+  }
+]
