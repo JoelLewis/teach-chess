@@ -5,7 +5,10 @@ set -euo pipefail
 # into src-tauri/binaries/ with the Tauri sidecar naming convention.
 
 STOCKFISH_VERSION="17"
-BINARIES_DIR="$(cd "$(dirname "$0")/../src-tauri/binaries" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BINARIES_DIR="$SCRIPT_DIR/../src-tauri/binaries"
+mkdir -p "$BINARIES_DIR"
+BINARIES_DIR="$(cd "$BINARIES_DIR" && pwd)"
 
 detect_target() {
     local os arch target
@@ -90,7 +93,6 @@ download_stockfish() {
 }
 
 main() {
-    mkdir -p "$BINARIES_DIR"
     local target
     target="$(detect_target)"
     echo "Detected target: $target"
