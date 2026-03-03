@@ -230,7 +230,7 @@
 
   .start-btn {
     padding: 12px 24px;
-    background: var(--cm-accent-secondary-hover);
+    background: var(--cm-accent-secondary);
     color: var(--cm-text-inverse);
     border: none;
     border-radius: 8px;

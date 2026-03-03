@@ -3,6 +3,7 @@
   import type { GameConfig, EngineStrength, PersonalityProfile, OpponentMode } from "../../types/game";
   import type { CoachingLevel } from "../../types/engine";
   import { ENGINE_PRESETS } from "../../types/game";
+  import LoadingSpinner from "../ui/LoadingSpinner.svelte";
 
   type Props = {
     onStart: (config: GameConfig) => void;
@@ -60,7 +61,7 @@
 </script>
 
 <div class="game-config">
-  <h2 class="text-xl font-semibold mb-6">New Game</h2>
+  <h2 class="config-heading">New Game</h2>
 
   <div class="mb-4">
     <span class="block text-sm font-medium mb-2">Play as</span>
@@ -161,7 +162,7 @@
         {/each}
       </div>
     {:else}
-      <p class="text-xs text-gray-500 mt-1">
+      <p class="mode-desc">
         {opponentMode === "surprise"
           ? "A random personality will be assigned at game start."
           : "The coach will pick a style that challenges your weaknesses."}
@@ -170,13 +171,13 @@
     <label class="flex items-center gap-2 mt-3 text-sm">
       <input type="checkbox" bind:checked={teachingMode} />
       Teaching mode
-      <span class="text-xs text-gray-500">— engine steers into positions that challenge your weak areas</span>
+      <span class="teaching-desc">— engine steers into positions that challenge your weak areas</span>
     </label>
   </div>
 
   <button class="btn-primary mt-4" onclick={handleStart} disabled={starting}>
     {#if starting}
-      <span class="btn-spinner"></span>
+      <LoadingSpinner size="sm" />
       Starting...
     {:else}
       Start Game
@@ -188,6 +189,24 @@
   .game-config {
     max-width: 400px;
     padding: 24px;
+  }
+
+  .config-heading {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--cm-text-primary);
+  }
+
+  .mode-desc {
+    font-size: 12px;
+    color: var(--cm-text-muted);
+    margin-top: 4px;
+  }
+
+  .teaching-desc {
+    font-size: 12px;
+    color: var(--cm-text-muted);
   }
 
   .btn {
@@ -229,22 +248,6 @@
   .btn-primary:disabled {
     opacity: 0.7;
     cursor: not-allowed;
-  }
-
-  .btn-spinner {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle;
-    margin-right: 6px;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
   }
 
   /* Grid: outlined primary button with glow */

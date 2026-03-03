@@ -48,7 +48,7 @@
     width: 200px;
     min-height: 100vh;
     background: var(--cm-bg-sidebar);
-    color: var(--cm-border-default);
+    color: var(--cm-sidebar-text);
     display: flex;
     flex-direction: column;
     padding: 16px 0;
@@ -93,7 +93,7 @@
   }
 
   .nav-item:hover {
-    color: var(--cm-border-default);
+    color: var(--cm-sidebar-text);
     background: var(--cm-bg-sidebar-hover);
   }
 

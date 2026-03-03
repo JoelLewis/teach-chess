@@ -277,6 +277,7 @@
     display: flex;
     flex-direction: column;
     width: 280px;
+    max-height: calc(100vh - 96px);
     background: var(--cm-bg-surface);
     border-radius: 8px;
     box-shadow: var(--cm-shadow-sm);
@@ -306,6 +307,7 @@
     padding: 12px 16px;
     border-top: 1px solid var(--cm-border-light);
     margin-top: auto;
+    flex-shrink: 0;
   }
 
   .coaching-section {

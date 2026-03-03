@@ -28,6 +28,18 @@
     z-index: 200;
     font-size: 14px;
     max-width: 500px;
+    animation: toast-in 0.2s ease;
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   }
 
   .toast-msg {

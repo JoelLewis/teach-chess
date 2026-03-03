@@ -77,15 +77,11 @@
   });
 </script>
 
-<div class="settings-page">
-  <h1 class="title">Settings</h1>
-
-  <section class="section">
-    <h2 class="section-title">AI Coaching Model</h2>
-    <p class="section-desc">
-      Download a local AI model for enhanced coaching feedback.
-      Without a model, coaching uses pre-written templates.
-    </p>
+<div class="model-manager">
+  <p class="section-desc">
+    Download a local AI model for enhanced coaching feedback.
+    Without a model, coaching uses pre-written templates.
+  </p>
 
     {#if llmStatus}
       <div class="status-card">
@@ -166,31 +162,11 @@
         </p>
       {/if}
     </div>
-  </section>
 </div>
 
 <style>
-  .settings-page {
-    padding: 32px;
+  .model-manager {
     max-width: 640px;
-  }
-
-  .title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--cm-text-primary);
-    margin-bottom: 24px;
-  }
-
-  .section {
-    margin-bottom: 32px;
-  }
-
-  .section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--cm-text-primary);
-    margin-bottom: 4px;
   }
 
   .section-desc {
@@ -308,7 +284,7 @@
 
   .download-btn {
     padding: 6px 16px;
-    background: var(--cm-accent-secondary-hover);
+    background: var(--cm-accent-secondary);
     color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;

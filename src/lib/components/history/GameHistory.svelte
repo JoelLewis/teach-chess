@@ -1,6 +1,7 @@
 <script lang="ts">
   import GameCard from "./GameCard.svelte";
   import * as api from "../../api/commands";
+  import { errorStore } from "../../stores/error.svelte";
   import type { GameRecord } from "../../types/game";
 
   type Props = {
@@ -20,6 +21,7 @@
       games = await api.getGameHistory(pageSize, page * pageSize);
     } catch (err) {
       console.error("Failed to load game history:", err);
+      errorStore.show("Failed to load game history");
     } finally {
       loading = false;
     }
@@ -33,12 +35,12 @@
 </script>
 
 <div class="game-history">
-  <h2 class="text-xl font-semibold mb-4">Game History</h2>
+  <h2 class="section-heading">Game History</h2>
 
   {#if loading}
-    <p class="text-gray-500">Loading...</p>
+    <p class="state-message">Loading...</p>
   {:else if games.length === 0}
-    <p class="text-gray-500">No games played yet. Start a new game!</p>
+    <p class="state-message">No games played yet. Start a new game!</p>
   {:else}
     <div class="games-list">
       {#each games as game (game.id)}
@@ -61,6 +63,17 @@
   .game-history {
     padding: 24px;
     max-width: 600px;
+  }
+
+  .section-heading {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--cm-text-primary);
+  }
+
+  .state-message {
+    color: var(--cm-text-muted);
   }
 
   .games-list {

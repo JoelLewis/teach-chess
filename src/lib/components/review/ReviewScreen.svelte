@@ -118,14 +118,14 @@
 
 <div class="review-screen">
   <div class="board-area">
-    <EvalBar score={displayScore} />
+    <EvalBar score={displayScore} orientation={gameStore.config?.playerColor} />
     <Chessboard fen={displayFen} viewOnly={true} />
   </div>
 
   <div class="review-panel">
     <div class="panel-header">
       <button class="back-btn" onclick={onBack}>Back</button>
-      <h2 class="text-lg font-semibold">Game Review</h2>
+      <h2 class="panel-heading">Game Review</h2>
     </div>
 
     {#if loading}
@@ -138,7 +138,7 @@
               style="width: {(progress.current / progress.total) * 100}%"
             ></div>
           </div>
-          <p class="text-sm text-gray-500">
+          <p class="progress-text">
             {progress.current} / {progress.total} moves
           </p>
         {/if}
@@ -217,6 +217,7 @@
 
   .review-panel {
     width: 300px;
+    max-height: calc(100vh - 96px);
     background: var(--cm-bg-surface);
     border-radius: 8px;
     box-shadow: var(--cm-shadow-sm);
@@ -231,6 +232,17 @@
     gap: 12px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--cm-border-light);
+  }
+
+  .panel-heading {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--cm-text-primary);
+  }
+
+  .progress-text {
+    font-size: 14px;
+    color: var(--cm-text-muted);
   }
 
   .back-btn {
