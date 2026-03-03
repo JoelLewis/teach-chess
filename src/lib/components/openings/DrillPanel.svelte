@@ -103,9 +103,9 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    background: white;
+    background: var(--cm-bg-surface);
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--cm-shadow-sm);
     overflow: hidden;
   }
 
@@ -113,8 +113,8 @@
     display: flex;
     justify-content: space-around;
     padding: 12px 16px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface-alt);
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .stat {
@@ -127,12 +127,12 @@
   .stat-value {
     font-size: 18px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .stat-label {
     font-size: 11px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     text-transform: uppercase;
   }
 
@@ -153,26 +153,26 @@
 
   .opening-label {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .opening-name {
     font-size: 15px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .hint-text {
     font-size: 14px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     margin: 0;
     text-align: center;
   }
 
   .start-btn {
     padding: 12px 24px;
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 8px;
     font-size: 16px;
@@ -182,7 +182,7 @@
   }
 
   .start-btn:hover {
-    background: #1e3a8a;
+    background: var(--cm-accent-secondary-hover);
   }
 
   .drill-info {
@@ -193,13 +193,13 @@
 
   .progress {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .turn-indicator {
     font-size: 14px;
     font-weight: 500;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .feedback {
@@ -211,13 +211,13 @@
   }
 
   .feedback.correct {
-    background: #ecfdf5;
-    color: #059669;
+    background: var(--cm-status-success-bg-alt);
+    color: var(--cm-status-success-alt);
   }
 
   .feedback.incorrect {
-    background: #fef2f2;
-    color: #dc2626;
+    background: var(--cm-status-error-bg);
+    color: var(--cm-status-error);
   }
 
   .correct-answer {
@@ -228,22 +228,22 @@
 
   .explanation {
     font-size: 13px;
-    color: #4b5563;
+    color: var(--cm-text-tertiary);
     line-height: 1.4;
   }
 
   .complete-message {
     font-size: 15px;
     font-weight: 600;
-    color: #059669;
+    color: var(--cm-status-success-alt);
     text-align: center;
   }
 
   .next-btn {
     padding: 10px 20px;
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-hover);
+    color: var(--cm-text-secondary);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
@@ -251,6 +251,6 @@
   }
 
   .next-btn:hover {
-    background: #e5e7eb;
+    background: var(--cm-bg-active);
   }
 </style>

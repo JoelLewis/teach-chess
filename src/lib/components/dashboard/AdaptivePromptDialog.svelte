@@ -10,10 +10,10 @@
   let { prompt, onAccept, onDismiss }: Props = $props();
 
   const typeColors: Record<string, string> = {
-    increaseChallenge: "#059669",
-    decreaseChallenge: "#ca8a04",
-    frustrationDetected: "#dc2626",
-    plateauDetected: "#6366f1",
+    increaseChallenge: "var(--cm-status-success-alt)",
+    decreaseChallenge: "var(--cm-status-warning-dark)",
+    frustrationDetected: "var(--cm-status-error)",
+    plateauDetected: "var(--cm-accent-primary-light)",
   };
 
   const typeLabels: Record<string, string> = {
@@ -23,7 +23,7 @@
     plateauDetected: "Break Through",
   };
 
-  let accentColor = $derived(typeColors[prompt.promptType] ?? "#6366f1");
+  let accentColor = $derived(typeColors[prompt.promptType] ?? "var(--cm-accent-primary-light)");
   let label = $derived(typeLabels[prompt.promptType] ?? "Suggestion");
 </script>
 
@@ -51,7 +51,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--cm-bg-overlay-light);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -59,13 +59,13 @@
   }
 
   .dialog {
-    background: white;
+    background: var(--cm-bg-surface);
     border-radius: 12px;
     padding: 24px;
     max-width: 420px;
     width: 90%;
     border-top: 4px solid;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--cm-shadow-xl);
   }
 
   .badge {
@@ -78,14 +78,14 @@
 
   .message {
     font-size: 15px;
-    color: #374151;
+    color: var(--cm-text-secondary);
     line-height: 1.6;
     margin: 0 0 8px;
   }
 
   .suggestion {
     font-size: 14px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     line-height: 1.5;
     margin: 0 0 20px;
   }
@@ -98,7 +98,7 @@
   .btn-accept {
     flex: 1;
     padding: 10px 16px;
-    color: white;
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     font-size: 14px;
@@ -113,9 +113,9 @@
 
   .btn-dismiss {
     padding: 10px 16px;
-    background: #f3f4f6;
-    color: #6b7280;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-hover);
+    color: var(--cm-text-muted);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
@@ -123,6 +123,6 @@
   }
 
   .btn-dismiss:hover {
-    background: #e5e7eb;
+    background: var(--cm-bg-active);
   }
 </style>

@@ -76,7 +76,7 @@
     flex-direction: column;
     gap: 12px;
     padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .filter-group {
@@ -88,7 +88,7 @@
   .filter-label {
     font-size: 12px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     text-transform: uppercase;
   }
 
@@ -101,22 +101,22 @@
   .cat-btn {
     padding: 4px 10px;
     font-size: 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--cm-border-medium);
     border-radius: 4px;
-    background: white;
+    background: var(--cm-bg-surface);
     cursor: pointer;
-    color: #374151;
+    color: var(--cm-text-secondary);
     transition: all 0.15s;
   }
 
   .cat-btn:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 
   .cat-btn.active {
-    background: #1e40af;
-    color: white;
-    border-color: #1e40af;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
+    border-color: var(--cm-accent-secondary-hover);
   }
 
   .range-inputs {
@@ -127,6 +127,6 @@
 
   .range-inputs input[type="range"] {
     width: 100%;
-    accent-color: #1e40af;
+    accent-color: var(--cm-accent-secondary-hover);
   }
 </style>

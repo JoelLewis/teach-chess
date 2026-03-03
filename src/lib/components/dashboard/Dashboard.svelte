@@ -193,7 +193,7 @@
   }
 
   .loading-text {
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     font-size: 14px;
   }
 
@@ -206,7 +206,7 @@
   .welcome {
     font-size: 24px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     margin: 0;
   }
 
@@ -217,10 +217,24 @@
   }
 
   .card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-light);
     border-radius: 10px;
     padding: 16px;
+    transition: border-color var(--cm-transition-normal), box-shadow var(--cm-transition-normal);
+  }
+
+  /* Study: parchment texture on cards */
+  :global([data-theme="study"]) .card {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.03'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    border-color: rgba(139, 109, 71, 0.15);
+  }
+
+  /* Grid: glowing card borders on hover */
+  :global([data-theme="grid"]) .card:hover {
+    border-color: var(--cm-border-glow);
+    box-shadow: var(--cm-glow-primary);
   }
 
   .card-header {
@@ -228,7 +242,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     margin-bottom: 12px;
     display: flex;
     justify-content: space-between;
@@ -244,17 +258,17 @@
 
   .overall-rating {
     font-size: 14px;
-    color: #374151;
+    color: var(--cm-text-secondary);
   }
 
   .overall-rating strong {
     font-size: 18px;
-    color: #1e40af;
+    color: var(--cm-accent-secondary-deep);
   }
 
   .empty-skill {
     text-align: center;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     padding: 24px 0;
     font-size: 14px;
   }
@@ -284,24 +298,49 @@
     opacity: 0.9;
   }
 
+  /* Study: brass bevel on quick-start buttons */
+  :global([data-theme="study"]) .qs-btn {
+    box-shadow:
+      inset 0 1px 0 var(--cm-study-brass-highlight),
+      0 1px 2px var(--cm-study-brass-shadow);
+  }
+
+  :global([data-theme="study"]) .qs-btn:hover {
+    box-shadow:
+      inset 0 1px 0 var(--cm-study-brass-highlight),
+      0 1px 2px var(--cm-study-brass-shadow),
+      var(--cm-study-brass-glow);
+  }
+
+  /* Grid: outlined quick-start buttons with glow */
+  :global([data-theme="grid"]) .qs-btn {
+    background: transparent;
+    border: 1px solid currentColor;
+  }
+
+  :global([data-theme="grid"]) .qs-btn:hover {
+    background: rgba(0, 229, 255, 0.08);
+    box-shadow: var(--cm-glow-primary);
+  }
+
   .qs-play {
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-deep);
+    color: var(--cm-text-inverse);
   }
 
   .qs-puzzles {
-    background: #059669;
-    color: white;
+    background: var(--cm-status-success-alt);
+    color: var(--cm-text-inverse);
   }
 
   .qs-openings {
-    background: #7c3aed;
-    color: white;
+    background: var(--cm-accent-violet);
+    color: var(--cm-text-inverse);
   }
 
   .view-all {
     font-size: 12px;
-    color: #6366f1;
+    color: var(--cm-accent-primary-light);
     background: none;
     border: none;
     cursor: pointer;
@@ -333,12 +372,12 @@
   .stat-value {
     font-size: 22px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .stat-label {
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -355,7 +394,7 @@
   }
 
   .empty-tagline {
-    color: #6b7280;
+    color: var(--cm-text-muted);
     font-size: 16px;
     margin: 0;
   }

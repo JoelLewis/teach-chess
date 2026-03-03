@@ -217,9 +217,9 @@
 
   .review-panel {
     width: 300px;
-    background: white;
+    background: var(--cm-bg-surface);
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--cm-shadow-sm);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -230,14 +230,14 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .back-btn {
     padding: 4px 12px;
     font-size: 13px;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-hover);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 4px;
     cursor: pointer;
   }
@@ -249,7 +249,7 @@
 
   .progress-bar {
     height: 6px;
-    background: #e5e7eb;
+    background: var(--cm-bg-active);
     border-radius: 3px;
     overflow: hidden;
     margin: 8px 0;
@@ -257,7 +257,7 @@
 
   .progress-fill {
     height: 100%;
-    background: #4f46e5;
+    background: var(--cm-accent-primary);
     transition: width 0.3s;
   }
 
@@ -266,12 +266,12 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
     font-size: 12px;
   }
 
   .summary-item {
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .nav-buttons {
@@ -283,8 +283,8 @@
 
   .nav-buttons button {
     padding: 6px 16px;
-    background: white;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
@@ -297,7 +297,7 @@
 
   .critical-moments {
     padding: 6px 12px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .moments-title {
@@ -305,7 +305,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     margin: 0 0 4px;
   }
 
@@ -315,24 +315,24 @@
     text-align: left;
     padding: 4px 8px;
     margin: 2px 0;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--cm-border-light);
     border-radius: 4px;
-    background: #f9fafb;
+    background: var(--cm-bg-surface-alt);
     cursor: pointer;
     transition: background 0.15s;
   }
 
   .moment-item:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 
   .moment-item.player-moment {
-    border-left: 3px solid #ef4444;
+    border-left: 3px solid var(--cm-status-error-light);
   }
 
   .moment-desc {
     font-size: 11px;
-    color: #374151;
+    color: var(--cm-text-secondary);
     line-height: 1.3;
   }
 
@@ -353,14 +353,14 @@
   }
 
   .critical-move {
-    background: #fef9c3;
+    background: var(--cm-status-warning-lightest);
     border-radius: 3px;
   }
 
   .critical-marker {
     font-size: 12px;
     font-weight: 700;
-    color: #dc2626;
+    color: var(--cm-status-error);
     width: 16px;
     flex-shrink: 0;
     text-align: center;

@@ -115,12 +115,12 @@
   .repertoire-view h2 {
     font-size: 20px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     margin: 0 0 20px;
   }
 
   .loading-text {
-    color: #6b7280;
+    color: var(--cm-text-muted);
     text-align: center;
     padding: 40px;
   }
@@ -128,18 +128,18 @@
   .empty-state {
     text-align: center;
     padding: 40px 20px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .hint-text {
     font-size: 13px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     margin-top: 8px;
   }
 
   .opening-group {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-light);
     border-radius: 8px;
     margin-bottom: 12px;
     overflow: hidden;
@@ -150,8 +150,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface-alt);
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .group-title {
@@ -162,8 +162,8 @@
 
   .eco-badge {
     padding: 2px 8px;
-    background: #f0f9ff;
-    color: #0369a1;
+    background: var(--cm-accent-secondary-bg);
+    color: var(--cm-accent-secondary-text);
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
@@ -172,18 +172,18 @@
   .opening-name {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .entry-count {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
   }
 
   .drill-btn {
     padding: 6px 16px;
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     font-size: 13px;
@@ -193,7 +193,7 @@
   }
 
   .drill-btn:hover {
-    background: #1e3a8a;
+    background: var(--cm-accent-secondary-hover);
   }
 
   .entries-list {
@@ -205,7 +205,7 @@
     align-items: center;
     gap: 12px;
     padding: 6px 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--cm-bg-hover);
   }
 
   .entry-row:last-child {
@@ -215,13 +215,13 @@
   .entry-move {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     min-width: 48px;
   }
 
   .entry-fen {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -231,7 +231,7 @@
   .remove-btn {
     background: none;
     border: none;
-    color: #d1d5db;
+    color: var(--cm-border-medium);
     cursor: pointer;
     font-size: 18px;
     padding: 2px 6px;
@@ -239,6 +239,6 @@
   }
 
   .remove-btn:hover {
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 </style>

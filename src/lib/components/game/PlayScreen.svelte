@@ -276,15 +276,15 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    background: white;
+    background: var(--cm-bg-surface);
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--cm-shadow-sm);
     overflow: hidden;
   }
 
   .panel-header {
     padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .turn-indicator {
@@ -293,23 +293,23 @@
   }
 
   .thinking {
-    color: #6366f1;
+    color: var(--cm-accent-primary-light);
   }
 
   .game-over-text {
-    color: #dc2626;
+    color: var(--cm-status-error);
     font-weight: 600;
   }
 
   .panel-footer {
     padding: 12px 16px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--cm-border-light);
     margin-top: auto;
   }
 
   .coaching-section {
     padding: 4px 8px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
     max-height: 180px;
     overflow-y: auto;
   }
@@ -317,9 +317,9 @@
   .btn-resign {
     width: 100%;
     padding: 8px;
-    background: #fee2e2;
-    color: #dc2626;
-    border: 1px solid #fca5a5;
+    background: var(--cm-status-error-bg-alt);
+    color: var(--cm-status-error);
+    border: 1px solid var(--cm-status-error-lighter);
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
@@ -327,15 +327,15 @@
   }
 
   .btn-resign:hover {
-    background: #fecaca;
+    background: var(--cm-status-error-muted);
   }
 
   .personality-badge {
     margin-top: 4px;
     padding: 3px 8px;
     font-size: 12px;
-    color: #6366f1;
-    background: #eef2ff;
+    color: var(--cm-accent-primary-light);
+    background: var(--cm-accent-primary-bg);
     border-radius: 4px;
     animation: fade-out 10s forwards;
   }

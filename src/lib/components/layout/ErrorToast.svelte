@@ -17,14 +17,14 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: #dc2626;
-    color: white;
+    background: var(--cm-status-error);
+    color: var(--cm-text-inverse);
     padding: 10px 20px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--cm-shadow-md);
     z-index: 200;
     font-size: 14px;
     max-width: 500px;
@@ -37,7 +37,7 @@
   .toast-dismiss {
     background: none;
     border: none;
-    color: white;
+    color: var(--cm-text-inverse);
     font-size: 20px;
     cursor: pointer;
     padding: 0 4px;

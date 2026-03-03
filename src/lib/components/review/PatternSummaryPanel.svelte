@@ -86,7 +86,7 @@
 <style>
   .pattern-summary {
     padding: 8px 12px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .section-title {
@@ -98,11 +98,11 @@
   }
 
   .strengths-title {
-    color: #16a34a;
+    color: var(--cm-status-success);
   }
 
   .weaknesses-title {
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 
   .strengths-section {
@@ -111,8 +111,8 @@
 
   .strength-item {
     font-size: 12px;
-    color: #166534;
-    background: #f0fdf4;
+    color: var(--cm-status-success-text);
+    background: var(--cm-status-success-bg);
     padding: 3px 8px;
     border-radius: 4px;
     margin: 2px 0;
@@ -137,14 +137,14 @@
   }
 
   .theme-name {
-    color: #374151;
+    color: var(--cm-text-secondary);
   }
 
   .theme-count {
     font-size: 11px;
     font-weight: 600;
-    color: #dc2626;
-    background: #fee2e2;
+    color: var(--cm-status-error);
+    background: var(--cm-status-error-bg-alt);
     padding: 0 6px;
     border-radius: 8px;
     min-width: 18px;
@@ -160,20 +160,20 @@
 
   .phase-badge {
     font-size: 10px;
-    color: #6b7280;
-    background: #f3f4f6;
+    color: var(--cm-text-muted);
+    background: var(--cm-bg-hover);
     padding: 1px 6px;
     border-radius: 3px;
   }
 
   .study-suggestions {
     padding: 8px 12px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .suggestion-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--cm-bg-surface-alt);
+    border: 1px solid var(--cm-border-default);
     border-radius: 6px;
     padding: 6px 10px;
     margin: 4px 0;
@@ -182,13 +182,13 @@
   .suggestion-topic {
     font-size: 12px;
     font-weight: 600;
-    color: #1e40af;
+    color: var(--cm-accent-secondary-deep);
   }
 
   .suggestion-desc {
     font-size: 11px;
     line-height: 1.4;
-    color: #475569;
+    color: var(--cm-text-tertiary);
     margin: 2px 0 0;
   }
 </style>

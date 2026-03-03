@@ -7,12 +7,13 @@
   import PlayScreen from "./lib/components/game/PlayScreen.svelte";
   import GameHistory from "./lib/components/history/GameHistory.svelte";
   import ReviewScreen from "./lib/components/review/ReviewScreen.svelte";
-  import ModelManager from "./lib/components/settings/ModelManager.svelte";
+  import SettingsPage from "./lib/components/settings/SettingsPage.svelte";
   import ProblemScreen from "./lib/components/problems/ProblemScreen.svelte";
   import OpeningsScreen from "./lib/components/openings/OpeningsScreen.svelte";
   import { gameStore } from "./lib/stores/game.svelte";
   import { playerStore } from "./lib/stores/player.svelte";
   import { errorStore } from "./lib/stores/error.svelte";
+  import { themeStore } from "./lib/stores/theme.svelte";
   import * as api from "./lib/api/commands";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { GameConfig } from "./lib/types/game";
@@ -73,6 +74,11 @@
     page = "home";
   }
 
+  // Initialize theme on startup
+  $effect(() => {
+    themeStore.load();
+  });
+
   // Initialize player on startup
   $effect(() => {
     api.getOrCreatePlayer("Player").then((player) => {
@@ -132,7 +138,7 @@
       {:else if page === "review" && reviewGameId}
         <ReviewScreen gameId={reviewGameId} onBack={() => navigate("history")} />
       {:else if page === "settings"}
-        <ModelManager />
+        <SettingsPage />
       {:else}
         <GameConfigForm onStart={startGame} />
       {/if}
@@ -152,7 +158,23 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #f1f5f9;
+    background: var(--cm-bg-app);
+  }
+
+  /* Study: linen grain via procedural SVG noise */
+  :global([data-theme="study"]) .main-area {
+    background-color: var(--cm-bg-app);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  /* Grid: vignette gradient */
+  :global([data-theme="grid"]) .main-area {
+    background: radial-gradient(
+      ellipse at 60% 45%,
+      #12121a 0%,
+      #0a0a0f 70%
+    );
   }
 
   .content {

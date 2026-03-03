@@ -45,13 +45,13 @@
   }
 
   .solution-panel.solved {
-    background: #ecfdf5;
-    border: 1px solid #6ee7b7;
+    background: var(--cm-status-success-bg-alt);
+    border: 1px solid var(--cm-status-success-lighter);
   }
 
   .solution-panel.failed {
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
+    background: var(--cm-status-error-bg);
+    border: 1px solid var(--cm-status-error-lighter);
   }
 
   .result-header {
@@ -66,11 +66,11 @@
   }
 
   .correct-icon {
-    color: #059669;
+    color: var(--cm-status-success-alt);
   }
 
   .failed-icon {
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 
   .result-text {
@@ -79,17 +79,17 @@
   }
 
   .solved .result-text {
-    color: #059669;
+    color: var(--cm-status-success-alt);
   }
 
   .failed .result-text {
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 
   .explanation {
     font-size: 13px;
     line-height: 1.5;
-    color: #374151;
+    color: var(--cm-text-secondary);
   }
 
   .explanation p {
@@ -98,8 +98,8 @@
 
   .next-btn {
     padding: 10px;
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -109,6 +109,6 @@
   }
 
   .next-btn:hover {
-    background: #1e3a8a;
+    background: var(--cm-accent-secondary-hover);
   }
 </style>

@@ -119,9 +119,9 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    background: white;
+    background: var(--cm-bg-surface);
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--cm-shadow-sm);
     overflow: hidden;
   }
 
@@ -129,8 +129,8 @@
     display: flex;
     justify-content: space-around;
     padding: 12px 16px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface-alt);
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .stat {
@@ -143,12 +143,12 @@
   .stat-value {
     font-size: 18px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .stat-label {
     font-size: 11px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     text-transform: uppercase;
   }
 
@@ -156,20 +156,20 @@
     padding: 6px 16px;
     background: none;
     border: none;
-    border-bottom: 1px solid #e5e7eb;
-    color: #6b7280;
+    border-bottom: 1px solid var(--cm-border-light);
+    color: var(--cm-text-muted);
     font-size: 12px;
     cursor: pointer;
     text-align: left;
   }
 
   .filter-toggle:hover {
-    color: #1e40af;
+    color: var(--cm-accent-secondary-hover);
   }
 
   .puzzle-info {
     padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--cm-border-light);
   }
 
   .info-row {
@@ -181,13 +181,13 @@
 
   .info-label {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .info-value {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .theme-tags {
@@ -199,21 +199,21 @@
 
   .theme-tag {
     padding: 2px 8px;
-    background: #ede9fe;
-    color: #5b21b6;
+    background: var(--cm-accent-violet-bg-alt);
+    color: var(--cm-accent-violet-dark);
     border-radius: 4px;
     font-size: 11px;
   }
 
   .move-progress {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .status-message {
     padding: 24px 16px;
     text-align: center;
-    color: #6366f1;
+    color: var(--cm-accent-primary-light);
     font-size: 14px;
   }
 
@@ -223,15 +223,15 @@
   }
 
   .idle-message p {
-    color: #6b7280;
+    color: var(--cm-text-muted);
     font-size: 14px;
     margin-bottom: 16px;
   }
 
   .start-btn {
     padding: 12px 24px;
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 8px;
     font-size: 16px;
@@ -241,7 +241,7 @@
   }
 
   .start-btn:hover {
-    background: #1e3a8a;
+    background: var(--cm-accent-secondary-hover);
   }
 
   .solving-section,
@@ -256,24 +256,24 @@
   .turn-indicator {
     font-size: 14px;
     font-weight: 500;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .feedback-text {
     font-size: 14px;
     font-weight: 500;
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 
   .correct-text {
-    color: #059669;
+    color: var(--cm-status-success-alt);
   }
 
   .abandon-btn {
     padding: 8px;
-    background: #fee2e2;
-    color: #dc2626;
-    border: 1px solid #fca5a5;
+    background: var(--cm-status-error-bg-alt);
+    color: var(--cm-status-error);
+    border: 1px solid var(--cm-status-error-lighter);
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
@@ -282,6 +282,6 @@
   }
 
   .abandon-btn:hover {
-    background: #fecaca;
+    background: var(--cm-status-error-muted);
   }
 </style>

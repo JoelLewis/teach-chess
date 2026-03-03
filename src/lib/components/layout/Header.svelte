@@ -15,8 +15,8 @@
 <style>
   .app-header {
     height: 48px;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border-bottom: 1px solid var(--cm-border-light);
     display: flex;
     align-items: center;
     padding: 0 24px;
@@ -32,6 +32,6 @@
   .player-name {
     font-size: 14px;
     font-weight: 500;
-    color: #374151;
+    color: var(--cm-text-secondary);
   }
 </style>

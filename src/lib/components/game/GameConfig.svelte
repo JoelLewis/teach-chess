@@ -186,28 +186,28 @@
 
   .btn {
     padding: 8px 16px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
-    background: white;
+    background: var(--cm-bg-surface);
     cursor: pointer;
     font-size: 14px;
     transition: all 0.15s;
   }
 
   .btn:hover {
-    border-color: #9ca3af;
+    border-color: var(--cm-text-disabled);
   }
 
   .btn.active {
-    background: #1e40af;
-    color: white;
-    border-color: #1e40af;
+    background: var(--cm-accent-secondary-deep);
+    color: var(--cm-text-inverse);
+    border-color: var(--cm-accent-secondary-deep);
   }
 
   .btn-primary {
     padding: 10px 24px;
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-deep);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -217,7 +217,19 @@
   }
 
   .btn-primary:hover {
-    background: #1e3a8a;
+    background: var(--cm-accent-secondary-deeper);
+  }
+
+  /* Grid: outlined primary button with glow */
+  :global([data-theme="grid"]) .btn-primary {
+    background: transparent;
+    border: 1px solid var(--cm-accent-primary);
+    color: var(--cm-accent-primary);
+  }
+
+  :global([data-theme="grid"]) .btn-primary:hover {
+    background: rgba(0, 229, 255, 0.1);
+    box-shadow: var(--cm-glow-primary);
   }
 
   .coaching-options {
@@ -231,21 +243,21 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 8px 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
-    background: white;
+    background: var(--cm-bg-surface);
     cursor: pointer;
     text-align: left;
     transition: all 0.15s;
   }
 
   .coaching-btn:hover {
-    border-color: #9ca3af;
+    border-color: var(--cm-text-disabled);
   }
 
   .coaching-btn.active {
-    background: #eff6ff;
-    border-color: #1e40af;
+    background: var(--cm-accent-secondary-bg);
+    border-color: var(--cm-accent-secondary-deep);
   }
 
   .coaching-label {
@@ -255,11 +267,11 @@
 
   .coaching-desc {
     font-size: 11px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     margin-top: 1px;
   }
 
   .coaching-btn.active .coaching-label {
-    color: #1e40af;
+    color: var(--cm-accent-secondary-deep);
   }
 </style>

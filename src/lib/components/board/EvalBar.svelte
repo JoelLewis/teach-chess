@@ -39,15 +39,15 @@
     flex-direction: column;
     border-radius: 4px;
     overflow: hidden;
-    border: 1px solid #888;
+    border: 1px solid var(--cm-border-medium);
     font-size: 11px;
     font-weight: 600;
     user-select: none;
   }
 
   .eval-black {
-    background: #403d39;
-    color: #fff;
+    background: var(--cm-eval-bar-black);
+    color: var(--cm-text-inverse);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -55,8 +55,8 @@
   }
 
   .eval-white {
-    background: #f0d9b5;
-    color: #333;
+    background: var(--cm-board-light);
+    color: var(--cm-text-primary);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -67,6 +67,6 @@
     padding: 2px 0;
     writing-mode: vertical-lr;
     text-orientation: mixed;
-    font-family: monospace;
+    font-family: var(--cm-font-mono);
   }
 </style>

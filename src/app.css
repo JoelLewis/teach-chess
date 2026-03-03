@@ -2,16 +2,17 @@
 @import "@lichess-org/chessground/assets/chessground.base.css";
 @import "@lichess-org/chessground/assets/chessground.brown.css";
 @import "@lichess-org/chessground/assets/chessground.cburnett.css";
+@import "./styles/fonts.css";
+@import "./styles/tokens.css";
+@import "./styles/board-themes.css";
+@import "./styles/grid-surface.css";
+@import "./styles/study-surfaces.css";
 
 :root {
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: var(--cm-font-body);
   font-size: 16px;
   line-height: 1.5;
-  color: #1e293b;
+  color: var(--cm-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

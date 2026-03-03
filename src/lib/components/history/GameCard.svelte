@@ -46,21 +46,21 @@
 <style>
   .game-card {
     padding: 12px 16px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--cm-border-light);
     border-radius: 8px;
-    background: white;
+    background: var(--cm-bg-surface);
   }
 
   .review-btn {
     padding: 4px 12px;
     font-size: 12px;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-hover);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 4px;
     cursor: pointer;
   }
 
   .review-btn:hover {
-    background: #e5e7eb;
+    background: var(--cm-bg-active);
   }
 </style>

@@ -18,7 +18,7 @@
   let classColor = $derived(
     evaluation?.classification
       ? CLASSIFICATION_COLORS[evaluation.classification]
-      : "#888",
+      : "var(--cm-text-muted)",
   );
 
   let themes = $derived(evaluation?.coachingContext?.themes ?? []);
@@ -116,8 +116,8 @@
   .coaching-panel {
     padding: 10px 16px;
     margin: 0 4px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--cm-bg-surface-alt);
+    border: 1px solid var(--cm-border-default);
     border-radius: 6px;
   }
 
@@ -131,7 +131,7 @@
   .classification-badge {
     display: inline-block;
     font-size: 10px;
-    color: white;
+    color: var(--cm-text-inverse);
     padding: 1px 8px;
     border-radius: 3px;
     text-transform: capitalize;
@@ -148,20 +148,20 @@
   }
 
   .source-ai {
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: var(--cm-accent-secondary-bg-alt);
+    color: var(--cm-accent-secondary-hover);
   }
 
   .source-cached {
-    background: #e2e8f0;
-    color: #64748b;
+    background: var(--cm-border-default);
+    color: var(--cm-text-muted);
   }
 
   .loading-dots {
     display: inline-flex;
     gap: 1px;
     font-size: 14px;
-    color: #94a3b8;
+    color: var(--cm-text-faint);
   }
 
   .dot {
@@ -178,7 +178,7 @@
   .coaching-text {
     font-size: 13px;
     line-height: 1.5;
-    color: #334155;
+    color: var(--cm-text-primary);
     margin: 0 0 6px;
   }
 
@@ -190,8 +190,8 @@
 
   .theme-tag {
     font-size: 10px;
-    color: #64748b;
-    background: #e2e8f0;
+    color: var(--cm-text-muted);
+    background: var(--cm-border-default);
     padding: 1px 6px;
     border-radius: 3px;
   }

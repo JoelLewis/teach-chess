@@ -10,3 +10,4 @@ pub mod player;
 pub mod puzzle;
 pub mod repertoire;
 pub mod review;
+pub mod theme;

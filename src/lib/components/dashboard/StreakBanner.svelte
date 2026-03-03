@@ -38,8 +38,8 @@
     align-items: center;
     gap: 16px;
     padding: 10px 16px;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-light);
     border-radius: 8px;
   }
 
@@ -52,21 +52,21 @@
   .streak-value {
     font-size: 20px;
     font-weight: 700;
-    color: #1e40af;
+    color: var(--cm-accent-secondary-deep);
   }
 
   .streak-label {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .streak-divider {
     width: 1px;
     height: 24px;
-    background: #e5e7eb;
+    background: var(--cm-border-light);
   }
 
   .muted .streak-value {
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
   }
 </style>

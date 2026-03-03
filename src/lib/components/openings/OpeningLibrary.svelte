@@ -90,7 +90,7 @@
   .library-header h2 {
     font-size: 20px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     margin: 0;
   }
 
@@ -101,24 +101,24 @@
 
   .filter-btn {
     padding: 6px 14px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--cm-border-light);
     border-radius: 6px;
-    background: white;
-    color: #6b7280;
+    background: var(--cm-bg-surface);
+    color: var(--cm-text-muted);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.15s;
   }
 
   .filter-btn:hover {
-    border-color: #3b82f6;
-    color: #1e40af;
+    border-color: var(--cm-accent-secondary);
+    color: var(--cm-accent-secondary-hover);
   }
 
   .filter-btn.active {
-    background: #1e40af;
-    color: white;
-    border-color: #1e40af;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
+    border-color: var(--cm-accent-secondary-hover);
   }
 
   .openings-grid {
@@ -128,8 +128,8 @@
   }
 
   .opening-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-light);
     border-radius: 8px;
     padding: 16px;
     cursor: pointer;
@@ -141,8 +141,8 @@
   }
 
   .opening-card:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    border-color: var(--cm-accent-secondary);
+    box-shadow: var(--cm-shadow-focus);
   }
 
   .card-header {
@@ -153,8 +153,8 @@
 
   .eco-badge {
     padding: 2px 8px;
-    background: #f0f9ff;
-    color: #0369a1;
+    background: var(--cm-accent-secondary-bg);
+    color: var(--cm-accent-secondary-text);
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
@@ -164,26 +164,26 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--cm-border-medium);
   }
 
   .color-dot.white {
-    background: white;
+    background: var(--cm-bg-surface);
   }
 
   .color-dot.black {
-    background: #1e293b;
+    background: var(--cm-text-primary);
   }
 
   .card-name {
     font-size: 15px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .card-desc {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -197,21 +197,21 @@
     align-items: center;
     margin-top: auto;
     padding-top: 8px;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid var(--cm-bg-hover);
   }
 
   .difficulty {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .themes {
     font-size: 11px;
-    color: #8b5cf6;
+    color: var(--cm-accent-violet-light);
   }
 
   .empty-text {
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     text-align: center;
     grid-column: 1 / -1;
     padding: 40px;

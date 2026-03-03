@@ -8,11 +8,11 @@
   const expanded = $derived(assessmentStore.expanded);
 
   const CATEGORY_COLORS: Record<string, string> = {
-    tactical: "#ef4444",
-    positional: "#3b82f6",
-    endgame: "#8b5cf6",
-    opening: "#f59e0b",
-    pattern: "#10b981",
+    tactical: "var(--cm-skill-tactical)",
+    positional: "var(--cm-skill-positional)",
+    endgame: "var(--cm-skill-endgame)",
+    opening: "var(--cm-skill-opening)",
+    pattern: "var(--cm-skill-pattern)",
   };
 
   function categoryLabel(category: string): string {
@@ -20,9 +20,9 @@
   }
 
   function ratingColor(rating: number): string {
-    if (rating >= 1500) return "#059669";
-    if (rating >= 1200) return "#ca8a04";
-    return "#dc2626";
+    if (rating >= 1500) return "var(--cm-status-success-alt)";
+    if (rating >= 1200) return "var(--cm-status-warning-dark)";
+    return "var(--cm-status-error)";
   }
 
   function barWidth(rating: number): number {
@@ -76,7 +76,7 @@
               <div class="rating-header">
                 <span
                   class="category-dot"
-                  style:background={CATEGORY_COLORS[rating.category] ?? "#6b7280"}
+                  style:background={CATEGORY_COLORS[rating.category] ?? "var(--cm-text-muted)"}
                 ></span>
                 <span class="category-name">{categoryLabel(rating.category)}</span>
                 <span class="rating-value" style:color={ratingColor(rating.rating)}>
@@ -87,7 +87,7 @@
                 <div
                   class="rating-bar-fill"
                   style:width="{barWidth(rating.rating)}%"
-                  style:background={CATEGORY_COLORS[rating.category] ?? "#6b7280"}
+                  style:background={CATEGORY_COLORS[rating.category] ?? "var(--cm-text-muted)"}
                 ></div>
               </div>
               <div class="rating-meta">
@@ -115,7 +115,7 @@
 
 <style>
   .skill-panel {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--cm-border-light);
   }
 
   .panel-toggle {
@@ -131,13 +131,13 @@
   }
 
   .panel-toggle:hover {
-    background: #f8fafc;
+    background: var(--cm-bg-surface-alt);
   }
 
   .toggle-label {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: var(--cm-text-secondary);
   }
 
   .overall-rating {
@@ -148,7 +148,7 @@
 
   .toggle-arrow {
     font-size: 10px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
   }
 
   .panel-content {
@@ -161,7 +161,7 @@
   .loading-text,
   .empty-text {
     font-size: 13px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     text-align: center;
     padding: 8px 0;
   }
@@ -192,7 +192,7 @@
 
   .category-name {
     font-size: 12px;
-    color: #374151;
+    color: var(--cm-text-secondary);
     flex: 1;
   }
 
@@ -203,7 +203,7 @@
 
   .rating-bar-bg {
     height: 4px;
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -218,7 +218,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 10px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
   }
 
   .rd-text {
@@ -227,14 +227,14 @@
 
   .insight {
     font-size: 12px;
-    color: #059669;
+    color: var(--cm-status-success-alt);
     padding: 6px 10px;
-    background: #ecfdf5;
+    background: var(--cm-status-success-bg-alt);
     border-radius: 4px;
   }
 
   .insight.weak {
-    color: #ca8a04;
-    background: #fefce8;
+    color: var(--cm-status-warning-dark);
+    background: var(--cm-status-warning-lightest);
   }
 </style>

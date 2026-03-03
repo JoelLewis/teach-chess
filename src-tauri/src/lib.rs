@@ -1,6 +1,7 @@
 mod assessment;
 mod coaching;
 mod commands;
+pub mod config;
 mod db;
 mod engine;
 mod error;
@@ -63,6 +64,16 @@ pub fn run() {
                 engine::process::EngineProcess::default(),
             ));
             app.manage(CurrentPlayerId::new());
+
+            // Load app config (theme, audio preferences)
+            let app_data_dir = app
+                .handle()
+                .path()
+                .app_data_dir()
+                .expect("app data dir");
+            app.manage(std::sync::Mutex::new(
+                config::AppConfigState::load(&app_data_dir),
+            ));
             app.manage(std::sync::Mutex::new(
                 puzzle::PuzzleSessionState::default(),
             ));
@@ -144,6 +155,8 @@ pub fn run() {
             commands::opponent::resolve_personality,
             commands::dashboard::get_dashboard_data,
             commands::dashboard::check_adaptive_difficulty,
+            commands::theme::get_theme,
+            commands::theme::set_theme,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

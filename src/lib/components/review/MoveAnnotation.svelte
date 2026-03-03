@@ -13,7 +13,7 @@
   let classColor = $derived(
     evaluation.classification
       ? CLASSIFICATION_COLORS[evaluation.classification]
-      : "#888",
+      : "var(--cm-text-muted)",
   );
 
   let evalText = $derived(
@@ -58,36 +58,36 @@
   }
 
   .annotation:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 
   .annotation.selected {
-    background: #dbeafe;
+    background: var(--cm-accent-secondary-bg-alt);
   }
 
   .move-num {
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     min-width: 30px;
-    font-family: monospace;
+    font-family: var(--cm-font-mono);
   }
 
   .san {
     font-weight: 500;
     min-width: 48px;
-    font-family: monospace;
+    font-family: var(--cm-font-mono);
   }
 
   .badge {
     font-size: 10px;
-    color: white;
+    color: var(--cm-text-inverse);
     padding: 1px 6px;
     border-radius: 3px;
     text-transform: capitalize;
   }
 
   .eval-text {
-    color: #6b7280;
-    font-family: monospace;
+    color: var(--cm-text-muted);
+    font-family: var(--cm-font-mono);
     font-size: 12px;
     margin-left: auto;
   }

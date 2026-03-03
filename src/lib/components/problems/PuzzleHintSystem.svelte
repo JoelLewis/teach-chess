@@ -72,18 +72,18 @@
   }
 
   .hint-card.tier-1 {
-    background: #fef3c7;
-    border-left: 3px solid #f59e0b;
+    background: var(--cm-status-warning-bg-alt);
+    border-left: 3px solid var(--cm-status-warning);
   }
 
   .hint-card.tier-2 {
-    background: #fed7aa;
-    border-left: 3px solid #f97316;
+    background: var(--cm-status-info-muted);
+    border-left: 3px solid var(--cm-status-info);
   }
 
   .hint-card.tier-3 {
-    background: #fecaca;
-    border-left: 3px solid #ef4444;
+    background: var(--cm-status-error-muted);
+    border-left: 3px solid var(--cm-status-error-light);
   }
 
   .hint-label {
@@ -99,9 +99,9 @@
 
   .hint-btn {
     padding: 8px 12px;
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fcd34d;
+    background: var(--cm-status-warning-bg-alt);
+    color: var(--cm-status-warning-text);
+    border: 1px solid var(--cm-status-warning-light);
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
@@ -109,7 +109,7 @@
   }
 
   .hint-btn:hover:not(:disabled) {
-    background: #fde68a;
+    background: var(--cm-status-warning-lighter);
   }
 
   .hint-btn:disabled {
@@ -119,7 +119,7 @@
 
   .hints-exhausted {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     text-align: center;
   }
 </style>

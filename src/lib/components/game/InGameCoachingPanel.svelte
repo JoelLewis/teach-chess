@@ -27,7 +27,7 @@
   let classColor = $derived(
     gameStore.latestCoaching?.classification
       ? CLASSIFICATION_COLORS[gameStore.latestCoaching.classification]
-      : "#888",
+      : "var(--cm-text-muted)",
   );
 
   const THEME_LABELS: Record<string, string> = {
@@ -115,21 +115,21 @@
   }
 
   .hint-tactical {
-    background: #fffbeb;
-    border: 1px solid #f59e0b;
-    color: #92400e;
+    background: var(--cm-status-warning-bg);
+    border: 1px solid var(--cm-status-warning);
+    color: var(--cm-status-warning-text);
   }
 
   .hint-phase {
-    background: #eff6ff;
-    border: 1px solid #60a5fa;
-    color: #1e40af;
+    background: var(--cm-accent-secondary-bg);
+    border: 1px solid var(--cm-accent-secondary-light);
+    color: var(--cm-accent-secondary-deep);
   }
 
   .hint-strategic {
-    background: #f0fdf4;
-    border: 1px solid #86efac;
-    color: #166534;
+    background: var(--cm-status-success-bg);
+    border: 1px solid var(--cm-status-success-lighter);
+    color: var(--cm-status-success-text);
   }
 
   .hint-icon {
@@ -142,7 +142,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--cm-bg-scrim);
   }
 
   .hint-text {
@@ -152,8 +152,8 @@
   .coaching-feedback {
     padding: 8px 12px;
     margin: 4px 0;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--cm-bg-surface-alt);
+    border: 1px solid var(--cm-border-default);
     border-radius: 6px;
     transition: all 0.2s;
   }
@@ -167,7 +167,7 @@
   .classification-badge {
     display: inline-block;
     font-size: 10px;
-    color: white;
+    color: var(--cm-text-inverse);
     padding: 1px 8px;
     border-radius: 3px;
     text-transform: capitalize;
@@ -175,33 +175,33 @@
 
   .move-number {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--cm-text-faint);
     flex: 1;
   }
 
   .expand-btn {
     width: 20px;
     height: 20px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--cm-border-medium);
     border-radius: 3px;
-    background: white;
+    background: var(--cm-bg-surface);
     cursor: pointer;
     font-size: 14px;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .expand-btn:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 
   .feedback-text {
     font-size: 12px;
     line-height: 1.5;
-    color: #334155;
+    color: var(--cm-text-primary);
     margin: 4px 0 0;
   }
 
@@ -222,8 +222,8 @@
 
   .theme-tag {
     font-size: 9px;
-    color: #64748b;
-    background: #e2e8f0;
+    color: var(--cm-text-muted);
+    background: var(--cm-border-default);
     padding: 1px 5px;
     border-radius: 3px;
   }

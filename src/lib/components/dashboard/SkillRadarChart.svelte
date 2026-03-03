@@ -9,11 +9,11 @@
   let { ratings, size = 200 }: Props = $props();
 
   const CATEGORY_COLORS: Record<string, string> = {
-    tactical: "#ef4444",
-    positional: "#3b82f6",
-    endgame: "#8b5cf6",
-    opening: "#f59e0b",
-    pattern: "#10b981",
+    tactical: "var(--cm-skill-tactical)",
+    positional: "var(--cm-skill-positional)",
+    endgame: "var(--cm-skill-endgame)",
+    opening: "var(--cm-skill-opening)",
+    pattern: "var(--cm-skill-pattern)",
   };
 
   const CATEGORIES = ["tactical", "positional", "endgame", "opening", "pattern"];
@@ -66,7 +66,7 @@
         return `${p.x},${p.y}`;
       }).join(" ")}
       fill="none"
-      stroke="#e5e7eb"
+      stroke="var(--cm-border-light)"
       stroke-width="1"
     />
   {/each}
@@ -74,14 +74,14 @@
   <!-- Axis lines -->
   {#each CATEGORIES as _, i}
     {@const p = pointAt(i, CATEGORIES.length, radius)}
-    <line x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#e5e7eb" stroke-width="1" />
+    <line x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--cm-border-light)" stroke-width="1" />
   {/each}
 
   <!-- Data polygon -->
   <polygon
     points={polygonPoints}
-    fill="rgba(99, 102, 241, 0.15)"
-    stroke="#6366f1"
+    fill="var(--cm-skill-radar-fill)"
+    stroke="var(--cm-skill-radar-stroke)"
     stroke-width="2"
   />
 
@@ -95,7 +95,7 @@
       cx={dp.x}
       cy={dp.y}
       r="4"
-      fill={CATEGORY_COLORS[cat] ?? "#6b7280"}
+      fill={CATEGORY_COLORS[cat] ?? "var(--cm-text-muted)"}
     />
     <text
       x={lp.x}
@@ -103,7 +103,7 @@
       text-anchor="middle"
       dominant-baseline="central"
       class="label"
-      fill={CATEGORY_COLORS[cat] ?? "#6b7280"}
+      fill={CATEGORY_COLORS[cat] ?? "var(--cm-text-muted)"}
     >
       {cat.charAt(0).toUpperCase() + cat.slice(1)}
     </text>

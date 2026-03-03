@@ -169,7 +169,7 @@
   .back-btn {
     background: none;
     border: none;
-    color: #3b82f6;
+    color: var(--cm-accent-secondary);
     cursor: pointer;
     font-size: 14px;
     padding: 0;
@@ -188,8 +188,8 @@
 
   .eco {
     padding: 4px 10px;
-    background: #f0f9ff;
-    color: #0369a1;
+    background: var(--cm-accent-secondary-bg);
+    color: var(--cm-accent-secondary-text);
     border-radius: 4px;
     font-size: 13px;
     font-weight: 600;
@@ -198,7 +198,7 @@
   .opening-title h2 {
     font-size: 22px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     margin: 0;
   }
 
@@ -223,18 +223,18 @@
 
   .board-controls button {
     padding: 6px 12px;
-    background: white;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
-    color: #374151;
+    color: var(--cm-text-secondary);
     transition: all 0.15s;
   }
 
   .board-controls button:hover:not(:disabled) {
-    background: #f3f4f6;
-    border-color: #9ca3af;
+    background: var(--cm-bg-hover);
+    border-color: var(--cm-text-disabled);
   }
 
   .board-controls button:disabled {
@@ -244,7 +244,7 @@
 
   .step-label {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     min-width: 60px;
     text-align: center;
   }
@@ -259,7 +259,7 @@
 
   .description {
     font-size: 14px;
-    color: #4b5563;
+    color: var(--cm-text-tertiary);
     line-height: 1.5;
     margin: 0;
   }
@@ -267,7 +267,7 @@
   .move-list h3 {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     margin: 0 0 8px;
   }
 
@@ -279,38 +279,38 @@
 
   .move-btn {
     padding: 4px 8px;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-light);
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
-    color: #374151;
+    color: var(--cm-text-secondary);
     transition: all 0.15s;
   }
 
   .move-btn:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 
   .move-btn.active {
-    background: #1e40af;
-    color: white;
-    border-color: #1e40af;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
+    border-color: var(--cm-accent-secondary-hover);
   }
 
   .move-num {
-    color: #9ca3af;
+    color: var(--cm-text-disabled);
     margin-right: 2px;
   }
 
   .move-btn.active .move-num {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--cm-text-inverse-muted);
   }
 
   .add-repertoire-btn {
     padding: 10px 16px;
-    background: #059669;
-    color: white;
+    background: var(--cm-status-success-alt);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 8px;
     font-size: 14px;
@@ -320,7 +320,7 @@
   }
 
   .add-repertoire-btn:hover {
-    background: #047857;
+    background: var(--cm-status-success-hover);
   }
 
   .meta {
@@ -328,7 +328,7 @@
     flex-direction: column;
     gap: 8px;
     padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--cm-border-light);
   }
 
   .meta-item {
@@ -338,11 +338,11 @@
   }
 
   .meta-label {
-    color: #6b7280;
+    color: var(--cm-text-muted);
   }
 
   .meta-value {
-    color: #1e293b;
+    color: var(--cm-text-primary);
     font-weight: 500;
   }
 </style>

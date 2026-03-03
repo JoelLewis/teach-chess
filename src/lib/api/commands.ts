@@ -342,6 +342,7 @@ export function getDifficultyTarget(
 // ─── Dashboard Commands ──────────────────────────────────────────
 
 import type { DashboardData, AdaptivePrompt } from "../types/dashboard";
+import type { Theme } from "../types/theme";
 
 export function getDashboardData(): Promise<DashboardData> {
   return invoke<DashboardData>("get_dashboard_data");
@@ -363,6 +364,16 @@ export function downloadModel(modelId: string): Promise<void> {
 
 export function getAvailableModels(): Promise<ModelStatus[]> {
   return invoke<ModelStatus[]>("get_available_models");
+}
+
+// ─── Theme Commands ─────────────────────────────────────────────
+
+export function getTheme(): Promise<Theme> {
+  return invoke<Theme>("get_theme");
+}
+
+export function setTheme(theme: Theme): Promise<void> {
+  return invoke<void>("set_theme", { theme });
 }
 
 export function generateCoaching(

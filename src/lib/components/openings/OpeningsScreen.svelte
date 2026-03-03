@@ -63,8 +63,8 @@
 
   .tabs {
     display: flex;
-    background: white;
-    border-bottom: 2px solid #e5e7eb;
+    background: var(--cm-bg-surface);
+    border-bottom: 2px solid var(--cm-border-light);
     padding: 0 24px;
   }
 
@@ -74,7 +74,7 @@
     border: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
-    color: #6b7280;
+    color: var(--cm-text-muted);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -82,12 +82,12 @@
   }
 
   .tab:hover {
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .tab.active {
-    color: #1e40af;
-    border-bottom-color: #1e40af;
+    color: var(--cm-accent-secondary-hover);
+    border-bottom-color: var(--cm-accent-secondary-hover);
   }
 
   .tab-content {

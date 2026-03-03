@@ -59,7 +59,7 @@
     overflow-y: auto;
     max-height: 400px;
     padding: 8px;
-    font-family: monospace;
+    font-family: var(--cm-font-mono);
     font-size: 14px;
   }
 
@@ -70,7 +70,7 @@
   }
 
   .move-number {
-    color: #888;
+    color: var(--cm-text-muted);
     min-width: 32px;
     text-align: right;
   }
@@ -89,11 +89,11 @@
   }
 
   .move:hover {
-    background: #e2e8f0;
+    background: var(--cm-border-default);
   }
 
   .move.active {
-    background: #bfdbfe;
+    background: var(--cm-accent-secondary-muted);
     font-weight: 600;
   }
 </style>

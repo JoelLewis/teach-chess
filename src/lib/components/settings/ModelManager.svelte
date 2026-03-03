@@ -178,7 +178,7 @@
   .title {
     font-size: 24px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--cm-text-primary);
     margin-bottom: 24px;
   }
 
@@ -189,19 +189,19 @@
   .section-title {
     font-size: 16px;
     font-weight: 600;
-    color: #334155;
+    color: var(--cm-text-primary);
     margin-bottom: 4px;
   }
 
   .section-desc {
     font-size: 13px;
-    color: #64748b;
+    color: var(--cm-text-muted);
     margin-bottom: 16px;
   }
 
   .status-card {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-default);
     border-radius: 8px;
     padding: 12px 16px;
     margin-bottom: 16px;
@@ -216,17 +216,17 @@
 
   .status-label {
     font-size: 13px;
-    color: #64748b;
+    color: var(--cm-text-muted);
   }
 
   .status-value {
     font-size: 13px;
     font-weight: 500;
-    color: #334155;
+    color: var(--cm-text-primary);
   }
 
   .status-value.active {
-    color: #16a34a;
+    color: var(--cm-status-success);
   }
 
   .model-list {
@@ -236,8 +236,8 @@
   }
 
   .model-card {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-default);
     border-radius: 8px;
     padding: 16px;
     display: flex;
@@ -247,8 +247,8 @@
   }
 
   .model-active {
-    border-color: #a5b4fc;
-    background: #fafbff;
+    border-color: var(--cm-accent-violet-lighter);
+    background: var(--cm-accent-primary-bg);
   }
 
   .model-name-row {
@@ -261,14 +261,14 @@
   .model-name {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--cm-text-primary);
   }
 
   .active-badge {
     font-size: 10px;
     font-weight: 600;
-    color: #16a34a;
-    background: #f0fdf4;
+    color: var(--cm-status-success);
+    background: var(--cm-status-success-bg);
     padding: 2px 6px;
     border-radius: 3px;
   }
@@ -276,40 +276,40 @@
   .recommended-badge {
     font-size: 10px;
     font-weight: 600;
-    color: #1e40af;
-    background: #eff6ff;
+    color: var(--cm-accent-secondary-hover);
+    background: var(--cm-accent-secondary-bg);
     padding: 2px 6px;
     border-radius: 3px;
   }
 
   .ram-indicator.ram-ok {
-    color: #16a34a;
+    color: var(--cm-status-success);
   }
 
   .ram-indicator.ram-warn {
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 
   .model-meta {
     display: flex;
     gap: 16px;
     font-size: 12px;
-    color: #64748b;
+    color: var(--cm-text-muted);
   }
 
   .downloaded-badge {
     font-size: 12px;
-    color: #16a34a;
+    color: var(--cm-status-success);
     font-weight: 500;
     padding: 4px 12px;
-    background: #f0fdf4;
+    background: var(--cm-status-success-bg);
     border-radius: 4px;
   }
 
   .download-btn {
     padding: 6px 16px;
-    background: #1e40af;
-    color: white;
+    background: var(--cm-accent-secondary-hover);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     font-size: 13px;
@@ -318,7 +318,7 @@
   }
 
   .download-btn:hover {
-    background: #1e3a8a;
+    background: var(--cm-accent-secondary-hover);
   }
 
   .download-progress {
@@ -330,25 +330,25 @@
 
   .progress-bar {
     height: 4px;
-    background: #e5e7eb;
+    background: var(--cm-border-light);
     border-radius: 2px;
     overflow: hidden;
   }
 
   .progress-fill {
     height: 100%;
-    background: #3b82f6;
+    background: var(--cm-accent-secondary);
     transition: width 0.3s;
   }
 
   .progress-text {
     font-size: 11px;
-    color: #64748b;
+    color: var(--cm-text-muted);
   }
 
   .empty-text {
     font-size: 13px;
-    color: #94a3b8;
+    color: var(--cm-text-faint);
     text-align: center;
     padding: 24px;
   }

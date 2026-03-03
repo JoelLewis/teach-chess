@@ -28,8 +28,8 @@
 
 <style>
   .recommendation-card {
-    background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
-    border: 1px solid #c7d2fe;
+    background: linear-gradient(135deg, var(--cm-accent-primary-bg) 0%, var(--cm-accent-violet-bg) 100%);
+    border: 1px solid var(--cm-accent-violet-muted);
     border-radius: 10px;
     padding: 16px;
     display: flex;
@@ -42,12 +42,12 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6366f1;
+    color: var(--cm-accent-primary-light);
   }
 
   .rec-text {
     font-size: 14px;
-    color: #374151;
+    color: var(--cm-text-secondary);
     line-height: 1.5;
     margin: 0;
   }
@@ -55,8 +55,8 @@
   .rec-action {
     align-self: flex-start;
     padding: 8px 20px;
-    background: #6366f1;
-    color: white;
+    background: var(--cm-accent-primary-light);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     font-size: 13px;
@@ -66,6 +66,6 @@
   }
 
   .rec-action:hover {
-    background: #4f46e5;
+    background: var(--cm-accent-primary);
   }
 </style>

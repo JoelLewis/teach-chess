@@ -20,6 +20,9 @@ pub enum AppError {
     #[error(transparent)]
     Repertoire(#[from] RepertoireError),
 
+    #[error("Config error: {0}")]
+    Config(String),
+
     #[error("Lock poisoned: {0}")]
     Lock(String),
 }

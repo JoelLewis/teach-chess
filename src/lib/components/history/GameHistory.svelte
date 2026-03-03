@@ -78,14 +78,14 @@
 
   .pagination button {
     padding: 6px 16px;
-    background: white;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-surface);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
   }
 
   .pagination button:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 </style>

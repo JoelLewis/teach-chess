@@ -46,8 +46,8 @@
   .sidebar {
     width: 200px;
     min-height: 100vh;
-    background: #1e293b;
-    color: #e2e8f0;
+    background: var(--cm-bg-sidebar);
+    color: var(--cm-border-default);
     display: flex;
     flex-direction: column;
     padding: 16px 0;
@@ -83,7 +83,7 @@
     padding: 10px 20px;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--cm-text-faint);
     cursor: pointer;
     font-size: 14px;
     width: 100%;
@@ -92,14 +92,14 @@
   }
 
   .nav-item:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--cm-border-default);
+    background: var(--cm-bg-sidebar-hover);
   }
 
   .nav-item.active {
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
-    border-left: 3px solid #3b82f6;
+    color: var(--cm-text-inverse);
+    background: var(--cm-bg-sidebar-active);
+    border-left: 3px solid var(--cm-accent-secondary);
     padding-left: 17px;
   }
 

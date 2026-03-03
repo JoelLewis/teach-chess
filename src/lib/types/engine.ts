@@ -187,14 +187,14 @@ export function scoreToBarValue(score: Score): number {
   return 1 / (1 + Math.pow(10, -cp / 400));
 }
 
-/** Classification color mapping for UI */
+/** Classification color mapping for UI — uses CSS tokens for theme support */
 export const CLASSIFICATION_COLORS: Record<MoveClassification, string> = {
-  best: "#26a641",
-  excellent: "#57ab5a",
-  good: "#8ddb8c",
-  inaccuracy: "#d29922",
-  mistake: "#e5534b",
-  blunder: "#da3633",
+  best: "var(--cm-class-best)",
+  excellent: "var(--cm-class-excellent)",
+  good: "var(--cm-class-good)",
+  inaccuracy: "var(--cm-class-inaccuracy)",
+  mistake: "var(--cm-class-mistake)",
+  blunder: "var(--cm-class-blunder)",
 } as const;
 
 // ─── In-Game Coaching Types ──────────────────────────────────────

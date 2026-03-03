@@ -56,7 +56,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--cm-bg-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -64,12 +64,12 @@
   }
 
   .dialog {
-    background: white;
+    background: var(--cm-bg-surface);
     border-radius: 12px;
     padding: 32px;
     max-width: 400px;
     text-align: center;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--cm-shadow-lg);
   }
 
   .result {
@@ -79,15 +79,15 @@
   }
 
   .result.win {
-    color: #16a34a;
+    color: var(--cm-status-success);
   }
 
   .result.loss {
-    color: #dc2626;
+    color: var(--cm-status-error);
   }
 
   .move-count {
-    color: #6b7280;
+    color: var(--cm-text-muted);
     margin-bottom: 24px;
   }
 
@@ -99,8 +99,8 @@
 
   .btn-review {
     padding: 10px 20px;
-    background: #4f46e5;
-    color: white;
+    background: var(--cm-accent-primary);
+    color: var(--cm-text-inverse);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -108,20 +108,20 @@
   }
 
   .btn-review:hover {
-    background: #4338ca;
+    background: var(--cm-accent-primary-hover);
   }
 
   .btn-new {
     padding: 10px 20px;
-    background: white;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    background: var(--cm-bg-surface);
+    color: var(--cm-text-secondary);
+    border: 1px solid var(--cm-border-medium);
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
   }
 
   .btn-new:hover {
-    background: #f3f4f6;
+    background: var(--cm-bg-hover);
   }
 </style>
