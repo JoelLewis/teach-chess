@@ -46,7 +46,7 @@ pub enum PlayerLevel {
 }
 
 /// Errors from the LLM subsystem
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 #[allow(dead_code)]
 pub enum LlmError {
     #[error("Model not loaded")]

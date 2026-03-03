@@ -72,8 +72,10 @@ pub fn check_adaptive_triggers(data: &AdaptiveTriggerData) -> AdaptivePrompt {
         if data.hint_usage_rate > 0.60 {
             return AdaptivePrompt {
                 prompt_type: AdaptivePromptType::DecreaseChallenge,
-                message: "You're using hints on most puzzles — the difficulty might be too high.".to_string(),
-                suggestion: "Try slightly easier puzzles to build confidence without hints.".to_string(),
+                message: "You're using hints on most puzzles — the difficulty might be too high."
+                    .to_string(),
+                suggestion: "Try slightly easier puzzles to build confidence without hints."
+                    .to_string(),
                 target_activity: "problems".to_string(),
                 target_category: data.weakest_category.clone(),
             };
@@ -84,10 +86,13 @@ pub fn check_adaptive_triggers(data: &AdaptiveTriggerData) -> AdaptivePrompt {
     if data.total_sessions >= 20 && data.rating_std_dev < 30.0 {
         return AdaptivePrompt {
             prompt_type: AdaptivePromptType::PlateauDetected,
-            message: "Your ratings have been stable for a while — you might be hitting a plateau.".to_string(),
+            message: "Your ratings have been stable for a while — you might be hitting a plateau."
+                .to_string(),
             suggestion: format!(
                 "Try focusing on {} — targeted practice breaks plateaus faster than general play.",
-                data.weakest_category.as_deref().unwrap_or("your weakest area")
+                data.weakest_category
+                    .as_deref()
+                    .unwrap_or("your weakest area")
             ),
             target_activity: "problems".to_string(),
             target_category: data.weakest_category.clone(),
@@ -99,7 +104,8 @@ pub fn check_adaptive_triggers(data: &AdaptiveTriggerData) -> AdaptivePrompt {
         return AdaptivePrompt {
             prompt_type: AdaptivePromptType::IncreaseChallenge,
             message: "You're crushing it! Your solve rate is well above 75%.".to_string(),
-            suggestion: "Time to level up — try harder puzzles or a stronger engine opponent.".to_string(),
+            suggestion: "Time to level up — try harder puzzles or a stronger engine opponent."
+                .to_string(),
             target_activity: "problems".to_string(),
             target_category: data.weakest_category.clone(),
         };

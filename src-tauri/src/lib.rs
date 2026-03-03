@@ -18,9 +18,15 @@ use tauri::Manager;
 /// Stores the current player's ID so game commands can reference it.
 pub struct CurrentPlayerId(std::sync::Mutex<Option<String>>);
 
+impl Default for CurrentPlayerId {
+    fn default() -> Self {
+        Self(std::sync::Mutex::new(None))
+    }
+}
+
 impl CurrentPlayerId {
     pub fn new() -> Self {
-        Self(std::sync::Mutex::new(None))
+        Self::default()
     }
 
     pub fn get(&self) -> Result<String, crate::error::AppError> {
@@ -57,26 +63,18 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let db = db::connection::Database::open(&app_handle)?;
             app.manage(std::sync::Mutex::new(db));
-            app.manage(std::sync::Mutex::new(
-                game::state::GameState::default(),
-            ));
+            app.manage(std::sync::Mutex::new(game::state::GameState::default()));
             app.manage(tokio::sync::Mutex::new(
                 engine::process::EngineProcess::default(),
             ));
             app.manage(CurrentPlayerId::new());
 
             // Load app config (theme, audio preferences)
-            let app_data_dir = app
-                .handle()
-                .path()
-                .app_data_dir()
-                .expect("app data dir");
-            app.manage(std::sync::Mutex::new(
-                config::AppConfigState::load(&app_data_dir),
-            ));
-            app.manage(std::sync::Mutex::new(
-                puzzle::PuzzleSessionState::default(),
-            ));
+            let app_data_dir = app.handle().path().app_data_dir().expect("app data dir");
+            app.manage(std::sync::Mutex::new(config::AppConfigState::load(
+                &app_data_dir,
+            )));
+            app.manage(std::sync::Mutex::new(puzzle::PuzzleSessionState::default()));
             app.manage(std::sync::Mutex::new(
                 repertoire::RepertoireSessionState::default(),
             ));
@@ -84,11 +82,7 @@ pub fn run() {
             // Initialize LLM state (feature-gated)
             #[cfg(feature = "llm")]
             {
-                let app_data_dir = app
-                    .handle()
-                    .path()
-                    .app_data_dir()
-                    .expect("app data dir");
+                let app_data_dir = app.handle().path().app_data_dir().expect("app data dir");
                 app.manage(llm::LlmState::new(app_data_dir));
             }
 

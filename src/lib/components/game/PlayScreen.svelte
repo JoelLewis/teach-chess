@@ -2,6 +2,7 @@
   import Chessboard from "../board/Chessboard.svelte";
   import EvalBar from "../board/EvalBar.svelte";
   import MoveList from "../board/MoveList.svelte";
+  import LoadingSpinner from "../ui/LoadingSpinner.svelte";
   import InGameCoachingPanel from "./InGameCoachingPanel.svelte";
   import GameOverDialog from "./GameOverDialog.svelte";
   import { gameStore } from "../../stores/game.svelte";
@@ -218,7 +219,7 @@
     <div class="panel-header">
       <div class="turn-indicator">
         {#if gameStore.engineThinking}
-          <span class="thinking">Engine thinking...</span>
+          <span class="thinking"><LoadingSpinner size="sm" message="Engine thinking..." /></span>
         {:else if position?.isGameOver}
           <span class="game-over-text">Game Over</span>
         {:else}

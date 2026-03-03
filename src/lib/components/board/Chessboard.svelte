@@ -100,7 +100,7 @@
   });
 </script>
 
-<div class="board-container">
+<div class="board-container" role="img" aria-label="Chess board">
   <div bind:this={boardEl} class="board"></div>
 </div>
 

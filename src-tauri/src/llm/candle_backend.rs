@@ -1,4 +1,3 @@
-#![cfg(feature = "llm")]
 #![allow(dead_code)]
 
 use std::path::Path;
@@ -28,11 +27,7 @@ impl CandleBackend {
     }
 
     /// Load a quantized GGUF model and tokenizer from disk.
-    pub fn load(
-        &mut self,
-        model_path: &Path,
-        tokenizer_path: &Path,
-    ) -> Result<(), LlmError> {
+    pub fn load(&mut self, model_path: &Path, tokenizer_path: &Path) -> Result<(), LlmError> {
         // Load GGUF model
         let mut model_file = std::fs::File::open(model_path)
             .map_err(|e| LlmError::InferenceError(format!("Failed to open model: {e}")))?;
@@ -75,14 +70,8 @@ impl CandleBackend {
         prompt: &str,
         cancel: &CancellationToken,
     ) -> Result<String, LlmError> {
-        let model = self
-            .model
-            .as_mut()
-            .ok_or(LlmError::ModelNotLoaded)?;
-        let tokenizer = self
-            .tokenizer
-            .as_ref()
-            .ok_or(LlmError::ModelNotLoaded)?;
+        let model = self.model.as_mut().ok_or(LlmError::ModelNotLoaded)?;
+        let tokenizer = self.tokenizer.as_ref().ok_or(LlmError::ModelNotLoaded)?;
 
         // Tokenize prompt
         let encoding = tokenizer
@@ -128,7 +117,12 @@ impl CandleBackend {
             .squeeze(0)
             .map_err(|e| LlmError::InferenceError(format!("Squeeze: {e}")))?;
         let logits = logits
-            .get(logits.dim(0).map_err(|e| LlmError::InferenceError(e.to_string()))? - 1)
+            .get(
+                logits
+                    .dim(0)
+                    .map_err(|e| LlmError::InferenceError(e.to_string()))?
+                    - 1,
+            )
             .map_err(|e| LlmError::InferenceError(format!("Get last: {e}")))?;
 
         // Apply repeat penalty
@@ -191,11 +185,7 @@ impl CandleBackend {
 }
 
 /// Apply repeat penalty to logits for tokens that already appeared.
-fn apply_repeat_penalty(
-    logits: &Tensor,
-    penalty: f32,
-    tokens: &[u32],
-) -> Result<Tensor, LlmError> {
+fn apply_repeat_penalty(logits: &Tensor, penalty: f32, tokens: &[u32]) -> Result<Tensor, LlmError> {
     let device = logits.device();
     let mut logits_vec: Vec<f32> = logits
         .to_vec1()

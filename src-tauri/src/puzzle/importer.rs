@@ -27,8 +27,9 @@ pub fn import_lichess_csv(
     let mut line_count = 0;
 
     for line in reader.lines() {
-        let line =
-            line.map_err(|e| PuzzleError::ImportError(format!("Read error at line {line_count}: {e}")))?;
+        let line = line.map_err(|e| {
+            PuzzleError::ImportError(format!("Read error at line {line_count}: {e}"))
+        })?;
         line_count += 1;
 
         // Skip header line
@@ -65,11 +66,7 @@ pub fn import_lichess_csv(
     Ok(count as usize)
 }
 
-fn parse_lichess_line(
-    line: &str,
-    rating_range: (u32, u32),
-    min_popularity: i32,
-) -> Option<Puzzle> {
+fn parse_lichess_line(line: &str, rating_range: (u32, u32), min_popularity: i32) -> Option<Puzzle> {
     // CSV parsing: handle commas within fields (Lichess CSV uses simple comma separation, no quoting)
     let fields: Vec<&str> = line.split(',').collect();
     if fields.len() < 8 {
@@ -126,23 +123,42 @@ fn generate_hints_from_themes(themes: &str, moves: &str) -> String {
         let primary = theme_list[0];
         match primary {
             "fork" => "Look for a way to attack two pieces at once.".to_string(),
-            "pin" => "Look for a pin — a piece that can't move without exposing something behind it.".to_string(),
-            "skewer" => "Look for a skewer — attack through a valuable piece to one behind it.".to_string(),
+            "pin" => {
+                "Look for a pin — a piece that can't move without exposing something behind it."
+                    .to_string()
+            }
+            "skewer" => {
+                "Look for a skewer — attack through a valuable piece to one behind it.".to_string()
+            }
             "mate" | "mateIn1" => "There's a checkmate in one move!".to_string(),
             "mateIn2" => "You can force checkmate in two moves.".to_string(),
-            "mateIn3" | "mateIn4" | "mateIn5" => "Look for a forcing sequence leading to checkmate.".to_string(),
+            "mateIn3" | "mateIn4" | "mateIn5" => {
+                "Look for a forcing sequence leading to checkmate.".to_string()
+            }
             "hangingPiece" => "One of the opponent's pieces is undefended.".to_string(),
             "trappedPiece" => "One of the opponent's pieces has no escape.".to_string(),
-            "discoveredAttack" => "Look for a discovered attack — moving one piece reveals an attack by another.".to_string(),
-            "sacrifice" => "Sometimes you need to give up material to gain an advantage.".to_string(),
+            "discoveredAttack" => {
+                "Look for a discovered attack — moving one piece reveals an attack by another."
+                    .to_string()
+            }
+            "sacrifice" => {
+                "Sometimes you need to give up material to gain an advantage.".to_string()
+            }
             "deflection" => "Can you deflect a defender away from a key square?".to_string(),
             "decoy" | "attraction" => "Can you lure a piece to a vulnerable square?".to_string(),
             "backRankMate" => "The opponent's king is vulnerable on the back rank.".to_string(),
-            "smotheredMate" => "The king is surrounded by its own pieces — look for a knight check.".to_string(),
+            "smotheredMate" => {
+                "The king is surrounded by its own pieces — look for a knight check.".to_string()
+            }
             "promotion" => "A pawn is close to promotion — that's the key.".to_string(),
             "endgame" => "Apply endgame technique to convert your advantage.".to_string(),
-            "quietMove" => "The best move isn't a check or capture — look for a quiet but strong move.".to_string(),
-            "intermezzo" | "zwischenzug" => "Before making the obvious move, is there a strong in-between move?".to_string(),
+            "quietMove" => {
+                "The best move isn't a check or capture — look for a quiet but strong move."
+                    .to_string()
+            }
+            "intermezzo" | "zwischenzug" => {
+                "Before making the obvious move, is there a strong in-between move?".to_string()
+            }
             _ => format!("This puzzle involves: {}.", themes.replace(' ', ", ")),
         }
     };
@@ -255,7 +271,10 @@ mod tests {
 
     #[test]
     fn categorize_endgame() {
-        assert_eq!(categorize_themes("endgame pawnEndgame"), PuzzleCategory::Endgame);
+        assert_eq!(
+            categorize_themes("endgame pawnEndgame"),
+            PuzzleCategory::Endgame
+        );
     }
 
     #[test]

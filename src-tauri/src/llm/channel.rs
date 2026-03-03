@@ -1,4 +1,3 @@
-#![cfg(feature = "llm")]
 #![allow(dead_code)]
 
 use std::path::Path;
@@ -20,9 +19,13 @@ struct InferenceJob {
 ///
 /// Owns a background worker task that processes jobs one at a time.
 /// Each new submission automatically cancels any in-flight request.
+/// Duplicate requests (same prompt) are deduplicated if one is in-flight.
 pub struct InferenceChannel {
     request_tx: mpsc::Sender<InferenceJob>,
     current_cancel: Option<CancellationToken>,
+    /// Tracks the prompt of the currently in-flight request for deduplication.
+    in_flight_prompt: Option<String>,
+    in_flight_rx: Option<tokio::sync::watch::Receiver<Option<Result<String, LlmError>>>>,
 }
 
 impl InferenceChannel {
@@ -87,17 +90,43 @@ impl InferenceChannel {
         Ok(Self {
             request_tx,
             current_cancel: None,
+            in_flight_prompt: None,
+            in_flight_rx: None,
         })
     }
 
     /// Submit a prompt for inference.
     ///
-    /// Cancels any previously in-flight request.
-    /// Returns a receiver for the result.
+    /// If the same prompt is already in-flight, returns a receiver that will
+    /// resolve to the same result (deduplication). Otherwise, cancels any
+    /// previously in-flight request and starts a new one.
     pub async fn submit(
         &mut self,
         prompt: String,
     ) -> Result<oneshot::Receiver<Result<String, LlmError>>, LlmError> {
+        // Deduplication: if the same prompt is already in-flight, return a proxy receiver
+        if let Some(ref existing_prompt) = self.in_flight_prompt {
+            if *existing_prompt == prompt {
+                if let Some(ref rx) = self.in_flight_rx {
+                    let mut watch_rx = rx.clone();
+                    let (proxy_tx, proxy_rx) = oneshot::channel();
+                    tokio::spawn(async move {
+                        // Wait for the watch channel to emit a value
+                        while watch_rx.changed().await.is_ok() {
+                            if let Some(result) = watch_rx.borrow().as_ref() {
+                                let _ = proxy_tx.send(result.clone());
+                                return;
+                            }
+                        }
+                        let _ = proxy_tx.send(Err(LlmError::InferenceError(
+                            "Dedup channel closed".to_string(),
+                        )));
+                    });
+                    return Ok(proxy_rx);
+                }
+            }
+        }
+
         // Cancel previous request
         if let Some(old_cancel) = self.current_cancel.take() {
             old_cancel.cancel();
@@ -108,9 +137,23 @@ impl InferenceChannel {
 
         let (response_tx, response_rx) = oneshot::channel();
 
+        // Set up dedup tracking via a watch channel
+        let (watch_tx, watch_rx) = tokio::sync::watch::channel(None);
+        self.in_flight_prompt = Some(prompt.clone());
+        self.in_flight_rx = Some(watch_rx);
+
+        // Wrap the response_tx to also broadcast via watch
+        let (actual_tx, actual_rx) = oneshot::channel::<Result<String, LlmError>>();
+        tokio::spawn(async move {
+            if let Ok(result) = actual_rx.await {
+                let _ = watch_tx.send(Some(result.clone()));
+                let _ = response_tx.send(result);
+            }
+        });
+
         let job = InferenceJob {
             prompt,
-            response_tx,
+            response_tx: actual_tx,
             cancel,
         };
 

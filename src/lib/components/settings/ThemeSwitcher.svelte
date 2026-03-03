@@ -13,16 +13,23 @@
       name: "The Grid",
       description: "Dark neon. A cyberpunk interface for late-night sessions.",
     },
+    {
+      id: "system",
+      name: "System",
+      description: "Follows your operating system's light or dark mode preference.",
+    },
   ];
 </script>
 
 <section class="theme-section">
   <h3 class="section-title">Theme</h3>
-  <div class="theme-cards">
+  <div class="theme-cards" role="radiogroup" aria-label="Theme selection">
     {#each themes as theme}
       <button
         class="theme-card"
         class:active={themeStore.current === theme.id}
+        role="radio"
+        aria-checked={themeStore.current === theme.id}
         onclick={() => themeStore.set(theme.id)}
       >
         <div class="theme-preview" data-preview={theme.id}>
@@ -55,7 +62,7 @@
 
   .theme-cards {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
   }
 
@@ -149,6 +156,29 @@
       linear-gradient(-45deg, transparent 75%, rgba(0,229,255,0.04) 75%);
     background-size: 12px 12px;
     background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+
+  /* System preview — split half light / half dark */
+  .theme-preview[data-preview="system"] {
+    background: linear-gradient(90deg, #f1f5f9 50%, #0a0a0f 50%);
+  }
+
+  .theme-preview[data-preview="system"] .preview-sidebar {
+    width: 30px;
+    background: linear-gradient(180deg, #1e293b 50%, #070b14 50%);
+  }
+
+  .theme-preview[data-preview="system"] .preview-header {
+    height: 8px;
+    background: linear-gradient(90deg, #ffffff 50%, #12121a 50%);
+  }
+
+  .theme-preview[data-preview="system"] .preview-board {
+    width: 48px;
+    height: 48px;
+    margin: 8px auto;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #f0d9b5 50%, #0e0e1a 50%);
   }
 
   .preview-content {

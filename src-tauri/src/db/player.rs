@@ -25,8 +25,7 @@ impl Database {
             Ok(player) => Ok(player),
             Err(rusqlite::Error::QueryReturnedNoRows) => {
                 let id = uuid::Uuid::new_v4().to_string();
-                let settings_json =
-                    serde_json::to_string(&PlayerSettings::default()).unwrap();
+                let settings_json = serde_json::to_string(&PlayerSettings::default()).unwrap();
 
                 self.conn().execute(
                     "INSERT INTO player (id, display_name, settings_json) VALUES (?1, ?2, ?3)",

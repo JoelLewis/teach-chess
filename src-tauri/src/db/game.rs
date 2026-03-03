@@ -85,9 +85,9 @@ impl Database {
         limit: u32,
         offset: u32,
     ) -> Result<Vec<GameRecord>, DatabaseError> {
-        let mut stmt = self.conn().prepare(
-            &format!("SELECT {GAME_SELECT_COLUMNS} FROM game ORDER BY created_at DESC LIMIT ?1 OFFSET ?2"),
-        )?;
+        let mut stmt = self.conn().prepare(&format!(
+            "SELECT {GAME_SELECT_COLUMNS} FROM game ORDER BY created_at DESC LIMIT ?1 OFFSET ?2"
+        ))?;
 
         let games = stmt
             .query_map(rusqlite::params![limit, offset], row_to_game_record)?

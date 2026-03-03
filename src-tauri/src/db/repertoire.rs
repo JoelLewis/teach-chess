@@ -191,10 +191,8 @@ impl Database {
 
     /// Remove a repertoire entry by ID.
     pub fn remove_repertoire_entry(&self, id: &str) -> Result<(), DatabaseError> {
-        self.conn().execute(
-            "DELETE FROM repertoire_entry WHERE id = ?1",
-            params![id],
-        )?;
+        self.conn()
+            .execute("DELETE FROM repertoire_entry WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -327,12 +325,9 @@ impl Database {
             "SELECT COUNT(*), SUM(CASE WHEN correct = 1 THEN 1 ELSE 0 END)
              FROM repertoire_drill_attempt WHERE player_id = ?1",
         )?;
-        let (total_drills, total_correct): (i64, i64) =
-            stmt.query_row(params![player_id], |row| {
-                Ok((
-                    row.get(0)?,
-                    row.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                ))
+        let (total_drills, total_correct): (i64, i64) = stmt
+            .query_row(params![player_id], |row| {
+                Ok((row.get(0)?, row.get::<_, Option<i64>>(1)?.unwrap_or(0)))
             })?;
 
         // Current streak

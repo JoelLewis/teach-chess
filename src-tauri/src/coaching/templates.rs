@@ -4,9 +4,7 @@ use crate::models::heuristics::{GamePhase, PositionalTheme, TacticType};
 /// Generic template for a move classification (Tier 1 — always available)
 pub fn generic_template(classification: MoveClassification) -> &'static str {
     match classification {
-        MoveClassification::Best => {
-            "Excellent find! This is the strongest move in the position."
-        }
+        MoveClassification::Best => "Excellent find! This is the strongest move in the position.",
         MoveClassification::Excellent => "Very good move. You're playing accurately.",
         MoveClassification::Good => "Solid choice. This keeps the position balanced.",
         MoveClassification::Inaccuracy => {
@@ -205,7 +203,9 @@ pub fn phase_transition_text(from: &GamePhase, to: &GamePhase) -> &'static str {
 ///
 /// Returns a context-sensitive hint based on the opponent's personality,
 /// or None if no personality-specific hint applies.
-pub fn personality_hint(personality: &crate::opponent::personality::PersonalityProfile) -> &'static str {
+pub fn personality_hint(
+    personality: &crate::opponent::personality::PersonalityProfile,
+) -> &'static str {
     use crate::opponent::personality::PersonalityProfile;
     match personality {
         PersonalityProfile::Aggressive => {

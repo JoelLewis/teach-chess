@@ -50,7 +50,10 @@ impl Database {
         )?;
 
         let result = stmt
-            .query_row(params![player_id, category, min_diff, max_diff], row_to_puzzle)
+            .query_row(
+                params![player_id, category, min_diff, max_diff],
+                row_to_puzzle,
+            )
             .optional()?;
 
         Ok(result)
@@ -127,7 +130,11 @@ impl Database {
 
         let (total_attempts, total_solved, avg_time): (i64, i64, f64) =
             stmt.query_row(params![player_id], |row| {
-                Ok((row.get(0)?, row.get::<_, Option<i64>>(1)?.unwrap_or(0), row.get(2)?))
+                Ok((
+                    row.get(0)?,
+                    row.get::<_, Option<i64>>(1)?.unwrap_or(0),
+                    row.get(2)?,
+                ))
             })?;
 
         // Compute current streak (consecutive solved, most recent first)
@@ -136,9 +143,7 @@ impl Database {
              WHERE player_id = ?1
              ORDER BY attempted_at DESC",
         )?;
-        let solved_iter = streak_stmt.query_map(params![player_id], |row| {
-            row.get::<_, bool>(0)
-        })?;
+        let solved_iter = streak_stmt.query_map(params![player_id], |row| row.get::<_, bool>(0))?;
 
         let mut current_streak: u32 = 0;
         for solved in solved_iter {
@@ -155,9 +160,8 @@ impl Database {
              WHERE player_id = ?1
              ORDER BY attempted_at ASC",
         )?;
-        let all_solved = best_streak_stmt.query_map(params![player_id], |row| {
-            row.get::<_, bool>(0)
-        })?;
+        let all_solved =
+            best_streak_stmt.query_map(params![player_id], |row| row.get::<_, bool>(0))?;
 
         let mut best_streak: u32 = 0;
         let mut running: u32 = 0;

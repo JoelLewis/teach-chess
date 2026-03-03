@@ -10,11 +10,7 @@ pub fn cp_loss(before: &Score, after: &Score, is_white: bool) -> i32 {
 }
 
 /// Classify a move based on score before and after
-pub fn classify_move(
-    before: &Score,
-    after: &Score,
-    is_white: bool,
-) -> MoveClassification {
+pub fn classify_move(before: &Score, after: &Score, is_white: bool) -> MoveClassification {
     let loss = cp_loss(before, after, is_white);
     MoveClassification::from_cp_loss(loss)
 }

@@ -1,4 +1,3 @@
-#![cfg(feature = "llm")]
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
@@ -110,10 +109,13 @@ impl ModelManager {
                 .map_err(|e| LlmError::DownloadError(format!("Copy tokenizer: {e}")))?;
         }
 
-        let _ = handle.emit("llm-download-progress", serde_json::json!({
-            "downloadedBytes": config.file_size_mb as u64 * 1024 * 1024,
-            "totalBytes": config.file_size_mb as u64 * 1024 * 1024,
-        }));
+        let _ = handle.emit(
+            "llm-download-progress",
+            serde_json::json!({
+                "downloadedBytes": config.file_size_mb as u64 * 1024 * 1024,
+                "totalBytes": config.file_size_mb as u64 * 1024 * 1024,
+            }),
+        );
 
         tracing::info!("Model download complete: {}", config.id);
         Ok(())

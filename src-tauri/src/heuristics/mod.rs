@@ -21,7 +21,14 @@ pub fn analyze_position(chess: &Chess) -> CoachingContext {
     let king = king_safety::analyze_king_safety(chess);
     let tactical_motifs = tactics::detect_tactics(chess);
 
-    let themes = derive_themes(&phase, &mat, &pawn_structure, &piece_activity, &king, &tactical_motifs);
+    let themes = derive_themes(
+        &phase,
+        &mat,
+        &pawn_structure,
+        &piece_activity,
+        &king,
+        &tactical_motifs,
+    );
 
     let fen = Fen::from_position(chess.clone(), EnPassantMode::Legal).to_string();
 
@@ -52,7 +59,11 @@ fn derive_themes(
     if !material.imbalances.is_empty() {
         themes.push(PositionalTheme::MaterialImbalance);
     }
-    if material.imbalances.iter().any(|i| matches!(i, MaterialImbalance::BishopPair { .. })) {
+    if material
+        .imbalances
+        .iter()
+        .any(|i| matches!(i, MaterialImbalance::BishopPair { .. }))
+    {
         themes.push(PositionalTheme::BishopPairAdvantage);
     }
 
@@ -113,12 +124,10 @@ fn derive_themes(
     }
 
     // King safety themes
-    if king.white.pawn_shield_max > 0
-        && king.white.pawn_shield_count < king.white.pawn_shield_max.saturating_sub(1)
-    {
-        themes.push(PositionalTheme::KingSafetyCompromised);
-    } else if king.black.pawn_shield_max > 0
-        && king.black.pawn_shield_count < king.black.pawn_shield_max.saturating_sub(1)
+    if (king.white.pawn_shield_max > 0
+        && king.white.pawn_shield_count < king.white.pawn_shield_max.saturating_sub(1))
+        || (king.black.pawn_shield_max > 0
+            && king.black.pawn_shield_count < king.black.pawn_shield_max.saturating_sub(1))
     {
         themes.push(PositionalTheme::KingSafetyCompromised);
     }
@@ -154,7 +163,9 @@ mod tests {
 
     fn from_fen(fen: &str) -> Chess {
         let setup: Fen = fen.parse().unwrap();
-        setup.into_position(shakmaty::CastlingMode::Standard).unwrap()
+        setup
+            .into_position(shakmaty::CastlingMode::Standard)
+            .unwrap()
     }
 
     #[test]
@@ -170,9 +181,8 @@ mod tests {
     #[test]
     fn complex_middlegame() {
         // Symmetric Italian, equal material, move 13 → middlegame
-        let chess = from_fen(
-            "r1bq1rk1/ppp2ppp/2np1n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 13",
-        );
+        let chess =
+            from_fen("r1bq1rk1/ppp2ppp/2np1n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 13");
         let ctx = analyze_position(&chess);
         assert_eq!(ctx.phase, GamePhase::Middlegame);
         assert_eq!(ctx.material.balance_cp, 0);

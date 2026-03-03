@@ -11,6 +11,9 @@
 
   let { outcome, playerColor, moveCount, onReview, onNewGame }: Props = $props();
 
+  let dialogEl: HTMLDivElement;
+  let primaryBtnEl: HTMLButtonElement;
+
   let resultText = $derived.by(() => {
     if (!outcome) return "Game Over";
 
@@ -37,16 +40,49 @@
     if ("resignation" in outcome) return outcome.resignation.winner === playerColor;
     return false;
   });
+
+  // Auto-focus primary button and set up focus trap + Escape key
+  $effect(() => {
+    primaryBtnEl?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onNewGame();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogEl) {
+        const focusable = dialogEl.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  });
 </script>
 
-<div class="overlay">
-  <div class="dialog">
-    <div class="result" class:win={isWin} class:loss={!isWin}>
+<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
+  <div class="dialog" bind:this={dialogEl}>
+    <div id="game-over-title" class="result" class:win={isWin} class:loss={!isWin}>
       {resultText}
     </div>
     <p class="move-count">{moveCount} moves played</p>
     <div class="actions">
-      <button class="btn-review" onclick={onReview}>Review Game</button>
+      <button class="btn-review" bind:this={primaryBtnEl} onclick={onReview}>Review Game</button>
       <button class="btn-new" onclick={onNewGame}>New Game</button>
     </div>
   </div>

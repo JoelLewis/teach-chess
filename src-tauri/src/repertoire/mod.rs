@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use crate::models::repertoire::{Opening, RepertoireEntry};
 
 /// Active repertoire drill session state, stored as Tauri managed state.
+#[derive(Default)]
 pub struct RepertoireSessionState {
     pub drill: Option<ActiveDrill>,
 }
@@ -26,10 +27,4 @@ pub struct ActiveDrill {
     pub player_color: String,
     /// The current shakmaty Chess position
     pub chess: shakmaty::Chess,
-}
-
-impl Default for RepertoireSessionState {
-    fn default() -> Self {
-        Self { drill: None }
-    }
 }

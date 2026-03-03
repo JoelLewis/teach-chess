@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 pub enum Theme {
     Study,
     Grid,
+    System,
 }
 
 impl std::fmt::Display for Theme {
@@ -14,6 +15,7 @@ impl std::fmt::Display for Theme {
         match self {
             Theme::Study => write!(f, "study"),
             Theme::Grid => write!(f, "grid"),
+            Theme::System => write!(f, "system"),
         }
     }
 }
@@ -54,7 +56,7 @@ fn default_ambient_volume() -> f64 {
 }
 
 /// Top-level app configuration stored as TOML.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
     pub theme: ThemeConfig,
@@ -78,15 +80,6 @@ impl Default for ThemeConfig {
 
 fn default_theme() -> Theme {
     Theme::Study
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            theme: ThemeConfig::default(),
-            audio: AudioConfig::default(),
-        }
-    }
 }
 
 /// Managed wrapper that holds config + path for persistence.
@@ -170,6 +163,7 @@ mod tests {
     fn test_theme_display() {
         assert_eq!(Theme::Study.to_string(), "study");
         assert_eq!(Theme::Grid.to_string(), "grid");
+        assert_eq!(Theme::System.to_string(), "system");
     }
 
     #[test]

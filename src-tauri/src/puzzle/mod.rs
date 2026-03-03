@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use crate::models::puzzle::Puzzle;
 
 /// Active puzzle session state, stored as Tauri managed state.
+#[derive(Default)]
 pub struct PuzzleSessionState {
     /// The puzzle being solved
     pub puzzle: Option<ActivePuzzle>,
@@ -31,10 +32,4 @@ pub struct ActivePuzzle {
     pub player_color: String,
     /// The current shakmaty Chess position (for move validation)
     pub chess: shakmaty::Chess,
-}
-
-impl Default for PuzzleSessionState {
-    fn default() -> Self {
-        Self { puzzle: None }
-    }
 }

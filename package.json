@@ -9,6 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "svelte-check --tsconfig ./tsconfig.json",
+    "fmt:check": "cd src-tauri && cargo fmt --all -- --check",
     "tauri": "tauri"
   },
   "dependencies": {

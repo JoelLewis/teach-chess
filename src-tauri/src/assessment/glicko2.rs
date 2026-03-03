@@ -1,7 +1,7 @@
-/// Simplified Glicko-2 rating system for per-category skill assessment.
-///
-/// Reference: http://www.glicko.net/glicko/glicko2.pdf
-/// Simplification: volatility update uses a constant instead of iterative Illinois method.
+//! Simplified Glicko-2 rating system for per-category skill assessment.
+//!
+//! Reference: http://www.glicko.net/glicko/glicko2.pdf
+//! Simplification: volatility update uses a constant instead of iterative Illinois method.
 
 use crate::models::assessment::SkillRating;
 
@@ -127,7 +127,11 @@ mod tests {
     fn win_vs_higher_rated_increases_rating() {
         let player = default_player(1200.0);
         let updated = update_rating(&player, 1400.0, true);
-        assert!(updated.rating > 1200.0, "Rating should increase: {}", updated.rating);
+        assert!(
+            updated.rating > 1200.0,
+            "Rating should increase: {}",
+            updated.rating
+        );
         assert!(updated.rd < 200.0, "RD should decrease: {}", updated.rd);
     }
 
@@ -135,7 +139,11 @@ mod tests {
     fn loss_vs_lower_rated_decreases_rating() {
         let player = default_player(1200.0);
         let updated = update_rating(&player, 1000.0, false);
-        assert!(updated.rating < 1200.0, "Rating should decrease: {}", updated.rating);
+        assert!(
+            updated.rating < 1200.0,
+            "Rating should decrease: {}",
+            updated.rating
+        );
     }
 
     #[test]
@@ -165,7 +173,11 @@ mod tests {
         for _ in 0..20 {
             player = update_rating(&player, 1200.0, true);
         }
-        assert!(player.rd < 150.0, "RD should converge after many games: {}", player.rd);
+        assert!(
+            player.rd < 150.0,
+            "RD should converge after many games: {}",
+            player.rd
+        );
     }
 
     #[test]
@@ -202,7 +214,11 @@ mod tests {
         let mu1 = to_glicko2(1200.0);
         let phi_j = rd_to_glicko2(60.0);
         let e = expected(mu1, mu1, phi_j);
-        assert!((e - 0.5).abs() < 0.01, "Equal players should have ~50% expected: {}", e);
+        assert!(
+            (e - 0.5).abs() < 0.01,
+            "Equal players should have ~50% expected: {}",
+            e
+        );
     }
 
     #[test]

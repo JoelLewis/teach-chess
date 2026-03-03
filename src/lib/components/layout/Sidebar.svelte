@@ -18,7 +18,7 @@
   ];
 </script>
 
-<nav class="sidebar">
+<nav class="sidebar" aria-label="Main navigation">
   <div class="logo">
     <span class="logo-icon">\u265E</span>
     <span class="logo-text">ChessMentor</span>
@@ -29,6 +29,7 @@
       <button
         class="nav-item"
         class:active={currentPage === item.page}
+        aria-current={currentPage === item.page ? "page" : undefined}
         onclick={() => onNavigate(item.page)}
       >
         <span class="nav-icon">{item.icon}</span>

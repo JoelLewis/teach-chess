@@ -21,10 +21,7 @@ pub fn new_game(
 }
 
 #[tauri::command]
-pub fn make_move(
-    uci: String,
-    state: State<'_, Mutex<GameState>>,
-) -> Result<Position, AppError> {
+pub fn make_move(uci: String, state: State<'_, Mutex<GameState>>) -> Result<Position, AppError> {
     let mut game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     game.make_move(&uci)?;
     Ok(game.to_position())
@@ -67,9 +64,7 @@ pub fn save_completed_game(
 }
 
 #[tauri::command]
-pub fn get_position(
-    state: State<'_, Mutex<GameState>>,
-) -> Result<Position, AppError> {
+pub fn get_position(state: State<'_, Mutex<GameState>>) -> Result<Position, AppError> {
     let game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     Ok(game.to_position())
 }

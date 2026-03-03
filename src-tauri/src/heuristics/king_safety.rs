@@ -139,14 +139,15 @@ mod tests {
 
     fn from_fen(fen: &str) -> Chess {
         let setup: Fen = fen.parse().unwrap();
-        setup.into_position(shakmaty::CastlingMode::Standard).unwrap()
+        setup
+            .into_position(shakmaty::CastlingMode::Standard)
+            .unwrap()
     }
 
     #[test]
     fn castled_kingside_intact_shield() {
         // White castled kingside, pawns on f2, g2, h2
-        let chess =
-            from_fen("r1bq1rk1/pppppppp/2n2n2/2b5/4P3/5N2/PPPP1PPP/RNBQ1RK1 w - - 0 5");
+        let chess = from_fen("r1bq1rk1/pppppppp/2n2n2/2b5/4P3/5N2/PPPP1PPP/RNBQ1RK1 w - - 0 5");
         let safety = analyze_king_safety(&chess);
         assert_eq!(safety.white.king_square, "g1");
         assert_eq!(safety.white.pawn_shield_count, 3); // f2, g2, h2

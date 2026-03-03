@@ -90,12 +90,12 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
     #[cfg(not(feature = "llm"))]
     {
         let _ = &app;
-        return Ok(LlmStatus {
+        Ok(LlmStatus {
             available: false,
             model_loaded: false,
             model_id: None,
             mode: "template".to_string(),
-        });
+        })
     }
 
     #[cfg(feature = "llm")]
@@ -131,7 +131,7 @@ pub async fn get_available_models(
     #[cfg(not(feature = "llm"))]
     {
         let _ = &app;
-        return Ok(vec![]);
+        Ok(vec![])
     }
 
     #[cfg(feature = "llm")]
@@ -159,10 +159,7 @@ pub async fn download_model(
     #[cfg(not(feature = "llm"))]
     {
         let _ = (&model_id, &app);
-        return Err(crate::llm::LlmError::ModelNotFound(
-            "LLM feature not compiled".to_string(),
-        )
-        .into());
+        Err(crate::llm::LlmError::ModelNotFound("LLM feature not compiled".to_string()).into())
     }
 
     #[cfg(feature = "llm")]
@@ -170,7 +167,7 @@ pub async fn download_model(
         use crate::llm::model_manager::ModelManager;
 
         let config = ModelManager::get_config(&model_id)
-            .ok_or_else(|| crate::llm::LlmError::ModelNotFound(model_id))?;
+            .ok_or(crate::llm::LlmError::ModelNotFound(model_id))?;
 
         let llm_state = app.state::<crate::llm::LlmState>();
         llm_state.model_manager.download(config, &app).await?;
@@ -178,6 +175,7 @@ pub async fn download_model(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn generate_coaching(
     fen: String,
@@ -201,8 +199,7 @@ pub async fn generate_coaching(
     let themes = extract_string_array(&coaching_context, "themes");
 
     // Check cache
-    let cache_key =
-        crate::llm::cache::compute_cache_key(&fen, level_str, &classification, &themes);
+    let cache_key = crate::llm::cache::compute_cache_key(&fen, level_str, &classification, &themes);
     {
         let db_lock = db
             .lock()
@@ -383,9 +380,7 @@ fn determine_player_level(
 
     // Derive from game stats
     let games = player.games_played;
-    Ok(crate::llm::PlayerLevel::from_game_stats(
-        games, 0.10, 0.10,
-    ))
+    Ok(crate::llm::PlayerLevel::from_game_stats(games, 0.10, 0.10))
 }
 
 fn generate_template_fallback(
@@ -397,9 +392,9 @@ fn generate_template_fallback(
     let mc = crate::models::engine::MoveClassification::from_str_loose(classification);
 
     if let Some(ctx_value) = coaching_context {
-        if let Ok(ctx) = serde_json::from_value::<crate::models::heuristics::CoachingContext>(
-            ctx_value.clone(),
-        ) {
+        if let Ok(ctx) =
+            serde_json::from_value::<crate::models::heuristics::CoachingContext>(ctx_value.clone())
+        {
             return crate::coaching::generate_coaching_text(&mc, &ctx);
         }
     }

@@ -13,6 +13,7 @@ pub struct EngineStrength {
     pub skill_level: u8,
 }
 
+#[allow(dead_code)]
 impl EngineStrength {
     #[cfg(test)]
     pub fn beginner() -> Self {
@@ -47,22 +48,13 @@ impl EngineStrength {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeControl {
     /// Initial time in seconds (0 = unlimited)
     pub initial_secs: u32,
     /// Increment per move in seconds
     pub increment_secs: u32,
-}
-
-impl Default for TimeControl {
-    fn default() -> Self {
-        Self {
-            initial_secs: 0,
-            increment_secs: 0,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

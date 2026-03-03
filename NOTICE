@@ -9,5 +9,30 @@ chessground
   Source: https://github.com/lichess-org/chessground
   Used for: Interactive chessboard UI component
 
-Because chessground is licensed under GPL-3.0, this entire application
-is distributed under the GPL-3.0-only license. See LICENSE for details.
+shakmaty
+  License: GPL-3.0+
+  Copyright: Niklas Fiekas
+  Source: https://github.com/niklasf/shakmaty
+  Used for: Chess move generation, validation, and FEN/SAN/PGN parsing
+
+rusqlite
+  License: MIT
+  Copyright: The rusqlite contributors
+  Source: https://github.com/rusqlite/rusqlite
+  Used for: SQLite database access
+
+tokio
+  License: MIT
+  Copyright: Tokio contributors
+  Source: https://github.com/tokio-rs/tokio
+  Used for: Async runtime
+
+candle (optional, llm feature)
+  License: MIT/Apache-2.0
+  Copyright: Hugging Face
+  Source: https://github.com/huggingface/candle
+  Used for: Local LLM inference with quantized models
+
+Because chessground and shakmaty are licensed under GPL-3.0, this entire
+application is distributed under the GPL-3.0-only license. See LICENSE
+for details.

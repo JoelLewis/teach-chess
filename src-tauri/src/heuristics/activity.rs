@@ -111,7 +111,7 @@ fn analyze_side(chess: &Chess, color: Color, open_files: &[File]) -> SideActivit
         developed_minors: developed,
         total_minors,
         rook_on_open_file: rook_on_open,
-        rook_on_seventh: rook_on_seventh,
+        rook_on_seventh,
         pieces,
     }
 }
@@ -143,7 +143,9 @@ mod tests {
 
     fn from_fen(fen: &str) -> Chess {
         let setup: Fen = fen.parse().unwrap();
-        setup.into_position(shakmaty::CastlingMode::Standard).unwrap()
+        setup
+            .into_position(shakmaty::CastlingMode::Standard)
+            .unwrap()
     }
 
     #[test]
@@ -159,7 +161,12 @@ mod tests {
     fn knight_on_rim_detected() {
         let chess = from_fen("4k3/8/8/8/8/8/8/N3K3 w - - 0 1");
         let activity = analyze_activity(&chess);
-        let knight = activity.white.pieces.iter().find(|p| p.piece == "N").unwrap();
+        let knight = activity
+            .white
+            .pieces
+            .iter()
+            .find(|p| p.piece == "N")
+            .unwrap();
         assert!(knight.is_on_rim, "Knight on a1 should be on rim");
         assert!(!knight.is_centralized);
     }
@@ -168,7 +175,12 @@ mod tests {
     fn centralized_knight() {
         let chess = from_fen("4k3/8/8/4N3/8/8/8/4K3 w - - 0 1");
         let activity = analyze_activity(&chess);
-        let knight = activity.white.pieces.iter().find(|p| p.piece == "N").unwrap();
+        let knight = activity
+            .white
+            .pieces
+            .iter()
+            .find(|p| p.piece == "N")
+            .unwrap();
         assert!(knight.is_centralized, "Knight on e5 should be centralized");
         assert!(!knight.is_on_rim);
     }

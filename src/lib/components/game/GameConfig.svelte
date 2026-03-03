@@ -6,9 +6,10 @@
 
   type Props = {
     onStart: (config: GameConfig) => void;
+    starting?: boolean;
   };
 
-  let { onStart }: Props = $props();
+  let { onStart, starting = false }: Props = $props();
 
   let playerColor = $state<Color>("white");
   let strengthPreset = $state<keyof typeof ENGINE_PRESETS>("beginner");
@@ -173,8 +174,13 @@
     </label>
   </div>
 
-  <button class="btn-primary mt-4" onclick={handleStart}>
-    Start Game
+  <button class="btn-primary mt-4" onclick={handleStart} disabled={starting}>
+    {#if starting}
+      <span class="btn-spinner"></span>
+      Starting...
+    {:else}
+      Start Game
+    {/if}
   </button>
 </div>
 
@@ -216,8 +222,29 @@
     transition: background 0.15s;
   }
 
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background: var(--cm-accent-secondary-deeper);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   /* Grid: outlined primary button with glow */

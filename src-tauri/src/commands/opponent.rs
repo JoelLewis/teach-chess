@@ -1,5 +1,5 @@
 use serde::Serialize;
-use shakmaty::{Position, uci::UciMove};
+use shakmaty::{uci::UciMove, Position};
 use tauri::State;
 use tokio::sync::Mutex;
 use tracing::debug;
@@ -71,15 +71,12 @@ pub async fn get_opponent_move(
     let mut contexts: Vec<(String, crate::models::heuristics::CoachingContext)> = Vec::new();
 
     for candidate in &candidates {
-        let uci: UciMove = candidate
-            .uci_move
-            .parse()
-            .map_err(|e| {
-                crate::error::EngineError::ProcessError(format!(
-                    "Bad UCI move {}: {e}",
-                    candidate.uci_move
-                ))
-            })?;
+        let uci: UciMove = candidate.uci_move.parse().map_err(|e| {
+            crate::error::EngineError::ProcessError(format!(
+                "Bad UCI move {}: {e}",
+                candidate.uci_move
+            ))
+        })?;
 
         let legal_move = uci.to_move(&base_pos).map_err(|e| {
             crate::error::EngineError::ProcessError(format!(
@@ -123,7 +120,10 @@ pub async fn get_opponent_move(
 
     debug!(
         "Selected {}: personality={:.2}, teaching={:.2}, combined={:.2}",
-        selected.uci_move, selected.personality_score, selected.teaching_score, selected.combined_score
+        selected.uci_move,
+        selected.personality_score,
+        selected.teaching_score,
+        selected.combined_score
     );
 
     Ok(SelectedMove {
@@ -150,9 +150,7 @@ pub fn resolve_personality(
         crate::opponent::personality::OpponentMode::Choose => {
             Ok(explicit.unwrap_or(PersonalityProfile::Solid))
         }
-        crate::opponent::personality::OpponentMode::Surprise => {
-            Ok(PersonalityProfile::random())
-        }
+        crate::opponent::personality::OpponentMode::Surprise => Ok(PersonalityProfile::random()),
         crate::opponent::personality::OpponentMode::CoachPicks => {
             // Read skill profile and pick a personality that challenges weaknesses
             let player_id = player_state.get()?;
@@ -161,14 +159,11 @@ pub fn resolve_personality(
             let profile = db_lock.get_skill_profile(&player_id)?;
 
             // Find the weakest category
-            let weakest = profile
-                .ratings
-                .iter()
-                .min_by(|a, b| {
-                    a.rating
-                        .partial_cmp(&b.rating)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                });
+            let weakest = profile.ratings.iter().min_by(|a, b| {
+                a.rating
+                    .partial_cmp(&b.rating)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
             let personality = match weakest.map(|r| r.category.as_str()) {
                 Some("tactical") => PersonalityProfile::Trappy,

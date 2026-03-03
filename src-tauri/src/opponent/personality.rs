@@ -15,21 +15,16 @@ pub enum PersonalityProfile {
 }
 
 /// How the personality is selected at game start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum OpponentMode {
     /// Player picks from the 4 profiles
+    #[default]
     Choose,
     /// Randomly assigned at game start
     Surprise,
     /// Picks the profile that best challenges the player's weaknesses
     CoachPicks,
-}
-
-impl Default for OpponentMode {
-    fn default() -> Self {
-        Self::Choose
-    }
 }
 
 /// Weight table for scoring candidate moves against a personality.

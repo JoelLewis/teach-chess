@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use shakmaty::{fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
+use shakmaty::{
+    fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
+};
 
 use crate::error::{AppError, GameError};
 use crate::models::chess::{Color, GameOutcome, Position};
@@ -25,7 +27,9 @@ impl Default for GameState {
             config: None,
             san_history: Vec::new(),
             uci_history: Vec::new(),
-            fen_history: vec![Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string()],
+            fen_history: vec![
+                Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string()
+            ],
             last_move: None,
             game_id: None,
             started_at: None,
@@ -40,7 +44,8 @@ impl GameState {
         self.config = Some(config);
         self.san_history.clear();
         self.uci_history.clear();
-        self.fen_history = vec![Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string()];
+        self.fen_history =
+            vec![Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string()];
         self.last_move = None;
         self.game_id = Some(uuid::Uuid::new_v4().to_string());
         self.started_at = Some(chrono_now());
@@ -94,10 +99,7 @@ impl GameState {
     }
 
     pub fn resign(&mut self) -> Result<GameRecord, AppError> {
-        let config = self
-            .config
-            .as_ref()
-            .ok_or(GameError::NoActiveGame)?;
+        let config = self.config.as_ref().ok_or(GameError::NoActiveGame)?;
 
         self.is_resigned = true;
 
@@ -111,9 +113,7 @@ impl GameState {
     }
 
     pub fn complete_game(&self) -> Result<GameRecord, AppError> {
-        self.config
-            .as_ref()
-            .ok_or(GameError::NoActiveGame)?;
+        self.config.as_ref().ok_or(GameError::NoActiveGame)?;
 
         if !self.is_game_over() {
             return Err(GameError::GameNotOver.into());
@@ -188,11 +188,9 @@ impl GameState {
 
         let outcome = self.chess.outcome()?;
         match outcome {
-            shakmaty::Outcome::Decisive { winner } => {
-                Some(GameOutcome::Checkmate {
-                    winner: winner.into(),
-                })
-            }
+            shakmaty::Outcome::Decisive { winner } => Some(GameOutcome::Checkmate {
+                winner: winner.into(),
+            }),
             shakmaty::Outcome::Draw => {
                 if self.chess.is_stalemate() {
                     Some(GameOutcome::Stalemate)

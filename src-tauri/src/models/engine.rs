@@ -24,13 +24,13 @@ impl Score {
     }
 
     /// Normalize to white's perspective (always positive = good for white)
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::wrong_self_convention)]
     pub fn from_white_perspective(&self) -> Self {
         self.clone()
     }
 
     /// Normalize to a specific side's perspective
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::wrong_self_convention)]
     pub fn from_perspective(&self, is_white: bool) -> Self {
         if is_white {
             self.clone()
@@ -93,7 +93,9 @@ impl MoveClassification {
     pub fn is_error(&self) -> bool {
         matches!(
             self,
-            MoveClassification::Inaccuracy | MoveClassification::Mistake | MoveClassification::Blunder
+            MoveClassification::Inaccuracy
+                | MoveClassification::Mistake
+                | MoveClassification::Blunder
         )
     }
 
@@ -142,10 +144,11 @@ pub struct MoveEvaluation {
 // ─── In-Game Coaching Types ──────────────────────────────────────
 
 /// How much coaching feedback to show during play
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum CoachingLevel {
     /// All feedback: pre-move hints + post-move for every classification
+    #[default]
     FullCoach,
     /// Post-move for inaccuracy+ and best; no pre-move hints
     LightTouch,
@@ -153,12 +156,6 @@ pub enum CoachingLevel {
     Minimal,
     /// No in-game coaching
     Silent,
-}
-
-impl Default for CoachingLevel {
-    fn default() -> Self {
-        Self::FullCoach
-    }
 }
 
 /// Post-move coaching feedback during gameplay

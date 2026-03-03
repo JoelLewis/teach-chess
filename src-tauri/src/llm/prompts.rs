@@ -28,7 +28,7 @@ pub fn system_prompt(level: &PlayerLevel) -> &'static str {
 /// Build a full prompt in Gemma 2 instruction format.
 ///
 /// Format: `<start_of_turn>user\n{system}\n\n{json_context}<end_of_turn>\n<start_of_turn>model\n`
-#[allow(dead_code)]
+#[allow(dead_code, clippy::too_many_arguments)]
 pub fn build_prompt(
     level: &PlayerLevel,
     classification: &str,

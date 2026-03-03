@@ -131,9 +131,13 @@ fn detect_skewers(chess: &Chess, color: Color) -> Vec<TacticalMotif> {
 
             // Verify the slider type matches the ray direction
             let can_reach = match slider_role {
-                Role::Bishop => attacks::bishop_attacks(slider_sq, Bitboard::EMPTY).contains(target_sq),
+                Role::Bishop => {
+                    attacks::bishop_attacks(slider_sq, Bitboard::EMPTY).contains(target_sq)
+                }
                 Role::Rook => attacks::rook_attacks(slider_sq, Bitboard::EMPTY).contains(target_sq),
-                Role::Queen => attacks::queen_attacks(slider_sq, Bitboard::EMPTY).contains(target_sq),
+                Role::Queen => {
+                    attacks::queen_attacks(slider_sq, Bitboard::EMPTY).contains(target_sq)
+                }
                 _ => false,
             };
             if !can_reach {
@@ -152,7 +156,8 @@ fn detect_skewers(chess: &Chess, color: Color) -> Vec<TacticalMotif> {
             // Continue the ray beyond the target
             // Use ray(slider_sq, target_sq) and look for pieces beyond target
             let full_ray = attacks::ray(slider_sq, target_sq);
-            let beyond_target = full_ray & !attacks::between(slider_sq, target_sq)
+            let beyond_target = full_ray
+                & !attacks::between(slider_sq, target_sq)
                 & !Bitboard::from_square(slider_sq)
                 & !Bitboard::from_square(target_sq);
             let behind_pieces = beyond_target & our_pieces;
@@ -227,7 +232,11 @@ fn detect_forks(chess: &Chess, color: Color) -> Vec<TacticalMotif> {
         if valuable_targets.len() >= 2 {
             let target_names: Vec<String> = valuable_targets
                 .iter()
-                .filter_map(|&s| board.role_at(s).map(|r| format!("{} on {}", role_name(r), sq_name(s))))
+                .filter_map(|&s| {
+                    board
+                        .role_at(s)
+                        .map(|r| format!("{} on {}", role_name(r), sq_name(s)))
+                })
                 .collect();
 
             motifs.push(TacticalMotif {
@@ -402,7 +411,9 @@ mod tests {
 
     fn from_fen(fen: &str) -> Chess {
         let setup: Fen = fen.parse().unwrap();
-        setup.into_position(shakmaty::CastlingMode::Standard).unwrap()
+        setup
+            .into_position(shakmaty::CastlingMode::Standard)
+            .unwrap()
     }
 
     #[test]

@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use shakmaty::{
-    fen::Fen, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
-};
+use shakmaty::{fen::Fen, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
 
 use crate::error::{AppError, PuzzleError};
 use crate::models::puzzle::{Puzzle, PuzzleMoveResult, PuzzleState};
@@ -141,8 +139,7 @@ pub fn validate_move(active: &mut ActivePuzzle, uci: &str) -> Result<PuzzleMoveR
     }
 
     // Update position state
-    active.current_fen =
-        Fen::from_position(active.chess.clone(), EnPassantMode::Legal).to_string();
+    active.current_fen = Fen::from_position(active.chess.clone(), EnPassantMode::Legal).to_string();
     active.legal_dests = compute_legal_dests(&active.chess);
 
     let is_complete = active.current_move_index >= active.solution_moves.len();
@@ -243,14 +240,8 @@ fn humanize_theme(theme: &str) -> &str {
 }
 
 fn normalize_uci(uci: &str) -> String {
-    // Normalize UCI by ensuring promotion is lowercase 'q' default
-    if uci.len() == 4 {
-        uci.to_lowercase()
-    } else if uci.len() == 5 {
-        uci.to_lowercase()
-    } else {
-        uci.to_lowercase()
-    }
+    // Normalize UCI by ensuring promotion is lowercase
+    uci.to_lowercase()
 }
 
 fn apply_uci_move(chess: &mut Chess, uci_str: &str) -> Result<(), AppError> {
@@ -422,9 +413,6 @@ mod tests {
             explanation: "Custom explanation here".to_string(),
         };
 
-        assert_eq!(
-            get_solution_explanation(&puzzle),
-            "Custom explanation here"
-        );
+        assert_eq!(get_solution_explanation(&puzzle), "Custom explanation here");
     }
 }

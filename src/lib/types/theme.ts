@@ -1,1 +1,1 @@
-export type Theme = "study" | "grid";
+export type Theme = "study" | "grid" | "system";

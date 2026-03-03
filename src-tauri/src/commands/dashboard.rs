@@ -62,10 +62,7 @@ fn compute_recommendation(
         if let Some(r) = weak_rating {
             if r.games_count < 5 {
                 return DailyRecommendation {
-                    text: format!(
-                        "Focus on {} puzzles to strengthen your weak area",
-                        weak_cat
-                    ),
+                    text: format!("Focus on {} puzzles to strengthen your weak area", weak_cat),
                     target_activity: "problems".to_string(),
                     target_category: Some(weak_cat.to_string()),
                 };

@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use shakmaty::{
-    fen::Fen, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
-};
+use shakmaty::{fen::Fen, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
 
 use crate::error::{AppError, RepertoireError};
 use crate::models::repertoire::{DrillMoveResult, DrillState, Opening, RepertoireEntry};
@@ -144,6 +142,7 @@ pub fn drill_quality(correct: bool, time_ms: u64) -> u8 {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn setup_position(
     fen_str: &str,
 ) -> Result<(Chess, String, HashMap<String, Vec<String>>), AppError> {
@@ -224,9 +223,8 @@ mod tests {
                 id: "e2".to_string(),
                 player_id: "p1".to_string(),
                 opening_id: "italian".to_string(),
-                position_fen:
-                    "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
-                        .to_string(),
+                position_fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
+                    .to_string(),
                 move_uci: "g1f3".to_string(),
                 move_san: "Nf3".to_string(),
                 notes: "".to_string(),

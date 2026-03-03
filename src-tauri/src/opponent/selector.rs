@@ -47,8 +47,7 @@ pub fn compute_personality_score(weights: &PersonalityWeights, context: &Coachin
     } else {
         0.5
     };
-    let king_attack_score =
-        (shield_ratio + opp_king.open_files_near_king as f64 * 0.2).min(1.0);
+    let king_attack_score = (shield_ratio + opp_king.open_files_near_king as f64 * 0.2).min(1.0);
     scores.push(king_attack_score * weights.king_attack);
     weight_sum += weights.king_attack;
 
@@ -123,7 +122,7 @@ pub fn select_move(
     candidates: &[MultiPvLine],
     weights: &PersonalityWeights,
     contexts: &[(String, CoachingContext)], // (uci_move, context_after)
-    teaching_scores: &[(String, f64)],     // (uci_move, teaching_score)
+    teaching_scores: &[(String, f64)],      // (uci_move, teaching_score)
 ) -> Option<ScoredCandidate> {
     if candidates.is_empty() {
         return None;
@@ -254,20 +253,34 @@ mod tests {
             phase: GamePhase::Opening,
             material: MaterialBalance {
                 white: PieceCounts {
-                    pawns: 8, knights: 2, bishops: 2, rooks: 2, queens: 1,
+                    pawns: 8,
+                    knights: 2,
+                    bishops: 2,
+                    rooks: 2,
+                    queens: 1,
                 },
                 black: PieceCounts {
-                    pawns: 8, knights: 2, bishops: 2, rooks: 2, queens: 1,
+                    pawns: 8,
+                    knights: 2,
+                    bishops: 2,
+                    rooks: 2,
+                    queens: 1,
                 },
                 balance_cp: 0,
                 imbalances: vec![],
             },
             pawns: PawnStructure {
                 white: SidePawnStructure {
-                    isolated: vec![], doubled: vec![], passed: vec![], backward: vec![],
+                    isolated: vec![],
+                    doubled: vec![],
+                    passed: vec![],
+                    backward: vec![],
                 },
                 black: SidePawnStructure {
-                    isolated: vec![], doubled: vec![], passed: vec![], backward: vec![],
+                    isolated: vec![],
+                    doubled: vec![],
+                    passed: vec![],
+                    backward: vec![],
                 },
                 chains: vec![],
                 open_files: vec![],
@@ -276,22 +289,40 @@ mod tests {
             },
             activity: PieceActivity {
                 white: SideActivity {
-                    total_mobility: 20, developed_minors: 2, total_minors: 4,
-                    rook_on_open_file: false, rook_on_seventh: false, pieces: vec![],
+                    total_mobility: 20,
+                    developed_minors: 2,
+                    total_minors: 4,
+                    rook_on_open_file: false,
+                    rook_on_seventh: false,
+                    pieces: vec![],
                 },
                 black: SideActivity {
-                    total_mobility: 20, developed_minors: 2, total_minors: 4,
-                    rook_on_open_file: false, rook_on_seventh: false, pieces: vec![],
+                    total_mobility: 20,
+                    developed_minors: 2,
+                    total_minors: 4,
+                    rook_on_open_file: false,
+                    rook_on_seventh: false,
+                    pieces: vec![],
                 },
             },
             king_safety: KingSafety {
                 white: SideKingSafety {
-                    king_square: "g1".to_string(), pawn_shield_count: 3, pawn_shield_max: 3,
-                    has_castled: true, can_castle: false, open_files_near_king: 0, king_zone_attacks: 0,
+                    king_square: "g1".to_string(),
+                    pawn_shield_count: 3,
+                    pawn_shield_max: 3,
+                    has_castled: true,
+                    can_castle: false,
+                    open_files_near_king: 0,
+                    king_zone_attacks: 0,
                 },
                 black: SideKingSafety {
-                    king_square: "g8".to_string(), pawn_shield_count: 3, pawn_shield_max: 3,
-                    has_castled: true, can_castle: false, open_files_near_king: 0, king_zone_attacks: 0,
+                    king_square: "g8".to_string(),
+                    pawn_shield_count: 3,
+                    pawn_shield_max: 3,
+                    has_castled: true,
+                    can_castle: false,
+                    open_files_near_king: 0,
+                    king_zone_attacks: 0,
                 },
             },
             tactics: vec![],
@@ -328,7 +359,7 @@ mod tests {
         ];
         for p in &profiles {
             let s = compute_personality_score(&p.weights(), &ctx);
-            assert!(s >= 0.0 && s <= 1.0, "Score {s} out of range for {p:?}");
+            assert!((0.0..=1.0).contains(&s), "Score {s} out of range for {p:?}");
         }
     }
 
@@ -352,9 +383,24 @@ mod tests {
     #[test]
     fn select_move_returns_viable_candidate() {
         let candidates = vec![
-            MultiPvLine { pv_index: 1, uci_move: "e2e4".to_string(), score: Score::cp(30), depth: 14 },
-            MultiPvLine { pv_index: 2, uci_move: "d2d4".to_string(), score: Score::cp(25), depth: 14 },
-            MultiPvLine { pv_index: 3, uci_move: "c2c4".to_string(), score: Score::cp(15), depth: 14 },
+            MultiPvLine {
+                pv_index: 1,
+                uci_move: "e2e4".to_string(),
+                score: Score::cp(30),
+                depth: 14,
+            },
+            MultiPvLine {
+                pv_index: 2,
+                uci_move: "d2d4".to_string(),
+                score: Score::cp(25),
+                depth: 14,
+            },
+            MultiPvLine {
+                pv_index: 3,
+                uci_move: "c2c4".to_string(),
+                score: Score::cp(15),
+                depth: 14,
+            },
         ];
 
         let ctx1 = default_context();
@@ -379,15 +425,22 @@ mod tests {
     #[test]
     fn select_move_filters_bad_candidates() {
         let candidates = vec![
-            MultiPvLine { pv_index: 1, uci_move: "e2e4".to_string(), score: Score::cp(100), depth: 14 },
-            MultiPvLine { pv_index: 2, uci_move: "a2a3".to_string(), score: Score::cp(-150), depth: 14 },
+            MultiPvLine {
+                pv_index: 1,
+                uci_move: "e2e4".to_string(),
+                score: Score::cp(100),
+                depth: 14,
+            },
+            MultiPvLine {
+                pv_index: 2,
+                uci_move: "a2a3".to_string(),
+                score: Score::cp(-150),
+                depth: 14,
+            },
         ];
 
         let ctx = default_context();
-        let contexts = vec![
-            ("e2e4".to_string(), ctx.clone()),
-            ("a2a3".to_string(), ctx),
-        ];
+        let contexts = vec![("e2e4".to_string(), ctx.clone()), ("a2a3".to_string(), ctx)];
 
         let weights = super::super::personality::PersonalityProfile::Solid.weights();
         let result = select_move(&candidates, &weights, &contexts, &[]);

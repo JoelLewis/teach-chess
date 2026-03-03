@@ -16,9 +16,20 @@
   let whiteHeight = $derived(
     orientation === "white" ? barValue * 100 : (1 - barValue) * 100,
   );
+
+  // Convert bar value (0-1) to centipawn-like range for aria
+  let ariaValue = $derived(Math.round((barValue - 0.5) * 20 * 100) / 100);
 </script>
 
-<div class="eval-bar" title={displayValue}>
+<div
+  class="eval-bar"
+  title={displayValue}
+  role="meter"
+  aria-valuenow={ariaValue}
+  aria-valuemin={-10}
+  aria-valuemax={10}
+  aria-label="Position evaluation: {displayValue}"
+>
   <div class="eval-black" style="height: {100 - whiteHeight}%">
     {#if whiteHeight < 50}
       <span class="eval-label">{displayValue}</span>

@@ -34,7 +34,9 @@ pub async fn get_engine_move(
 ) -> Result<EngineMove, AppError> {
     let _ = app.emit("engine-thinking", true);
     let mut engine = state.lock().await;
-    let engine_move = engine.get_move(&fen, depth, elo, skill_level, Some(&app)).await?;
+    let engine_move = engine
+        .get_move(&fen, depth, elo, skill_level, Some(&app))
+        .await?;
     let _ = app.emit("engine-thinking", false);
     Ok(engine_move)
 }

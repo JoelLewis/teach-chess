@@ -62,7 +62,9 @@ mod tests {
 
     fn from_fen(fen: &str) -> Chess {
         let setup: Fen = fen.parse().unwrap();
-        setup.into_position(shakmaty::CastlingMode::Standard).unwrap()
+        setup
+            .into_position(shakmaty::CastlingMode::Standard)
+            .unwrap()
     }
 
     #[test]
@@ -74,9 +76,7 @@ mod tests {
     #[test]
     fn middlegame_position() {
         // Middlegame: all pieces developed, move 15+
-        let chess = from_fen(
-            "r4rk1/pp2ppbp/2np1np1/q1p5/2P1P3/2N1BN2/PP2BPPP/R2Q1RK1 w - - 0 13",
-        );
+        let chess = from_fen("r4rk1/pp2ppbp/2np1np1/q1p5/2P1P3/2N1BN2/PP2BPPP/R2Q1RK1 w - - 0 13");
         assert_eq!(detect_phase(&chess), GamePhase::Middlegame);
     }
 

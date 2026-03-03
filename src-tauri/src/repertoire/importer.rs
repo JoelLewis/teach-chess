@@ -5,10 +5,7 @@ use crate::error::{AppError, RepertoireError};
 use crate::models::repertoire::Opening;
 
 /// Import openings from a JSON file.
-pub fn import_openings_json(
-    json_str: &str,
-    db: &Database,
-) -> Result<usize, AppError> {
+pub fn import_openings_json(json_str: &str, db: &Database) -> Result<usize, AppError> {
     let raw: Vec<RawOpening> = serde_json::from_str(json_str)
         .map_err(|e| RepertoireError::ImportError(format!("JSON parse error: {e}")))?;
 

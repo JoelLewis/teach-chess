@@ -107,10 +107,7 @@ pub fn submit_puzzle_move(
     session: State<'_, Mutex<PuzzleSessionState>>,
 ) -> Result<PuzzleMoveResult, AppError> {
     let mut session = session.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let active = session
-        .puzzle
-        .as_mut()
-        .ok_or(PuzzleError::NoPuzzleActive)?;
+    let active = session.puzzle.as_mut().ok_or(PuzzleError::NoPuzzleActive)?;
 
     session::validate_move(active, &uci)
 }
@@ -120,10 +117,7 @@ pub fn request_puzzle_hint(
     session: State<'_, Mutex<PuzzleSessionState>>,
 ) -> Result<Option<String>, AppError> {
     let mut session = session.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let active = session
-        .puzzle
-        .as_mut()
-        .ok_or(PuzzleError::NoPuzzleActive)?;
+    let active = session.puzzle.as_mut().ok_or(PuzzleError::NoPuzzleActive)?;
 
     Ok(session::reveal_hint(active))
 }
@@ -137,10 +131,7 @@ pub fn abandon_puzzle(
     let player_id = player_state.get()?;
 
     let mut session = session.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let active = session
-        .puzzle
-        .as_ref()
-        .ok_or(PuzzleError::NoPuzzleActive)?;
+    let active = session.puzzle.as_ref().ok_or(PuzzleError::NoPuzzleActive)?;
 
     let now_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -205,10 +196,7 @@ pub fn save_puzzle_result(
     let player_id = player_state.get()?;
 
     let mut session = session.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let active = session
-        .puzzle
-        .as_ref()
-        .ok_or(PuzzleError::NoPuzzleActive)?;
+    let active = session.puzzle.as_ref().ok_or(PuzzleError::NoPuzzleActive)?;
 
     let now_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -246,11 +234,8 @@ pub fn save_puzzle_result(
         .unwrap_or_else(|| {
             crate::models::assessment::SkillRating::default_for(&attempt.player_id, category)
         });
-    let updated_skill = crate::assessment::glicko2::update_rating(
-        &skill,
-        active.puzzle.difficulty as f64,
-        solved,
-    );
+    let updated_skill =
+        crate::assessment::glicko2::update_rating(&skill, active.puzzle.difficulty as f64, solved);
     db.upsert_skill_rating(&updated_skill)?;
 
     // Clear session
@@ -284,9 +269,7 @@ pub fn import_puzzles_from_csv(
 }
 
 #[tauri::command]
-pub fn get_puzzle_themes(
-    db: State<'_, Mutex<Database>>,
-) -> Result<Vec<String>, AppError> {
+pub fn get_puzzle_themes(db: State<'_, Mutex<Database>>) -> Result<Vec<String>, AppError> {
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let themes = db.get_puzzle_themes()?;
     Ok(themes)

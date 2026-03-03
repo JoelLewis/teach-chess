@@ -30,7 +30,7 @@
   --cm-text-secondary: #374151;
   --cm-text-tertiary: #475569;
   --cm-text-muted: #6b7280;
-  --cm-text-faint: #94a3b8;
+  --cm-text-faint: #64748b;
   --cm-text-disabled: #9ca3af;
   --cm-text-inverse: #ffffff;
   --cm-text-inverse-muted: rgba(255, 255, 255, 0.7);
@@ -201,7 +201,7 @@
   --cm-text-secondary: #b0b0c0;
   --cm-text-tertiary: #8888a0;
   --cm-text-muted: #606078;
-  --cm-text-faint: #404058;
+  --cm-text-faint: #5a5a78;
   --cm-text-disabled: #353548;
   --cm-text-inverse: #0a0a0f;
   --cm-text-inverse-muted: rgba(10, 10, 15, 0.7);
@@ -329,4 +329,23 @@
   --cm-glow-primary: 0 0 12px rgba(0, 229, 255, 0.15);
   --cm-glow-primary-intense: 0 0 20px rgba(0, 229, 255, 0.3);
   --cm-border-glow: rgba(0, 229, 255, 0.4);
+}
+
+/* ─── Global Focus Styles ─────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--cm-accent-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Reduced Motion ─────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

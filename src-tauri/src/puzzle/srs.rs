@@ -80,9 +80,7 @@ fn format_unix_as_datetime(secs: u64) -> String {
 
     // Simple date calculation from days since 1970-01-01
     let (year, month, day) = days_to_ymd(days_since_epoch);
-    format!(
-        "{year:04}-{month:02}-{day:02} {hours:02}:{minutes:02}:{seconds:02}"
-    )
+    format!("{year:04}-{month:02}-{day:02} {hours:02}:{minutes:02}:{seconds:02}")
 }
 
 fn days_to_ymd(days: u64) -> (u64, u64, u64) {

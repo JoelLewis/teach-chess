@@ -15,20 +15,11 @@ use crate::models::game::GameRecord;
 
 use super::uci;
 
+#[derive(Default)]
 pub struct EngineProcess {
     child: Option<CommandChild>,
     stdout_rx: Option<mpsc::Receiver<String>>,
     is_running: bool,
-}
-
-impl Default for EngineProcess {
-    fn default() -> Self {
-        Self {
-            child: None,
-            stdout_rx: None,
-            is_running: false,
-        }
-    }
 }
 
 impl EngineProcess {
@@ -110,6 +101,30 @@ impl EngineProcess {
         Ok(())
     }
 
+    /// Send `stop` to cancel any in-progress search, then drain until `bestmove` is consumed.
+    async fn stop_and_drain(&mut self) -> Result<(), AppError> {
+        self.send("stop").await?;
+        // Drain any remaining output until we see the bestmove response
+        while let Ok(Ok(line)) =
+            tokio::time::timeout(Duration::from_millis(500), self.read_line_raw()).await
+        {
+            if uci::parse_bestmove(&line).is_some() {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    /// Internal read_line without the 30s timeout — used by stop_and_drain.
+    async fn read_line_raw(&mut self) -> Result<String, AppError> {
+        let rx = self.stdout_rx.as_mut().ok_or(EngineError::NotRunning)?;
+
+        match rx.recv().await {
+            Some(line) => Ok(line),
+            None => Err(EngineError::ProcessError("Engine stdout closed".to_string()).into()),
+        }
+    }
+
     pub async fn get_move(
         &mut self,
         fen: &str,
@@ -121,6 +136,9 @@ impl EngineProcess {
         if !self.is_running {
             return Err(EngineError::NotRunning.into());
         }
+
+        // Cancel any in-progress analysis before starting a new one
+        let _ = self.stop_and_drain().await;
 
         // Set strength options
         for cmd in uci::strength_commands(elo, skill_level) {
@@ -140,14 +158,13 @@ impl EngineProcess {
         self.wait_for_bestmove_with_info(app).await
     }
 
-    pub async fn analyze(
-        &mut self,
-        fen: &str,
-        depth: u32,
-    ) -> Result<EngineEvaluation, AppError> {
+    pub async fn analyze(&mut self, fen: &str, depth: u32) -> Result<EngineEvaluation, AppError> {
         if !self.is_running {
             return Err(EngineError::NotRunning.into());
         }
+
+        // Cancel any in-progress analysis before starting a new one
+        let _ = self.stop_and_drain().await;
 
         // Disable strength limits for analysis
         self.send("setoption name UCI_LimitStrength value false")
@@ -188,6 +205,9 @@ impl EngineProcess {
             return Err(EngineError::NotRunning.into());
         }
 
+        // Cancel any in-progress analysis before starting a new one
+        let _ = self.stop_and_drain().await;
+
         // Disable strength limits — we need accurate evals for candidate filtering
         self.send("setoption name UCI_LimitStrength value false")
             .await?;
@@ -206,10 +226,7 @@ impl EngineProcess {
 
             if let Some(info) = uci::parse_info(&line) {
                 if let Some(idx) = info.multipv {
-                    let existing_depth = best_lines
-                        .get(&idx)
-                        .and_then(|i| i.depth)
-                        .unwrap_or(0);
+                    let existing_depth = best_lines.get(&idx).and_then(|i| i.depth).unwrap_or(0);
                     if info.depth.unwrap_or(0) >= existing_depth {
                         best_lines.insert(idx, info);
                     }
@@ -275,10 +292,13 @@ impl EngineProcess {
         for (i, step) in replay.iter().enumerate() {
             // Emit progress
             if let Some(app) = app {
-                let _ = app.emit("review-progress", ReviewProgressPayload {
-                    current: (i + 1) as u32,
-                    total: total as u32,
-                });
+                let _ = app.emit(
+                    "review-progress",
+                    ReviewProgressPayload {
+                        current: (i + 1) as u32,
+                        total: total as u32,
+                    },
+                );
             }
 
             // Reuse cached eval_after from previous move as eval_before, or analyze fresh
@@ -292,20 +312,17 @@ impl EngineProcess {
             cached_eval = Some(eval_after.clone());
 
             let is_white = step.is_white;
-            let classification = eval::classify_move(
-                &eval_before.score,
-                &eval_after.score,
-                is_white,
-            );
+            let classification =
+                eval::classify_move(&eval_before.score, &eval_after.score, is_white);
 
             // Compute coaching context from the position before the move
             let coaching_context = crate::game::parse_fen(&step.fen_before)
                 .ok()
                 .map(|pos| crate::heuristics::analyze_position(&pos));
 
-            let coaching_text = coaching_context.as_ref().map(|ctx| {
-                crate::coaching::generate_coaching_text(&classification, ctx)
-            });
+            let coaching_text = coaching_context
+                .as_ref()
+                .map(|ctx| crate::coaching::generate_coaching_text(&classification, ctx));
 
             evaluations.push(MoveEvaluation {
                 move_number: step.move_number,
@@ -329,10 +346,7 @@ impl EngineProcess {
     }
 
     async fn send(&mut self, cmd: &str) -> Result<(), AppError> {
-        let child = self
-            .child
-            .as_mut()
-            .ok_or(EngineError::NotRunning)?;
+        let child = self.child.as_mut().ok_or(EngineError::NotRunning)?;
 
         debug!("-> Engine: {cmd}");
         let cmd_with_newline = format!("{cmd}\n");
@@ -344,10 +358,7 @@ impl EngineProcess {
     }
 
     async fn read_line(&mut self) -> Result<String, AppError> {
-        let rx = self
-            .stdout_rx
-            .as_mut()
-            .ok_or(EngineError::NotRunning)?;
+        let rx = self.stdout_rx.as_mut().ok_or(EngineError::NotRunning)?;
 
         match tokio::time::timeout(Duration::from_secs(30), rx.recv()).await {
             Ok(Some(line)) => Ok(line),
@@ -385,12 +396,15 @@ impl EngineProcess {
             if let Some(info) = uci::parse_info(&line) {
                 if (info.multipv.is_none() || info.multipv == Some(1)) && info.score.is_some() {
                     if let Some(app) = app {
-                        let _ = app.emit("engine-info", EngineInfoPayload {
-                            depth: info.depth.unwrap_or(0),
-                            score: info.score.clone().unwrap(),
-                            nodes: info.nodes.unwrap_or(0),
-                            pv: info.pv.clone(),
-                        });
+                        let _ = app.emit(
+                            "engine-info",
+                            EngineInfoPayload {
+                                depth: info.depth.unwrap_or(0),
+                                score: info.score.clone().unwrap(),
+                                nodes: info.nodes.unwrap_or(0),
+                                pv: info.pv.clone(),
+                            },
+                        );
                     }
                 }
             }
@@ -429,7 +443,9 @@ struct ReplayStep {
 
 /// Replay a PGN string to extract positions and moves
 fn replay_pgn(pgn: &str) -> Result<Vec<ReplayStep>, AppError> {
-    use shakmaty::{fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
+    use shakmaty::{
+        fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
+    };
 
     let mut chess = Chess::default();
     let mut steps = Vec::new();

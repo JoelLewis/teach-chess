@@ -79,12 +79,18 @@ pub fn score_teaching_opportunity(
             }
             WeaknessCategory::KingSafety => {
                 // Position has king safety issues for the player to navigate
-                let white_unsafe =
-                    context_after.king_safety.white.pawn_shield_count
-                        < context_after.king_safety.white.pawn_shield_max.saturating_sub(1);
-                let black_unsafe =
-                    context_after.king_safety.black.pawn_shield_count
-                        < context_after.king_safety.black.pawn_shield_max.saturating_sub(1);
+                let white_unsafe = context_after.king_safety.white.pawn_shield_count
+                    < context_after
+                        .king_safety
+                        .white
+                        .pawn_shield_max
+                        .saturating_sub(1);
+                let black_unsafe = context_after.king_safety.black.pawn_shield_count
+                    < context_after
+                        .king_safety
+                        .black
+                        .pawn_shield_max
+                        .saturating_sub(1);
                 if white_unsafe || black_unsafe {
                     0.8
                 } else {
@@ -127,20 +133,34 @@ mod tests {
             phase: GamePhase::Middlegame,
             material: MaterialBalance {
                 white: PieceCounts {
-                    pawns: 8, knights: 2, bishops: 2, rooks: 2, queens: 1,
+                    pawns: 8,
+                    knights: 2,
+                    bishops: 2,
+                    rooks: 2,
+                    queens: 1,
                 },
                 black: PieceCounts {
-                    pawns: 8, knights: 2, bishops: 2, rooks: 2, queens: 1,
+                    pawns: 8,
+                    knights: 2,
+                    bishops: 2,
+                    rooks: 2,
+                    queens: 1,
                 },
                 balance_cp: 0,
                 imbalances: vec![],
             },
             pawns: PawnStructure {
                 white: SidePawnStructure {
-                    isolated: vec![], doubled: vec![], passed: vec![], backward: vec![],
+                    isolated: vec![],
+                    doubled: vec![],
+                    passed: vec![],
+                    backward: vec![],
                 },
                 black: SidePawnStructure {
-                    isolated: vec![], doubled: vec![], passed: vec![], backward: vec![],
+                    isolated: vec![],
+                    doubled: vec![],
+                    passed: vec![],
+                    backward: vec![],
                 },
                 chains: vec![],
                 open_files: vec![],
@@ -149,22 +169,40 @@ mod tests {
             },
             activity: PieceActivity {
                 white: SideActivity {
-                    total_mobility: 20, developed_minors: 2, total_minors: 4,
-                    rook_on_open_file: false, rook_on_seventh: false, pieces: vec![],
+                    total_mobility: 20,
+                    developed_minors: 2,
+                    total_minors: 4,
+                    rook_on_open_file: false,
+                    rook_on_seventh: false,
+                    pieces: vec![],
                 },
                 black: SideActivity {
-                    total_mobility: 20, developed_minors: 2, total_minors: 4,
-                    rook_on_open_file: false, rook_on_seventh: false, pieces: vec![],
+                    total_mobility: 20,
+                    developed_minors: 2,
+                    total_minors: 4,
+                    rook_on_open_file: false,
+                    rook_on_seventh: false,
+                    pieces: vec![],
                 },
             },
             king_safety: KingSafety {
                 white: SideKingSafety {
-                    king_square: "g1".to_string(), pawn_shield_count: 3, pawn_shield_max: 3,
-                    has_castled: true, can_castle: false, open_files_near_king: 0, king_zone_attacks: 0,
+                    king_square: "g1".to_string(),
+                    pawn_shield_count: 3,
+                    pawn_shield_max: 3,
+                    has_castled: true,
+                    can_castle: false,
+                    open_files_near_king: 0,
+                    king_zone_attacks: 0,
                 },
                 black: SideKingSafety {
-                    king_square: "g8".to_string(), pawn_shield_count: 3, pawn_shield_max: 3,
-                    has_castled: true, can_castle: false, open_files_near_king: 0, king_zone_attacks: 0,
+                    king_square: "g8".to_string(),
+                    pawn_shield_count: 3,
+                    pawn_shield_max: 3,
+                    has_castled: true,
+                    can_castle: false,
+                    open_files_near_king: 0,
+                    king_zone_attacks: 0,
                 },
             },
             tactics: vec![],
@@ -195,7 +233,10 @@ mod tests {
         });
 
         let score = score_teaching_opportunity(&ctx, &[WeaknessCategory::Tactical]);
-        assert!(score > 0.5, "Expected high tactical teaching score, got {score}");
+        assert!(
+            score > 0.5,
+            "Expected high tactical teaching score, got {score}"
+        );
     }
 
     #[test]
@@ -212,7 +253,10 @@ mod tests {
         ctx.material.black.queens = 0;
 
         let score = score_teaching_opportunity(&ctx, &[WeaknessCategory::Endgame]);
-        assert!(score >= 0.7, "Expected high endgame score with 3 pieces, got {score}");
+        assert!(
+            score >= 0.7,
+            "Expected high endgame score with 3 pieces, got {score}"
+        );
     }
 
     #[test]
@@ -238,11 +282,26 @@ mod tests {
 
     #[test]
     fn category_mapping() {
-        assert_eq!(category_to_weakness("tactical"), Some(WeaknessCategory::Tactical));
-        assert_eq!(category_to_weakness("positional"), Some(WeaknessCategory::Positional));
-        assert_eq!(category_to_weakness("endgame"), Some(WeaknessCategory::Endgame));
-        assert_eq!(category_to_weakness("opening"), Some(WeaknessCategory::Opening));
-        assert_eq!(category_to_weakness("pattern"), Some(WeaknessCategory::KingSafety));
+        assert_eq!(
+            category_to_weakness("tactical"),
+            Some(WeaknessCategory::Tactical)
+        );
+        assert_eq!(
+            category_to_weakness("positional"),
+            Some(WeaknessCategory::Positional)
+        );
+        assert_eq!(
+            category_to_weakness("endgame"),
+            Some(WeaknessCategory::Endgame)
+        );
+        assert_eq!(
+            category_to_weakness("opening"),
+            Some(WeaknessCategory::Opening)
+        );
+        assert_eq!(
+            category_to_weakness("pattern"),
+            Some(WeaknessCategory::KingSafety)
+        );
         assert_eq!(category_to_weakness("unknown"), None);
     }
 }

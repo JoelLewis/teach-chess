@@ -71,7 +71,9 @@ fn stop_square(sq: Square, color: Color) -> Option<Square> {
         Color::White => 1,
         Color::Black => -1,
     };
-    sq.rank().offset(delta).map(|r| Square::from_coords(sq.file(), r))
+    sq.rank()
+        .offset(delta)
+        .map(|r| Square::from_coords(sq.file(), r))
 }
 
 /// Ranks behind (inclusive) for adjacent file support checking
@@ -261,7 +263,9 @@ mod tests {
 
     fn from_fen(fen: &str) -> Chess {
         let setup: Fen = fen.parse().unwrap();
-        setup.into_position(shakmaty::CastlingMode::Standard).unwrap()
+        setup
+            .into_position(shakmaty::CastlingMode::Standard)
+            .unwrap()
     }
 
     #[test]
@@ -315,9 +319,7 @@ mod tests {
     fn open_and_half_open_files() {
         // White pawns on a,b,d,e,f,g,h. Black pawns on a,b,c,e,f,g,h.
         // c-file half open for white, d-file half open for black, no fully open files
-        let chess = from_fen(
-            "rnbqkbnr/ppp1pppp/8/8/3P4/8/PP2PPPP/RNBQKBNR w KQkq - 0 2",
-        );
+        let chess = from_fen("rnbqkbnr/ppp1pppp/8/8/3P4/8/PP2PPPP/RNBQKBNR w KQkq - 0 2");
         let pawns = analyze_pawns(&chess);
         // c-file: no white pawns → half open for white
         assert!(

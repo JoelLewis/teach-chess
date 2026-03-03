@@ -2,9 +2,7 @@ pub(crate) mod templates;
 
 use std::collections::HashMap;
 
-use crate::models::engine::{
-    MoveClassification, MoveEvaluation, PatternSummary, StudySuggestion,
-};
+use crate::models::engine::{MoveClassification, MoveEvaluation, PatternSummary, StudySuggestion};
 use crate::models::heuristics::{CoachingContext, GamePhase, PositionalTheme, TacticType};
 
 /// Generate human-readable coaching text from a move classification and coaching context.
@@ -514,19 +512,28 @@ mod tests {
     fn pattern_summary_counts_errors() {
         let moves = vec![
             make_test_move_with_context(
-                1, true, MoveClassification::Mistake,
+                1,
+                true,
+                MoveClassification::Mistake,
                 GamePhase::Opening,
                 vec![PositionalTheme::HangingMaterial],
                 vec![],
             ),
             make_test_move_with_context(
-                2, true, MoveClassification::Blunder,
+                2,
+                true,
+                MoveClassification::Blunder,
                 GamePhase::Opening,
-                vec![PositionalTheme::HangingMaterial, PositionalTheme::KingSafetyCompromised],
+                vec![
+                    PositionalTheme::HangingMaterial,
+                    PositionalTheme::KingSafetyCompromised,
+                ],
                 vec![],
             ),
             make_test_move_with_context(
-                3, true, MoveClassification::Best,
+                3,
+                true,
+                MoveClassification::Best,
                 GamePhase::Middlegame,
                 vec![],
                 vec![],
@@ -537,19 +544,30 @@ mod tests {
         assert_eq!(summary.total_errors, 2);
         assert_eq!(summary.error_themes[0].0, PositionalTheme::HangingMaterial);
         assert_eq!(summary.error_themes[0].1, 2);
-        assert_eq!(*summary.errors_by_phase.get(&GamePhase::Opening).unwrap(), 2);
+        assert_eq!(
+            *summary.errors_by_phase.get(&GamePhase::Opening).unwrap(),
+            2
+        );
     }
 
     #[test]
     fn pattern_summary_only_counts_player_moves() {
         let moves = vec![
             make_test_move_with_context(
-                1, true, MoveClassification::Blunder,
-                GamePhase::Opening, vec![], vec![],
+                1,
+                true,
+                MoveClassification::Blunder,
+                GamePhase::Opening,
+                vec![],
+                vec![],
             ),
             make_test_move_with_context(
-                1, false, MoveClassification::Blunder,
-                GamePhase::Opening, vec![], vec![],
+                1,
+                false,
+                MoveClassification::Blunder,
+                GamePhase::Opening,
+                vec![],
+                vec![],
             ),
         ];
 
@@ -562,13 +580,17 @@ mod tests {
     fn study_suggestions_from_recurring_themes() {
         let moves = vec![
             make_test_move_with_context(
-                1, true, MoveClassification::Mistake,
+                1,
+                true,
+                MoveClassification::Mistake,
                 GamePhase::Middlegame,
                 vec![PositionalTheme::HangingMaterial],
                 vec![],
             ),
             make_test_move_with_context(
-                2, true, MoveClassification::Blunder,
+                2,
+                true,
+                MoveClassification::Blunder,
                 GamePhase::Middlegame,
                 vec![PositionalTheme::HangingMaterial],
                 vec![],
@@ -583,14 +605,14 @@ mod tests {
 
     #[test]
     fn no_suggestions_for_non_recurring_themes() {
-        let moves = vec![
-            make_test_move_with_context(
-                1, true, MoveClassification::Mistake,
-                GamePhase::Middlegame,
-                vec![PositionalTheme::HangingMaterial],
-                vec![],
-            ),
-        ];
+        let moves = vec![make_test_move_with_context(
+            1,
+            true,
+            MoveClassification::Mistake,
+            GamePhase::Middlegame,
+            vec![PositionalTheme::HangingMaterial],
+            vec![],
+        )];
 
         let summary = generate_pattern_summary(&moves, true);
         let suggestions = generate_study_suggestions(&summary);
