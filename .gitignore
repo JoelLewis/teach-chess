@@ -27,3 +27,6 @@ Thumbs.db
 
 # Zone identifiers (Windows/WSL)
 *:Zone.Identifier
+
+# Git worktrees
+.worktrees/
