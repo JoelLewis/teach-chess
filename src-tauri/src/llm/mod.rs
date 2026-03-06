@@ -22,6 +22,8 @@ pub struct LlmState {
     /// Lazy-initialized: None until the first coaching request with a downloaded model.
     pub channel: tokio::sync::Mutex<Option<channel::InferenceChannel>>,
     pub app_data_dir: PathBuf,
+    /// Which compute device the inference channel is using (e.g. "cpu", "cuda", "metal").
+    pub device_name: std::sync::OnceLock<String>,
 }
 
 #[cfg(feature = "llm")]
@@ -32,6 +34,7 @@ impl LlmState {
             model_manager,
             channel: tokio::sync::Mutex::new(None),
             app_data_dir,
+            device_name: std::sync::OnceLock::new(),
         }
     }
 }
@@ -96,4 +99,13 @@ pub struct CoachingRequest {
 pub struct CoachingResponse {
     pub text: String,
     pub source: CoachingSource,
+}
+
+/// Events emitted during streaming LLM token generation.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum LlmTokenEvent {
+    Token { text: String, request_id: String },
+    Done { full_text: String, request_id: String },
+    Error { message: String, request_id: String },
 }

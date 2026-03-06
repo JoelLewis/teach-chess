@@ -38,3 +38,5 @@ tempfile = "3"
 [features]
 default = []
 llm = ["dep:candle-core", "dep:candle-transformers", "dep:tokenizers", "dep:hf-hub", "dep:tokio-util"]
+llm-cuda = ["llm", "candle-core/cuda", "candle-transformers/cuda"]
+llm-metal = ["llm", "candle-core/metal", "candle-transformers/metal"]

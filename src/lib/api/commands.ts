@@ -382,6 +382,7 @@ export function generateCoaching(
   coachingContext: CoachingContext | null,
   playerMoveSan: string,
   engineBestSan: string | null,
+  requestId?: string,
 ): Promise<CoachingResponse> {
   return invoke<CoachingResponse>("generate_coaching", {
     fen,
@@ -389,5 +390,6 @@ export function generateCoaching(
     coachingContext,
     playerMoveSan,
     engineBestSan,
+    requestId: requestId ?? null,
   });
 }

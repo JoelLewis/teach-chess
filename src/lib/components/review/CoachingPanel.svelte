@@ -2,6 +2,7 @@
   import type { MoveEvaluation, CoachingSource } from "../../types/engine";
   import { CLASSIFICATION_COLORS } from "../../types/engine";
   import { generateCoaching } from "../../api/commands";
+  import { onLlmToken } from "../../api/events";
 
   type Props = {
     evaluation: MoveEvaluation | null;
@@ -12,8 +13,12 @@
   let llmText = $state<string | null>(null);
   let llmSource = $state<CoachingSource | null>(null);
   let llmLoading = $state(false);
+  let streamedText = $state("");
+  let isStreaming = $state(false);
 
-  let displayText = $derived(llmText ?? evaluation?.coachingText ?? null);
+  let displayText = $derived(
+    isStreaming ? streamedText : (llmText ?? evaluation?.coachingText ?? null),
+  );
 
   let classColor = $derived(
     evaluation?.classification
@@ -23,17 +28,41 @@
 
   let themes = $derived(evaluation?.coachingContext?.themes ?? []);
 
-  // When the evaluation changes, try to get LLM-enhanced coaching
+  // When the evaluation changes, try to get LLM-enhanced coaching with streaming
   $effect(() => {
     const eval_ = evaluation;
     llmText = null;
     llmSource = null;
     llmLoading = false;
+    streamedText = "";
+    isStreaming = false;
 
     if (!eval_?.classification || !eval_?.fenBefore) return;
 
     let cancelled = false;
     llmLoading = true;
+
+    const requestId = crypto.randomUUID();
+    let unlisten: (() => void) | undefined;
+
+    // Subscribe to token stream before calling generate
+    onLlmToken((event) => {
+      if (cancelled || event.requestId !== requestId) return;
+
+      if (event.type === "token") {
+        streamedText += event.text;
+        isStreaming = true;
+      } else if (event.type === "done") {
+        streamedText = event.fullText;
+        isStreaming = false;
+      }
+    }).then((fn) => {
+      if (cancelled) {
+        fn();
+      } else {
+        unlisten = fn;
+      }
+    });
 
     generateCoaching(
       eval_.fenBefore,
@@ -41,9 +70,11 @@
       eval_.coachingContext,
       eval_.playerMoveSan,
       eval_.engineBestSan,
+      requestId,
     )
       .then((response) => {
         if (cancelled) return;
+        isStreaming = false;
         if (response.source !== "template") {
           llmText = response.text;
         }
@@ -51,6 +82,7 @@
       })
       .catch(() => {
         // Silently fall back to template text
+        isStreaming = false;
       })
       .finally(() => {
         if (!cancelled) llmLoading = false;
@@ -58,6 +90,8 @@
 
     return () => {
       cancelled = true;
+      isStreaming = false;
+      unlisten?.();
     };
   });
 
