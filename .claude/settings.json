@@ -8,7 +8,7 @@
       "Bash(npx svelte-check:*)"
     ]
   },
-  "enabledPlugins": [
-    "@anthropic/rust-analyzer-lsp"
-  ]
+  "enabledPlugins": {
+    "@anthropic/rust-analyzer-lsp": true
+  }
 }

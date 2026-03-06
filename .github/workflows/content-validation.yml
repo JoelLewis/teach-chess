@@ -1,0 +1,30 @@
+name: Content Validation
+
+on:
+  pull_request:
+    paths:
+      - "src-tauri/data/**"
+  push:
+    paths:
+      - "src-tauri/data/**"
+
+jobs:
+  validate:
+    name: Validate Content Files
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate puzzle CSV files
+        run: |
+          python3 scripts/validate-content.py puzzles src-tauri/data/
+
+      - name: Validate opening JSON files
+        run: |
+          python3 scripts/validate-content.py openings src-tauri/data/
