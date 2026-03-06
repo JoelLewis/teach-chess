@@ -40,7 +40,7 @@
   {#if loading}
     <p class="state-message">Loading...</p>
   {:else if games.length === 0}
-    <p class="state-message">No games played yet. Start a new game!</p>
+    <p class="state-message">No games yet — start playing to see your history here.</p>
   {:else}
     <div class="games-list">
       {#each games as game (game.id)}

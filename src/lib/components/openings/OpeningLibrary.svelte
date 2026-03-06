@@ -4,9 +4,11 @@
   import * as api from "../../api/commands";
 
   let colorFilter = $state<string | undefined>(undefined);
+  let loading = $state(false);
   const openings = $derived(repertoireStore.openings);
 
   async function loadOpenings() {
+    loading = true;
     try {
       const result = await api.getOpenings({
         color: colorFilter,
@@ -14,6 +16,8 @@
       repertoireStore.openings = result;
     } catch (err) {
       errorStore.show(`Failed to load openings: ${err}`);
+    } finally {
+      loading = false;
     }
   }
 
@@ -54,6 +58,10 @@
       >Black</button>
     </div>
   </div>
+
+  {#if loading}
+    <div class="loading-state">Loading openings...</div>
+  {/if}
 
   <div class="openings-grid">
     {#each openings as opening}
@@ -208,6 +216,15 @@
   .themes {
     font-size: 11px;
     color: var(--cm-accent-violet-light);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .loading-state {
+    color: var(--cm-text-muted);
+    text-align: center;
+    padding: 40px;
   }
 
   .empty-text {

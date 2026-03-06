@@ -135,13 +135,17 @@
           <div class="progress-bar">
             <div
               class="progress-fill"
-              style="width: {(progress.current / progress.total) * 100}%"
+              style="width: {Math.min(100, (progress.current / progress.total) * 100)}%"
             ></div>
           </div>
           <p class="progress-text">
             {progress.current} / {progress.total} moves
           </p>
         {/if}
+      </div>
+    {:else if evaluations.length === 0}
+      <div class="empty-state">
+        <p>No moves to review</p>
       </div>
     {:else}
       <div class="summary">
@@ -216,7 +220,9 @@
   }
 
   .review-panel {
-    width: 300px;
+    min-width: 260px;
+    max-width: 300px;
+    flex: 0 1 300px;
     max-height: calc(100vh - 96px);
     background: var(--cm-bg-surface);
     border-radius: 8px;
@@ -367,6 +373,13 @@
   .critical-move {
     background: var(--cm-status-warning-lightest);
     border-radius: 3px;
+  }
+
+  .empty-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--cm-text-muted);
+    font-size: 14px;
   }
 
   .critical-marker {

@@ -141,7 +141,7 @@
   }
 
   .stat-value {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--cm-text-primary);
   }
@@ -208,6 +208,9 @@
   .move-progress {
     font-size: 13px;
     color: var(--cm-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .status-message {

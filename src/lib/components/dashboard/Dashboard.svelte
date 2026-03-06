@@ -84,8 +84,7 @@
           </div>
         {:else}
           <div class="empty-skill">
-            <p>No skill data yet.</p>
-            <p class="empty-hint">Solve puzzles to build your profile.</p>
+            <p>Solve puzzles to build your skill profile</p>
           </div>
         {/if}
       </div>
@@ -216,6 +215,12 @@
     gap: 16px;
   }
 
+  @media (max-width: 600px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .card {
     background: var(--cm-bg-surface);
     border: 1px solid var(--cm-border-light);
@@ -268,14 +273,13 @@
 
   .empty-skill {
     text-align: center;
-    color: var(--cm-text-disabled);
-    padding: 24px 0;
+    color: var(--cm-text-muted);
+    padding: 24px 16px;
     font-size: 14px;
-  }
-
-  .empty-hint {
-    font-size: 12px;
-    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
   }
 
   .quick-start {

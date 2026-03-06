@@ -77,6 +77,9 @@
     font-size: 14px;
     color: var(--cm-text-muted);
     margin-left: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .result-raw {

@@ -46,7 +46,7 @@
 
   .spinner-message {
     font-size: 13px;
-    color: var(--cm-text-muted);
+    color: var(--cm-text-secondary);
   }
 
   .sm .spinner-message {

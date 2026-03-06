@@ -63,6 +63,19 @@
     font-size: 14px;
   }
 
+  .move-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .move-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .move-list::-webkit-scrollbar-thumb {
+    background: var(--cm-border-default);
+    border-radius: 3px;
+  }
+
   .move-row {
     display: flex;
     gap: 4px;

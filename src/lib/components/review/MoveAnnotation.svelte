@@ -25,6 +25,7 @@
   class="annotation"
   class:selected={isSelected}
   onclick={onClick}
+  aria-label="Go to move {evaluation.moveNumber}"
 >
   <span class="move-num">
     {#if evaluation.isWhite}

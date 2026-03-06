@@ -276,7 +276,9 @@
   .side-panel {
     display: flex;
     flex-direction: column;
-    width: 280px;
+    min-width: 240px;
+    max-width: 280px;
+    flex: 0 1 280px;
     max-height: calc(100vh - 96px);
     background: var(--cm-bg-surface);
     border-radius: 8px;

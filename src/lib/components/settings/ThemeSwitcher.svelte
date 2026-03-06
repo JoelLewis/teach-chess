@@ -83,6 +83,11 @@
     border-color: var(--cm-text-faint);
   }
 
+  .theme-card:focus-visible {
+    outline: 2px solid var(--cm-accent-primary);
+    outline-offset: 2px;
+  }
+
   .theme-card.active {
     border-color: var(--cm-accent-primary);
     box-shadow: 0 0 0 1px var(--cm-accent-primary);

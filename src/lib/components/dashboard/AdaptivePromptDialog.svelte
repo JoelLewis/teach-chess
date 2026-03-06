@@ -25,10 +25,44 @@
 
   let accentColor = $derived(typeColors[prompt.promptType] ?? "var(--cm-accent-primary-light)");
   let label = $derived(typeLabels[prompt.promptType] ?? "Suggestion");
+
+  let dialogEl: HTMLDivElement | undefined = $state();
+  let acceptBtnEl: HTMLButtonElement | undefined = $state();
+
+  $effect(() => {
+    acceptBtnEl?.focus();
+  });
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      onDismiss();
+      return;
+    }
+    if (e.key === "Tab" && dialogEl) {
+      const focusable = dialogEl.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  }
 </script>
 
-<div class="overlay" role="dialog" aria-modal="true">
-  <div class="dialog" style:border-top-color={accentColor}>
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<div class="overlay" role="dialog" aria-modal="true" onkeydown={handleKeydown}>
+  <div class="dialog" style:border-top-color={accentColor} bind:this={dialogEl}>
     <div class="badge" style:color={accentColor}>{label}</div>
     <p class="message">{prompt.message}</p>
     <p class="suggestion">{prompt.suggestion}</p>
@@ -37,6 +71,7 @@
         class="btn-accept"
         style:background={accentColor}
         onclick={() => onAccept(prompt.targetActivity, prompt.targetCategory)}
+        bind:this={acceptBtnEl}
       >
         Sounds good
       </button>

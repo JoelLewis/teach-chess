@@ -171,6 +171,10 @@
     padding: 1px 8px;
     border-radius: 3px;
     text-transform: capitalize;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .move-number {

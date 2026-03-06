@@ -79,5 +79,7 @@
     writing-mode: vertical-lr;
     text-orientation: mixed;
     font-family: var(--cm-font-mono);
+    max-height: 100%;
+    overflow: hidden;
   }
 </style>

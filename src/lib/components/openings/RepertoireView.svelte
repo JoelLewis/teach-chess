@@ -7,9 +7,11 @@
   let openings = $state<Opening[]>([]);
   let entriesByOpening = $state<Map<string, RepertoireEntry[]>>(new Map());
   let loading = $state(true);
+  let error = $state<string | null>(null);
 
   async function loadRepertoire() {
     loading = true;
+    error = null;
     try {
       const allOpenings = await api.getOpenings({});
       openings = allOpenings;
@@ -23,7 +25,8 @@
       }
       entriesByOpening = map;
     } catch (err) {
-      errorStore.show(`Failed to load repertoire: ${err}`);
+      error = `Failed to load repertoire: ${err}`;
+      errorStore.show(error);
     } finally {
       loading = false;
     }
@@ -65,7 +68,12 @@
 <div class="repertoire-view">
   <h2>My Repertoire</h2>
 
-  {#if loading}
+  {#if error}
+    <div class="error-state">
+      <p>{error}</p>
+      <button class="retry-btn" onclick={loadRepertoire}>Retry</button>
+    </div>
+  {:else if loading}
     <p class="loading-text">Loading repertoire...</p>
   {:else if openingsWithEntries.length === 0}
     <div class="empty-state">
@@ -117,6 +125,33 @@
     font-weight: 700;
     color: var(--cm-text-primary);
     margin: 0 0 20px;
+  }
+
+  .error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--cm-status-error);
+  }
+
+  .error-state p {
+    margin: 0 0 12px;
+    font-size: 14px;
+  }
+
+  .retry-btn {
+    padding: 8px 20px;
+    background: var(--cm-accent-secondary);
+    color: var(--cm-text-inverse);
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .retry-btn:hover {
+    background: var(--cm-accent-secondary-hover);
   }
 
   .loading-text {

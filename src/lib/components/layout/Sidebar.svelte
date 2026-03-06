@@ -19,8 +19,8 @@
 </script>
 
 <nav class="sidebar" aria-label="Main navigation">
-  <div class="logo">
-    <span class="logo-icon">\u265E</span>
+  <div class="logo" aria-label="ChessMentor">
+    <span class="logo-icon" aria-hidden="true">\u265E</span>
     <span class="logo-text">ChessMentor</span>
   </div>
 
@@ -39,7 +39,7 @@
   </div>
 
   <div class="sidebar-footer">
-    <span class="text-xs opacity-50">v0.1.0</span>
+    <span class="text-xs opacity-70">v0.1.0</span>
   </div>
 </nav>
 

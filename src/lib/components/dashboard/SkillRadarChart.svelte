@@ -57,7 +57,7 @@
   let gridLevels = [0.25, 0.5, 0.75, 1.0];
 </script>
 
-<svg width={size} height={size} viewBox="0 0 {size} {size}" class="radar-chart">
+<svg viewBox="0 0 {size} {size}" class="radar-chart">
   <!-- Grid rings -->
   {#each gridLevels as level}
     <polygon
@@ -114,6 +114,9 @@
   .radar-chart {
     display: block;
     margin: 0 auto;
+    width: 100%;
+    max-width: 200px;
+    height: auto;
   }
 
   .label {

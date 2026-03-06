@@ -182,7 +182,7 @@
   }
 
   .start-btn:hover {
-    background: var(--cm-accent-secondary-hover);
+    background: var(--cm-accent-secondary-pressed, color-mix(in srgb, var(--cm-accent-secondary-hover), black 12%));
   }
 
   .drill-info {

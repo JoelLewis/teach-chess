@@ -80,7 +80,7 @@
     <div id="game-over-title" class="result" class:win={isWin} class:loss={!isWin}>
       {resultText}
     </div>
-    <p class="move-count">{moveCount} moves played</p>
+    <p class="move-count">Game lasted {moveCount} moves</p>
     <div class="actions">
       <button class="btn-review" bind:this={primaryBtnEl} onclick={onReview}>Review Game</button>
       <button class="btn-new" onclick={onNewGame}>New Game</button>

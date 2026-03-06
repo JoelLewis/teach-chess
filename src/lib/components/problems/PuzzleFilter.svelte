@@ -26,9 +26,8 @@
 </script>
 
 <div class="puzzle-filter">
-  <div class="filter-group">
-    <!-- svelte-ignore a11y_label_has_associated_control -->
-    <label class="filter-label">Category</label>
+  <div class="filter-group" role="group" aria-labelledby="category-label">
+    <span id="category-label" class="filter-label">Category</span>
     <div class="category-buttons">
       {#each categories as cat}
         <button
@@ -42,11 +41,10 @@
     </div>
   </div>
 
-  <div class="filter-group">
-    <!-- svelte-ignore a11y_label_has_associated_control -->
-    <label class="filter-label">
+  <fieldset class="filter-group">
+    <legend class="filter-label">
       Difficulty: {puzzleStore.filter.minDifficulty ?? 400} – {puzzleStore.filter.maxDifficulty ?? 1600}
-    </label>
+    </legend>
     <div class="range-inputs">
       <input
         type="range"
@@ -67,7 +65,7 @@
         aria-label="Maximum difficulty"
       />
     </div>
-  </div>
+  </fieldset>
 </div>
 
 <style>
@@ -83,6 +81,9 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    border: none;
+    margin: 0;
+    padding: 0;
   }
 
   .filter-label {
