@@ -10,6 +10,47 @@ use tokio_util::sync::CancellationToken;
 
 use super::LlmError;
 
+/// Select the best available compute device.
+///
+/// Tries CUDA (if `llm-cuda` feature) → Metal (if `llm-metal` feature) → CPU fallback.
+/// Returns the device and a human-readable name.
+pub fn select_device() -> (Device, &'static str) {
+    #[cfg(feature = "llm-cuda")]
+    {
+        match Device::cuda_if_available(0) {
+            Ok(device) if device.is_cuda() => {
+                tracing::info!("Using CUDA GPU for inference");
+                return (device, "cuda");
+            }
+            Ok(_) => tracing::info!("CUDA requested but no GPU available, falling back to CPU"),
+            Err(e) => tracing::warn!("CUDA initialization failed: {e}, falling back to CPU"),
+        }
+    }
+
+    #[cfg(feature = "llm-metal")]
+    {
+        match Device::new_metal(0) {
+            Ok(device) => {
+                tracing::info!("Using Metal GPU for inference");
+                return (device, "metal");
+            }
+            Err(e) => tracing::warn!("Metal initialization failed: {e}, falling back to CPU"),
+        }
+    }
+
+    tracing::info!("Using CPU for inference");
+    (Device::Cpu, "cpu")
+}
+
+/// Return a display name for a device.
+pub fn device_name(device: &Device) -> &'static str {
+    match device {
+        Device::Cpu => "cpu",
+        Device::Cuda(_) => "cuda",
+        Device::Metal(_) => "metal",
+    }
+}
+
 /// Candle-based inference backend for quantized Gemma 2B GGUF models.
 pub struct CandleBackend {
     model: Option<ModelWeights>,
@@ -18,17 +59,16 @@ pub struct CandleBackend {
 }
 
 impl CandleBackend {
-    pub fn new() -> Self {
+    pub fn new(device: Device) -> Self {
         Self {
             model: None,
             tokenizer: None,
-            device: Device::Cpu,
+            device,
         }
     }
 
     /// Load a quantized GGUF model and tokenizer from disk.
     pub fn load(&mut self, model_path: &Path, tokenizer_path: &Path) -> Result<(), LlmError> {
-        // Load GGUF model
         let mut model_file = std::fs::File::open(model_path)
             .map_err(|e| LlmError::InferenceError(format!("Failed to open model: {e}")))?;
 
@@ -38,14 +78,17 @@ impl CandleBackend {
         let model = ModelWeights::from_gguf(content, &mut model_file, &self.device)
             .map_err(|e| LlmError::InferenceError(format!("Failed to load model weights: {e}")))?;
 
-        // Load tokenizer
         let tokenizer = Tokenizer::from_file(tokenizer_path)
             .map_err(|e| LlmError::TokenizerError(format!("Failed to load tokenizer: {e}")))?;
 
         self.model = Some(model);
         self.tokenizer = Some(tokenizer);
 
-        tracing::info!("Candle backend loaded model from {}", model_path.display());
+        tracing::info!(
+            "Candle backend loaded model from {} on {}",
+            model_path.display(),
+            device_name(&self.device)
+        );
         Ok(())
     }
 
@@ -64,16 +107,20 @@ impl CandleBackend {
     /// Generate text from a prompt using token-by-token decoding.
     ///
     /// Supports cancellation via the provided token.
+    /// Calls `on_token` with each new chunk of decoded text as it becomes available.
     /// Uses temperature 0.3, top_p 0.9, repeat_penalty 1.1, max 128 tokens.
-    pub fn generate(
+    pub fn generate<F>(
         &mut self,
         prompt: &str,
         cancel: &CancellationToken,
-    ) -> Result<String, LlmError> {
+        mut on_token: F,
+    ) -> Result<String, LlmError>
+    where
+        F: FnMut(&str),
+    {
         let model = self.model.as_mut().ok_or(LlmError::ModelNotLoaded)?;
         let tokenizer = self.tokenizer.as_ref().ok_or(LlmError::ModelNotLoaded)?;
 
-        // Tokenize prompt
         let encoding = tokenizer
             .encode(prompt, true)
             .map_err(|e| LlmError::TokenizerError(e.to_string()))?;
@@ -84,7 +131,7 @@ impl CandleBackend {
         }
 
         let mut logits_processor = LogitsProcessor::from_sampling(
-            42, // seed
+            42,
             candle_transformers::generation::Sampling::TopKThenTopP {
                 k: 50,
                 p: 0.9,
@@ -96,11 +143,13 @@ impl CandleBackend {
             .token_to_id("<eos>")
             .or_else(|| tokenizer.token_to_id("</s>"))
             .or_else(|| tokenizer.token_to_id("<end_of_turn>"))
-            .unwrap_or(1); // Fallback EOS token ID
+            .unwrap_or(1);
 
         let max_tokens: usize = 128;
         let mut output_tokens: Vec<u32> = Vec::with_capacity(max_tokens);
         let mut all_tokens = prompt_tokens.clone();
+        // Track how many characters we've already emitted for incremental decoding
+        let mut prev_decoded_len: usize = 0;
 
         // Process prompt tokens as a batch first
         let input = Tensor::new(prompt_tokens.as_slice(), &self.device)
@@ -112,7 +161,6 @@ impl CandleBackend {
             .forward(&input, 0)
             .map_err(|e| LlmError::InferenceError(format!("Forward pass: {e}")))?;
 
-        // Get logits for the last position
         let logits = logits
             .squeeze(0)
             .map_err(|e| LlmError::InferenceError(format!("Squeeze: {e}")))?;
@@ -125,7 +173,6 @@ impl CandleBackend {
             )
             .map_err(|e| LlmError::InferenceError(format!("Get last: {e}")))?;
 
-        // Apply repeat penalty
         let logits = apply_repeat_penalty(&logits, 1.1, &all_tokens)?;
 
         let next_token = logits_processor
@@ -138,6 +185,9 @@ impl CandleBackend {
 
         output_tokens.push(next_token);
         all_tokens.push(next_token);
+
+        // Emit first token incrementally
+        emit_new_text(tokenizer, &output_tokens, &mut prev_decoded_len, &mut on_token);
 
         // Generate remaining tokens one at a time
         for i in 0..max_tokens - 1 {
@@ -173,14 +223,34 @@ impl CandleBackend {
 
             output_tokens.push(next_token);
             all_tokens.push(next_token);
+
+            emit_new_text(tokenizer, &output_tokens, &mut prev_decoded_len, &mut on_token);
         }
 
-        // Decode output tokens
+        // Decode full output
         let text = tokenizer
             .decode(&output_tokens, true)
             .map_err(|e| LlmError::TokenizerError(format!("Decode: {e}")))?;
 
         Ok(text.trim().to_string())
+    }
+}
+
+/// Decode the full token buffer and emit only the newly produced characters.
+///
+/// This avoids emitting partial UTF-8 sequences by always decoding the complete
+/// buffer and only sending the delta since the last successful decode.
+fn emit_new_text<F: FnMut(&str)>(
+    tokenizer: &Tokenizer,
+    tokens: &[u32],
+    prev_len: &mut usize,
+    on_token: &mut F,
+) {
+    if let Ok(decoded) = tokenizer.decode(tokens, true) {
+        if decoded.len() > *prev_len {
+            on_token(&decoded[*prev_len..]);
+            *prev_len = decoded.len();
+        }
     }
 }
 

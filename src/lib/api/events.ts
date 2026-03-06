@@ -72,3 +72,18 @@ export function onLlmDownloadProgress(
     },
   );
 }
+
+// ─── LLM Token Streaming Events ─────────────────────────────────
+
+export type LlmTokenPayload =
+  | { type: "token"; text: string; requestId: string }
+  | { type: "done"; fullText: string; requestId: string }
+  | { type: "error"; message: string; requestId: string };
+
+export function onLlmToken(
+  callback: (event: LlmTokenPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<LlmTokenPayload>("llm-token", (event) => {
+    callback(event.payload);
+  });
+}

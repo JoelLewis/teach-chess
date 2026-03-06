@@ -96,6 +96,12 @@
             <span class="status-label">Model</span>
             <span class="status-value">{llmStatus.modelId ?? "Unknown"}</span>
           </div>
+          <div class="status-row">
+            <span class="status-label">Running on</span>
+            <span class="status-value" class:active={llmStatus.device !== "cpu"}>
+              {llmStatus.device === "cuda" ? "GPU (CUDA)" : llmStatus.device === "metal" ? "GPU (Metal)" : "CPU"}
+            </span>
+          </div>
         {/if}
         {#if systemMemoryMb > 0}
           <div class="status-row">

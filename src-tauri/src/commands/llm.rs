@@ -26,6 +26,7 @@ pub struct LlmStatus {
     pub model_loaded: bool,
     pub model_id: Option<String>,
     pub mode: String,
+    pub device: String,
 }
 
 /// Download/availability status of a single model
@@ -75,8 +76,21 @@ fn get_system_memory_mb() -> u32 {
 
     #[cfg(target_os = "windows")]
     {
-        // Approximate via GlobalMemoryStatusEx
-        0 // Would need winapi crate; skip for now
+        use std::process::Command;
+        // wmic returns total visible memory in KB
+        if let Ok(output) = Command::new("wmic")
+            .args(["OS", "get", "TotalVisibleMemorySize"])
+            .output()
+        {
+            if let Ok(s) = String::from_utf8(output.stdout) {
+                for line in s.lines() {
+                    if let Ok(kb) = line.trim().parse::<u64>() {
+                        return (kb / 1024) as u32;
+                    }
+                }
+            }
+        }
+        0
     }
 
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
@@ -95,6 +109,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
             model_loaded: false,
             model_id: None,
             mode: "template".to_string(),
+            device: "cpu".to_string(),
         })
     }
 
@@ -111,6 +126,12 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
             .unwrap_or(false);
         drop(channel_guard);
 
+        let device = llm_state
+            .device_name
+            .get()
+            .cloned()
+            .unwrap_or_else(|| "cpu".to_string());
+
         Ok(LlmStatus {
             available: model_available,
             model_loaded,
@@ -120,6 +141,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
                 None
             },
             mode: if model_available { "llm" } else { "template" }.to_string(),
+            device,
         })
     }
 }
@@ -183,6 +205,7 @@ pub async fn generate_coaching(
     coaching_context: Option<serde_json::Value>,
     player_move_san: String,
     engine_best_san: Option<String>,
+    request_id: Option<String>,
     app: tauri::AppHandle,
     db: tauri::State<'_, std::sync::Mutex<crate::db::connection::Database>>,
     player_id: tauri::State<'_, crate::CurrentPlayerId>,
@@ -222,6 +245,8 @@ pub async fn generate_coaching(
         {
             match try_llm_generation(
                 &llm_state,
+                &app,
+                request_id.as_deref(),
                 &level,
                 &classification,
                 &coaching_context,
@@ -278,6 +303,8 @@ pub async fn generate_coaching(
 #[cfg(feature = "llm")]
 async fn try_llm_generation(
     llm_state: &crate::llm::LlmState,
+    app: &tauri::AppHandle,
+    request_id: Option<&str>,
     level: &crate::llm::PlayerLevel,
     classification: &str,
     coaching_context: &Option<serde_json::Value>,
@@ -285,8 +312,9 @@ async fn try_llm_generation(
     engine_best_san: &Option<String>,
 ) -> Result<String, crate::llm::LlmError> {
     use crate::llm::model_manager::GEMMA2_2B;
+    use crate::llm::LlmTokenEvent;
+    use tauri::Emitter;
 
-    // Extract fields for the prompt
     let phase = coaching_context
         .as_ref()
         .and_then(|ctx| ctx.get("phase"))
@@ -330,26 +358,56 @@ async fn try_llm_generation(
     );
 
     // Lazy-spawn the inference channel if not yet created
-    let response_rx = {
+    let submit_result = {
         let mut channel_guard = llm_state.channel.lock().await;
         if channel_guard.is_none() {
             let model_path = llm_state.model_manager.get_model_path(&GEMMA2_2B);
             let tokenizer_path = llm_state.model_manager.get_tokenizer_path(&GEMMA2_2B);
-            let ch = crate::llm::channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
+            let (ch, dev_name) =
+                crate::llm::channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
+            let _ = llm_state.device_name.set(dev_name);
             *channel_guard = Some(ch);
         }
 
         let channel = channel_guard.as_mut().unwrap();
         channel.submit(prompt).await?
-        // channel_guard dropped here at end of block — BEFORE we await the result.
-        // This is critical: inference takes 2-5s and holding the lock would block
-        // all other coaching calls during that time.
+        // channel_guard dropped here — BEFORE we await the result.
     };
 
+    // Spawn a task to forward token events to the frontend
+    if let Some(rid) = request_id {
+        let app_handle = app.clone();
+        let rid = rid.to_string();
+        let mut token_rx = submit_result.token_rx;
+        tokio::spawn(async move {
+            while let Some(text) = token_rx.recv().await {
+                let _ = app_handle.emit(
+                    "llm-token",
+                    LlmTokenEvent::Token {
+                        text,
+                        request_id: rid.clone(),
+                    },
+                );
+            }
+        });
+    }
+
     // Await the response outside the mutex lock
-    let result = response_rx
+    let result = submit_result
+        .response_rx
         .await
         .map_err(|_| crate::llm::LlmError::InferenceError("Channel closed".to_string()))??;
+
+    // Emit Done event
+    if let Some(rid) = request_id {
+        let _ = app.emit(
+            "llm-token",
+            LlmTokenEvent::Done {
+                full_text: result.clone(),
+                request_id: rid.to_string(),
+            },
+        );
+    }
 
     Ok(result)
 }

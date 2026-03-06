@@ -13,7 +13,7 @@ A desktop chess coach that combines Stockfish analysis with heuristic coaching, 
 - **Opponent personalities** — aggressive, positional, trappy, solid — with teaching mode targeting your weak areas
 - **Dashboard** — skill radar, streaks, recommendations, adaptive difficulty prompts
 - **Two themes** — The Study (warm parchment) and The Grid (cyberpunk neon), plus system auto-detection
-- **Optional LLM coaching** — local Gemma 2B inference via candle (feature-gated, no cloud API)
+- **Optional LLM coaching** — local Gemma 2B inference via candle with GPU acceleration and token streaming (feature-gated, no cloud API)
 
 ## Screenshot
 
@@ -26,6 +26,7 @@ A desktop chess coach that combines Stockfish analysis with heuristic coaching, 
 - System dependencies for Tauri 2:
   - **Linux:** `libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
   - **macOS:** Xcode command line tools
+  - **Windows:** [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with "Desktop development with C++" workload, plus [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (pre-installed on Windows 11)
 
 ## Quick Start
 
@@ -34,7 +35,7 @@ A desktop chess coach that combines Stockfish analysis with heuristic coaching, 
 npm install
 
 # Download Stockfish sidecar binary for your platform
-./scripts/fetch-stockfish.sh
+./scripts/fetch-stockfish.sh    # Linux / macOS / Git Bash on Windows
 
 # Start the development server
 npm run tauri dev
@@ -64,10 +65,35 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed overview of the 
 To enable local LLM-powered coaching feedback:
 
 ```bash
-cargo build --features llm
+# CPU-only (all platforms)
+npm run tauri dev -- --features llm
+
+# With CUDA GPU acceleration (Linux / Windows — requires CUDA Toolkit)
+npm run tauri dev -- --features llm-cuda
+
+# With Metal GPU acceleration (macOS only)
+npm run tauri dev -- --features llm-metal
 ```
 
-This adds ~200MB to the binary for candle inference. Models are downloaded on first use via the Settings > Model Manager page. Without the `llm` feature, the app uses template-based coaching text (no quality difference for most users).
+### GPU Acceleration
+
+The LLM backend automatically selects the best available compute device:
+
+| Feature flag | Device | Requirements |
+|---|---|---|
+| `llm` | CPU | None |
+| `llm-cuda` | NVIDIA GPU → CPU fallback | [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) with `nvcc` on PATH |
+| `llm-metal` | Apple GPU → CPU fallback | macOS with Metal support |
+
+If the GPU is unavailable at runtime (e.g., driver mismatch), the backend falls back to CPU automatically. The active device is shown in Settings > Model Manager.
+
+### Token Streaming
+
+When an LLM model is loaded, coaching text streams progressively in the review panel as tokens are generated, instead of waiting for the full response. Cache hits and template responses still appear instantly.
+
+### Model Management
+
+Models are downloaded on first use via Settings > Model Manager. Without the `llm` feature, the app uses template-based coaching text (no quality difference for most users). The LLM feature adds ~200 MB to the binary for candle inference.
 
 ## License
 

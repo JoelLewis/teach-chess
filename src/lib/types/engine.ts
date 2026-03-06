@@ -262,6 +262,7 @@ export type LlmStatus = {
   modelLoaded: boolean;
   modelId: string | null;
   mode: "llm" | "template";
+  device: "cpu" | "cuda" | "metal";
 };
 
 export type ModelStatus = {
