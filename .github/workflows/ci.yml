@@ -96,6 +96,9 @@ jobs:
       - name: Svelte check
         run: npx svelte-check --tsconfig ./tsconfig.json
 
+      - name: Frontend tests
+        run: npx vitest run
+
   clippy:
     name: Clippy
     runs-on: ubuntu-22.04

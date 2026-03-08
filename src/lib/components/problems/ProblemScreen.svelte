@@ -77,8 +77,11 @@
     }
   }
 
-  // Load stats on mount
+  // Load first puzzle and stats on mount
   $effect(() => {
+    if (puzzleStore.phase === "idle") {
+      loadNextPuzzle();
+    }
     api.getPuzzleStats().then((stats) => {
       puzzleStore.sessionStats = stats;
     }).catch(() => {

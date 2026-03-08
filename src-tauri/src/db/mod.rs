@@ -22,3 +22,6 @@ impl<T> OptionalRow for Result<T, rusqlite::Error> {
         }
     }
 }
+
+#[cfg(test)]
+mod migration_tests;
