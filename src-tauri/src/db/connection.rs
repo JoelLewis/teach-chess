@@ -30,7 +30,7 @@ impl Database {
         Ok(db)
     }
 
-    fn run_migrations(&self) -> Result<(), DatabaseError> {
+    pub(crate) fn run_migrations(&self) -> Result<(), DatabaseError> {
         let migration_sql = include_str!("../../migrations/001_initial.sql");
         self.conn
             .execute_batch(migration_sql)
@@ -69,6 +69,21 @@ impl Database {
             .execute_batch(m006)
             .map_err(DatabaseError::Sqlite)?;
 
+        // 007: Add opponent personality columns (safe to re-run — ignore "duplicate column" error)
+        let m007 = include_str!("../../migrations/007_opponent_personality.sql");
+        for line in m007.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            if let Err(e) = self.conn.execute_batch(line) {
+                let msg = e.to_string();
+                if !msg.contains("duplicate column") {
+                    return Err(DatabaseError::Sqlite(e));
+                }
+            }
+        }
+
         info!("Database migrations applied");
         Ok(())
     }
@@ -81,5 +96,16 @@ impl Database {
     #[cfg(test)]
     pub fn from_connection(conn: Connection) -> Self {
         Self { conn }
+    }
+
+    #[cfg(test)]
+    pub fn open_in_memory() -> Result<Self, DatabaseError> {
+        let conn = Connection::open_in_memory()
+            .map_err(DatabaseError::Sqlite)?;
+        conn.pragma_update(None, "foreign_keys", "ON")
+            .map_err(DatabaseError::Sqlite)?;
+        let db = Self { conn };
+        db.run_migrations()?;
+        Ok(db)
     }
 }
