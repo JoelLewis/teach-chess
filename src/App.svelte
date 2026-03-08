@@ -113,7 +113,7 @@
       } catch {
         // Ignore cleanup errors
       }
-      await appWindow.close();
+      await appWindow.destroy();
     });
 
     return () => {
