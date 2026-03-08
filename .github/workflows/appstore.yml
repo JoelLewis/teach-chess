@@ -1,0 +1,210 @@
+name: macOS App Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build type"
+        required: true
+        default: "app-store"
+        type: choice
+        options:
+          - app-store
+          - developer-id
+
+concurrency:
+  group: appstore-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-appstore:
+    name: Build macOS App Store Package
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: arm64
+          - target: x86_64-apple-darwin
+            arch: x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Fetch Stockfish sidecar
+        run: ./scripts/fetch-stockfish.sh
+
+      - name: Import signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o $CERTIFICATE_PATH
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+      - name: Install provisioning profile
+        env:
+          PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+        run: |
+          PP_PATH=$RUNNER_TEMP/chessmentor.provisionprofile
+          echo -n "$PROVISIONING_PROFILE" | base64 --decode -o $PP_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Build Tauri app
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ""
+        run: |
+          npm run tauri build -- --target ${{ matrix.target }}
+
+      - name: Sign sidecar binary
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          APP_PATH=$(find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -maxdepth 1)
+          SIDECAR=$(find "$APP_PATH" -name "stockfish-*" -type f)
+
+          if [ -n "$SIDECAR" ]; then
+            echo "Signing sidecar: $SIDECAR"
+            codesign --force --options runtime \
+              --entitlements src-tauri/entitlements/Stockfish.entitlements \
+              --sign "$APPLE_SIGNING_IDENTITY" \
+              "$SIDECAR"
+          fi
+
+      - name: Re-sign app bundle (with sidecar now signed)
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          APP_PATH=$(find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -maxdepth 1)
+
+          codesign --force --deep --options runtime \
+            --entitlements src-tauri/entitlements/ChessMentor.entitlements \
+            --sign "$APPLE_SIGNING_IDENTITY" \
+            "$APP_PATH"
+
+          echo "Verifying signature..."
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+      - name: Create App Store package (.pkg)
+        if: ${{ inputs.build_type == 'app-store' }}
+        env:
+          APPLE_INSTALLER_IDENTITY: ${{ secrets.APPLE_INSTALLER_IDENTITY }}
+        run: |
+          APP_PATH=$(find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -maxdepth 1)
+          PKG_PATH="src-tauri/target/${{ matrix.target }}/release/bundle/ChessMentor-${{ matrix.arch }}.pkg"
+
+          productbuild \
+            --sign "$APPLE_INSTALLER_IDENTITY" \
+            --component "$APP_PATH" /Applications \
+            "$PKG_PATH"
+
+          echo "Created: $PKG_PATH"
+
+      - name: Notarize (Developer ID builds only)
+        if: ${{ inputs.build_type == 'developer-id' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH=$(find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -maxdepth 1)
+          DMG_PATH=$(find src-tauri/target/${{ matrix.target }}/release/bundle/dmg -name "*.dmg" -maxdepth 1)
+
+          if [ -n "$DMG_PATH" ]; then
+            xcrun notarytool submit "$DMG_PATH" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+
+            xcrun stapler staple "$DMG_PATH"
+          fi
+
+      - name: Upload App Store package
+        if: ${{ inputs.build_type == 'app-store' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: chessmentor-appstore-${{ matrix.arch }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/ChessMentor-*.pkg
+
+      - name: Upload notarized DMG
+        if: ${{ inputs.build_type == 'developer-id' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: chessmentor-notarized-${{ matrix.arch }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
+
+  create-universal:
+    name: Create Universal Binary (App Store)
+    needs: build-appstore
+    if: ${{ inputs.build_type == 'app-store' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download arm64 package
+        uses: actions/download-artifact@v4
+        with:
+          name: chessmentor-appstore-arm64
+          path: packages/arm64
+
+      - name: Download x86_64 package
+        uses: actions/download-artifact@v4
+        with:
+          name: chessmentor-appstore-x86_64
+          path: packages/x86_64
+
+      - name: Upload both packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: chessmentor-appstore-packages
+          path: packages/

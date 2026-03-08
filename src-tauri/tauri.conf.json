@@ -37,6 +37,15 @@
     "externalBin": [
       "binaries/stockfish"
     ],
-    "license": "GPL-3.0-only"
+    "license": "GPL-3.0-only",
+    "category": "Education",
+    "shortDescription": "Learn chess with an adaptive AI coach",
+    "longDescription": "ChessMentor is a chess learning app featuring adaptive coaching, tactical puzzles with spaced repetition, opening repertoire training, and game analysis powered by Stockfish.",
+    "macOS": {
+      "entitlements": "entitlements/ChessMentor.entitlements",
+      "signingIdentity": "-",
+      "minimumSystemVersion": "11.0",
+      "exceptionDomain": null
+    }
   }
 }
