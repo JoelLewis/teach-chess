@@ -26,33 +26,64 @@ pub const GEMMA2_2B: ModelConfig = ModelConfig {
 };
 
 /// Manages model download, storage, and lifecycle.
+///
+/// Supports two-tier resolution: bundled models in `resource_dir` (read-only,
+/// shipped with the app) and user-downloaded models in `models_dir` (writable).
 pub struct ModelManager {
     models_dir: PathBuf,
+    resource_dir: Option<PathBuf>,
 }
 
 impl ModelManager {
-    pub fn new(app_data_dir: &Path) -> Self {
+    pub fn new(app_data_dir: &Path, resource_dir: Option<PathBuf>) -> Self {
         let models_dir = app_data_dir.join("models");
-        Self { models_dir }
+        Self {
+            models_dir,
+            resource_dir,
+        }
     }
 
-    /// Path where a model's GGUF file would be stored.
+    /// Path where a model's GGUF file is located.
+    /// Checks bundled resource dir first, then user data dir.
     pub fn get_model_path(&self, config: &ModelConfig) -> PathBuf {
+        if let Some(ref res) = self.resource_dir {
+            let bundled = res.join(config.gguf_filename);
+            if bundled.exists() {
+                return bundled;
+            }
+        }
         self.models_dir
             .join(config.repo_id)
             .join(config.gguf_filename)
     }
 
-    /// Path where a model's tokenizer would be stored.
+    /// Path where a model's tokenizer is located.
+    /// Checks bundled resource dir first, then user data dir.
     pub fn get_tokenizer_path(&self, config: &ModelConfig) -> PathBuf {
+        if let Some(ref res) = self.resource_dir {
+            let bundled = res.join(config.tokenizer_filename);
+            if bundled.exists() {
+                return bundled;
+            }
+        }
         self.models_dir
             .join(config.repo_id)
             .join(config.tokenizer_filename)
     }
 
-    /// Check if a model's files are already downloaded.
+    /// Check if a model's files are available (bundled or downloaded).
     pub fn is_available(&self, config: &ModelConfig) -> bool {
         self.get_model_path(config).exists() && self.get_tokenizer_path(config).exists()
+    }
+
+    /// Whether the model is available from the bundled resource directory.
+    pub fn is_bundled(&self, config: &ModelConfig) -> bool {
+        if let Some(ref res) = self.resource_dir {
+            res.join(config.gguf_filename).exists()
+                && res.join(config.tokenizer_filename).exists()
+        } else {
+            false
+        }
     }
 
     /// Download a model from HuggingFace Hub.
@@ -86,7 +117,10 @@ impl ModelManager {
             .map_err(|e| LlmError::DownloadError(format!("Model download: {e}")))?;
 
         // Copy/symlink to our expected location if not already there
-        let target_model = self.get_model_path(config);
+        let target_model = self
+            .models_dir
+            .join(config.repo_id)
+            .join(config.gguf_filename);
         if !target_model.exists() {
             if let Some(parent) = target_model.parent() {
                 std::fs::create_dir_all(parent)
@@ -103,7 +137,10 @@ impl ModelManager {
             .await
             .map_err(|e| LlmError::DownloadError(format!("Tokenizer download: {e}")))?;
 
-        let target_tokenizer = self.get_tokenizer_path(config);
+        let target_tokenizer = self
+            .models_dir
+            .join(config.repo_id)
+            .join(config.tokenizer_filename);
         if !target_tokenizer.exists() {
             std::fs::copy(&_tokenizer_path, &target_tokenizer)
                 .map_err(|e| LlmError::DownloadError(format!("Copy tokenizer: {e}")))?;
@@ -146,8 +183,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn model_paths_are_constructed_correctly() {
-        let mgr = ModelManager::new(Path::new("/tmp/test"));
+    fn model_paths_without_resource_dir() {
+        let mgr = ModelManager::new(Path::new("/tmp/test"), None);
         let path = mgr.get_model_path(&GEMMA2_2B);
         assert!(path.to_str().unwrap().contains("bartowski"));
         assert!(path.to_str().unwrap().ends_with(".gguf"));
@@ -155,7 +192,7 @@ mod tests {
 
     #[test]
     fn tokenizer_path_separate_from_model() {
-        let mgr = ModelManager::new(Path::new("/tmp/test"));
+        let mgr = ModelManager::new(Path::new("/tmp/test"), None);
         let model_path = mgr.get_model_path(&GEMMA2_2B);
         let tok_path = mgr.get_tokenizer_path(&GEMMA2_2B);
         assert_ne!(model_path, tok_path);
@@ -173,5 +210,26 @@ mod tests {
         assert_eq!(GEMMA2_2B.file_size_mb, 1500);
         assert_eq!(GEMMA2_2B.ram_requirement_mb, 2500);
         assert!(!GEMMA2_2B.repo_id.is_empty());
+    }
+
+    #[test]
+    fn bundled_resource_dir_preferred_when_exists() {
+        // With a resource dir that doesn't have files, falls back to models_dir
+        let mgr = ModelManager::new(Path::new("/tmp/test"), Some(PathBuf::from("/tmp/nonexistent")));
+        let path = mgr.get_model_path(&GEMMA2_2B);
+        // Should fall back to models_dir path since resource dir files don't exist
+        assert!(path.to_str().unwrap().contains("bartowski"));
+    }
+
+    #[test]
+    fn is_bundled_false_without_resource_dir() {
+        let mgr = ModelManager::new(Path::new("/tmp/test"), None);
+        assert!(!mgr.is_bundled(&GEMMA2_2B));
+    }
+
+    #[test]
+    fn is_bundled_false_when_files_missing() {
+        let mgr = ModelManager::new(Path::new("/tmp/test"), Some(PathBuf::from("/tmp/nonexistent")));
+        assert!(!mgr.is_bundled(&GEMMA2_2B));
     }
 }

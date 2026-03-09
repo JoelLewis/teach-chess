@@ -28,8 +28,8 @@ pub struct LlmState {
 
 #[cfg(feature = "llm")]
 impl LlmState {
-    pub fn new(app_data_dir: PathBuf) -> Self {
-        let model_manager = model_manager::ModelManager::new(&app_data_dir);
+    pub fn new(app_data_dir: PathBuf, resource_dir: Option<PathBuf>) -> Self {
+        let model_manager = model_manager::ModelManager::new(&app_data_dir, resource_dir);
         Self {
             model_manager,
             channel: tokio::sync::Mutex::new(None),

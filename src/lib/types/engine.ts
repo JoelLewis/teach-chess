@@ -263,12 +263,14 @@ export type LlmStatus = {
   modelId: string | null;
   mode: "llm" | "template";
   device: "cpu" | "cuda" | "metal";
+  bundled: boolean;
 };
 
 export type ModelStatus = {
   id: string;
   displayName: string;
   downloaded: boolean;
+  bundled: boolean;
   fileSizeMb: number;
   ramRequirementMb: number;
   systemMemoryMb: number;

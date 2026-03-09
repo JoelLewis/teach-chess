@@ -37,6 +37,13 @@
     "externalBin": [
       "binaries/stockfish"
     ],
+    "resources": [
+      "models/*"
+    ],
+    "macOS": {
+      "entitlements": "Entitlements.plist",
+      "minimumSystemVersion": "10.15"
+    },
     "license": "GPL-3.0-only"
   }
 }

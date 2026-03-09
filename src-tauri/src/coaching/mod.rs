@@ -112,26 +112,41 @@ pub fn generate_pattern_summary(
     let mut missed_tactics: Vec<(TacticType, u32)> = tactic_counts.into_iter().collect();
     missed_tactics.sort_by(|a, b| b.1.cmp(&a.1));
 
-    // Derive strengths
+    // Derive strengths — only if the overall error rate is reasonable
     let mut strengths = Vec::new();
+    let error_rate = if total_moves > 0 {
+        total_errors as f64 / total_moves as f64
+    } else {
+        0.0
+    };
 
-    // Good ratio of best moves
-    if total_moves > 0 && (best_count as f64 / total_moves as f64) > 0.3 {
-        strengths.push("Strong move accuracy — many best moves found".to_string());
-    }
+    // Count blunders separately for suppression
+    let blunder_count = evaluations
+        .iter()
+        .filter(|mv| mv.is_white == is_player_white)
+        .filter(|mv| mv.classification == Some(MoveClassification::Blunder))
+        .count();
 
-    // Phase-specific strengths (no errors in a phase with at least 3 moves)
-    for (phase, total) in &phase_totals {
-        let errors = phase_errors.get(phase).copied().unwrap_or(0);
-        if *total >= 3 && errors == 0 {
-            strengths.push(format!(
-                "Clean {} play — no errors",
-                match phase {
-                    GamePhase::Opening => "opening",
-                    GamePhase::Middlegame => "middlegame",
-                    GamePhase::Endgame => "endgame",
-                }
-            ));
+    // Suppress all positive feedback if error rate > 30% or 2+ blunders
+    if error_rate <= 0.3 && blunder_count < 2 {
+        // Good ratio of best moves
+        if total_moves > 0 && (best_count as f64 / total_moves as f64) > 0.3 {
+            strengths.push("Strong move accuracy — many best moves found".to_string());
+        }
+
+        // Phase-specific strengths (no errors in a phase with at least 3 moves)
+        for (phase, total) in &phase_totals {
+            let errors = phase_errors.get(phase).copied().unwrap_or(0);
+            if *total >= 3 && errors == 0 {
+                strengths.push(format!(
+                    "Clean {} play — no errors",
+                    match phase {
+                        GamePhase::Opening => "opening",
+                        GamePhase::Middlegame => "middlegame",
+                        GamePhase::Endgame => "endgame",
+                    }
+                ));
+            }
         }
     }
 

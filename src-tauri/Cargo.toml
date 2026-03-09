@@ -25,18 +25,21 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 toml = "0.8"
 
-# LLM coaching (optional, gated behind "llm" feature)
-candle-core = { version = "0.9", optional = true }
-candle-transformers = { version = "0.9", optional = true }
-tokenizers = { version = "0.22", default-features = false, features = ["onig"], optional = true }
-hf-hub = { version = "0.5", features = ["tokio"], optional = true }
-tokio-util = { version = "0.7", features = ["rt"], optional = true }
+# System info (sandbox-compatible memory detection)
+sysinfo = "0.33"
+
+# LLM coaching
+candle-core = "0.9"
+candle-transformers = "0.9"
+tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
+hf-hub = { version = "0.5", features = ["tokio"] }
+tokio-util = { version = "0.7", features = ["rt"] }
 
 [dev-dependencies]
 tempfile = "3"
 
 [features]
-default = []
-llm = ["dep:candle-core", "dep:candle-transformers", "dep:tokenizers", "dep:hf-hub", "dep:tokio-util"]
-llm-cuda = ["llm", "candle-core/cuda", "candle-transformers/cuda"]
-llm-metal = ["llm", "candle-core/metal", "candle-transformers/metal"]
+default = ["llm"]
+llm = []
+llm-cuda = ["candle-core/cuda", "candle-transformers/cuda"]
+llm-metal = ["candle-core/metal", "candle-transformers/metal"]

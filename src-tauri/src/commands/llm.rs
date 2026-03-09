@@ -27,6 +27,7 @@ pub struct LlmStatus {
     pub model_id: Option<String>,
     pub mode: String,
     pub device: String,
+    pub bundled: bool,
 }
 
 /// Download/availability status of a single model
@@ -36,67 +37,21 @@ pub struct ModelStatus {
     pub id: String,
     pub display_name: String,
     pub downloaded: bool,
+    pub bundled: bool,
     pub file_size_mb: u32,
     pub ram_requirement_mb: u32,
     pub system_memory_mb: u32,
 }
 
-/// Detect total system memory in MB.
+/// Detect total system memory in MB using the sysinfo crate.
+/// This is sandbox-compatible (no subprocess spawning).
 #[allow(dead_code)]
 fn get_system_memory_mb() -> u32 {
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(contents) = std::fs::read_to_string("/proc/meminfo") {
-            for line in contents.lines() {
-                if line.starts_with("MemTotal:") {
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if let Some(kb_str) = parts.get(1) {
-                        if let Ok(kb) = kb_str.parse::<u64>() {
-                            return (kb / 1024) as u32;
-                        }
-                    }
-                }
-            }
-        }
-        0
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        use std::process::Command;
-        if let Ok(output) = Command::new("sysctl").arg("-n").arg("hw.memsize").output() {
-            if let Ok(s) = String::from_utf8(output.stdout) {
-                if let Ok(bytes) = s.trim().parse::<u64>() {
-                    return (bytes / (1024 * 1024)) as u32;
-                }
-            }
-        }
-        0
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        use std::process::Command;
-        // wmic returns total visible memory in KB
-        if let Ok(output) = Command::new("wmic")
-            .args(["OS", "get", "TotalVisibleMemorySize"])
-            .output()
-        {
-            if let Ok(s) = String::from_utf8(output.stdout) {
-                for line in s.lines() {
-                    if let Ok(kb) = line.trim().parse::<u64>() {
-                        return (kb / 1024) as u32;
-                    }
-                }
-            }
-        }
-        0
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-    {
-        0
-    }
+    use sysinfo::System;
+    let sys = System::new_with_specifics(
+        sysinfo::RefreshKind::nothing().with_memory(sysinfo::MemoryRefreshKind::everything()),
+    );
+    (sys.total_memory() / (1024 * 1024)) as u32
 }
 
 #[tauri::command]
@@ -110,6 +65,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
             model_id: None,
             mode: "template".to_string(),
             device: "cpu".to_string(),
+            bundled: false,
         })
     }
 
@@ -119,6 +75,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
 
         let llm_state = app.state::<crate::llm::LlmState>();
         let model_available = llm_state.model_manager.is_available(&GEMMA2_2B);
+        let model_bundled = llm_state.model_manager.is_bundled(&GEMMA2_2B);
         let channel_guard = llm_state.channel.lock().await;
         let model_loaded = channel_guard
             .as_ref()
@@ -142,6 +99,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
             },
             mode: if model_available { "llm" } else { "template" }.to_string(),
             device,
+            bundled: model_bundled,
         })
     }
 }
@@ -166,6 +124,7 @@ pub async fn get_available_models(
             id: GEMMA2_2B.id.to_string(),
             display_name: GEMMA2_2B.display_name.to_string(),
             downloaded: llm_state.model_manager.is_available(&GEMMA2_2B),
+            bundled: llm_state.model_manager.is_bundled(&GEMMA2_2B),
             file_size_mb: GEMMA2_2B.file_size_mb,
             ram_requirement_mb: GEMMA2_2B.ram_requirement_mb,
             system_memory_mb: sys_mem,

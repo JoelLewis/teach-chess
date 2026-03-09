@@ -83,7 +83,13 @@ pub fn run() {
             #[cfg(feature = "llm")]
             {
                 let app_data_dir = app.handle().path().app_data_dir().expect("app data dir");
-                app.manage(llm::LlmState::new(app_data_dir));
+                let resource_dir = app
+                    .handle()
+                    .path()
+                    .resource_dir()
+                    .ok()
+                    .map(|d| d.join("models"));
+                app.manage(llm::LlmState::new(app_data_dir, resource_dir));
             }
 
             // Import bundled starter data if tables are empty

@@ -102,18 +102,10 @@
 
   // Clean up engine when window closes
   $effect(() => {
-    let closing = false;
     const appWindow = getCurrentWindow();
-    const unlistenPromise = appWindow.onCloseRequested(async (event) => {
-      if (closing) return;
-      event.preventDefault();
-      closing = true;
-      try {
-        await api.stopEngine();
-      } catch {
-        // Ignore cleanup errors
-      }
-      await appWindow.destroy();
+    const unlistenPromise = appWindow.onCloseRequested(async () => {
+      // Fire-and-forget cleanup — don't preventDefault, let the window close naturally
+      api.stopEngine().catch(() => {});
     });
 
     return () => {
@@ -165,13 +157,15 @@
 <style>
   .app-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .main-area {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     background: var(--cm-bg-app);
   }
 

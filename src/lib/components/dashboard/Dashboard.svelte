@@ -3,6 +3,7 @@
   import RecommendationCard from "./RecommendationCard.svelte";
   import StreakBanner from "./StreakBanner.svelte";
   import AdaptivePromptDialog from "./AdaptivePromptDialog.svelte";
+  import ModelDownloadCard from "./ModelDownloadCard.svelte";
   import GameCard from "../history/GameCard.svelte";
   import * as api from "../../api/commands";
   import { errorStore } from "../../stores/error.svelte";
@@ -19,6 +20,7 @@
   let data = $state<DashboardData | null>(null);
   let loading = $state(true);
   let adaptivePrompt = $state<AdaptivePrompt | null>(null);
+  let showModelPrompt = $state(false);
 
   async function loadDashboard() {
     loading = true;
@@ -55,9 +57,20 @@
     onNavigate(activity === "play" ? "play" : activity === "openings" ? "openings" : "problems");
   }
 
+  async function checkModelStatus() {
+    try {
+      const status = await api.getLlmStatus();
+      // Hide the download card if the model is bundled or already available
+      showModelPrompt = !status.available && !status.bundled;
+    } catch {
+      // Non-blocking
+    }
+  }
+
   $effect(() => {
     loadDashboard();
     checkAdaptive();
+    checkModelStatus();
   });
 </script>
 
@@ -72,6 +85,11 @@
       <h1 class="welcome">Welcome back, {playerStore.displayName}</h1>
       <StreakBanner streak={data.streak} />
     </div>
+
+    <!-- Model Download Prompt -->
+    {#if showModelPrompt}
+      <ModelDownloadCard {onNavigate} />
+    {/if}
 
     <!-- Skill Overview + Recommendation -->
     <div class="dashboard-grid">
@@ -155,6 +173,11 @@
   <div class="dashboard-empty">
     <h1 class="welcome">Welcome to ChessMentor</h1>
     <p class="empty-tagline">Your AI chess coach. Play, learn, improve.</p>
+    {#if showModelPrompt}
+      <div class="empty-model-prompt">
+        <ModelDownloadCard {onNavigate} />
+      </div>
+    {/if}
     <div class="quick-start">
       <button class="qs-btn qs-play" onclick={() => onNavigate("play")}>
         Start a Game
@@ -401,5 +424,10 @@
     color: var(--cm-text-muted);
     font-size: 16px;
     margin: 0;
+  }
+
+  .empty-model-prompt {
+    width: 100%;
+    max-width: 480px;
   }
 </style>

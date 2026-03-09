@@ -46,7 +46,7 @@
 <style>
   .sidebar {
     width: 200px;
-    min-height: 100vh;
+    height: 100%;
     background: var(--cm-bg-sidebar);
     color: var(--cm-sidebar-text);
     display: flex;

@@ -27,9 +27,6 @@ jobs:
           - name: macOS
             os: macos-latest
             target: aarch64-apple-darwin
-          - name: Windows
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
 
     steps:
       - uses: actions/checkout@v4
@@ -71,6 +68,10 @@ jobs:
         shell: bash
         run: ./scripts/fetch-stockfish.sh
 
+      - name: Fetch LLM model
+        shell: bash
+        run: ./scripts/fetch-model.sh
+
       - name: Extract release notes from CHANGELOG
         id: changelog
         shell: bash
@@ -88,6 +89,14 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS code signing (set these secrets in GitHub repo settings)
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # macOS notarization via App Store Connect API key
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_PATH: ${{ secrets.APPLE_API_KEY_PATH }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ChessMentor ${{ github.ref_name }}
@@ -104,6 +113,67 @@ jobs:
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/release/bundle/macos/*.app
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: ignore
+
+  # Mac App Store build (separate job with MAS-specific signing)
+  build-mas:
+    name: Build (Mac App Store)
+    runs-on: macos-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Fetch Stockfish sidecar
+        shell: bash
+        run: ./scripts/fetch-stockfish.sh
+
+      - name: Fetch LLM model
+        shell: bash
+        run: ./scripts/fetch-model.sh
+
+      - name: Build Tauri app (MAS)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # MAS-specific certificates
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_MAS_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_MAS_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_MAS_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_PATH: ${{ secrets.APPLE_API_KEY_PATH }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: ChessMentor ${{ github.ref_name }}
+          releaseBody: See CHANGELOG.md for details.
+          releaseDraft: true
+          prerelease: false
+
+      - name: Upload MAS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chessmentor-mas
+          path: |
+            src-tauri/target/release/bundle/macos/*.app
+            src-tauri/target/release/bundle/dmg/*.dmg
           if-no-files-found: ignore
