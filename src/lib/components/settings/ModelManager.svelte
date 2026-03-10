@@ -21,6 +21,9 @@
       if (m.length > 0 && m[0].systemMemoryMb) {
         systemMemoryMb = m[0].systemMemoryMb;
       }
+      if (m.length > 0 && m[0].availableMemoryMb) {
+        availableMemoryMb = m[0].availableMemoryMb;
+      }
     } catch (err) {
       console.error("Failed to load model data:", err);
     }
@@ -40,6 +43,7 @@
   }
 
   let systemMemoryMb = $state(0);
+  let availableMemoryMb = $state(0);
 
   function formatSize(mb: number): string {
     if (mb >= 1000) return `${(mb / 1000).toFixed(1)} GB`;
@@ -58,7 +62,10 @@
   }
 
   function modelFitsMemory(ramMb: number): boolean {
-    return systemMemoryMb > 0 && ramMb <= systemMemoryMb;
+    if (systemMemoryMb <= 0) return false;
+    if (ramMb > systemMemoryMb) return false;
+    if (availableMemoryMb > 0 && ramMb > availableMemoryMb) return false;
+    return true;
   }
 
   function isActiveModel(modelId: string): boolean {
@@ -108,6 +115,12 @@
             <span class="status-label">System RAM</span>
             <span class="status-value">{formatSize(systemMemoryMb)}</span>
           </div>
+        {#if availableMemoryMb > 0}
+          <div class="status-row">
+            <span class="status-label">Available RAM</span>
+            <span class="status-value">{formatSize(availableMemoryMb)}</span>
+          </div>
+        {/if}
         {/if}
       </div>
     {/if}
@@ -129,6 +142,10 @@
               <span>Size: {formatSize(model.fileSizeMb)}</span>
               <span class="ram-indicator" class:ram-ok={modelFitsMemory(model.ramRequirementMb)} class:ram-warn={systemMemoryMb > 0 && !modelFitsMemory(model.ramRequirementMb)}>
                 RAM: {formatSize(model.ramRequirementMb)}
+              </span>
+              {#if systemMemoryMb >= model.ramRequirementMb && availableMemoryMb > 0 && availableMemoryMb < model.ramRequirementMb}
+                <span class="ram-low-warn">Low available RAM — close other apps</span>
+              {/if}
               </span>
             </div>
           </div>
@@ -270,6 +287,12 @@
 
   .ram-indicator.ram-warn {
     color: var(--cm-status-error);
+  }
+
+  .ram-low-warn {
+    color: var(--cm-status-warning, #e6a700);
+    font-size: 11px;
+    font-style: italic;
   }
 
   .model-meta {

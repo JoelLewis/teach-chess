@@ -41,6 +41,7 @@ pub struct ModelStatus {
     pub file_size_mb: u32,
     pub ram_requirement_mb: u32,
     pub system_memory_mb: u32,
+    pub available_memory_mb: u32,
 }
 
 /// Detect total system memory in MB using the sysinfo crate.
@@ -52,6 +53,17 @@ fn get_system_memory_mb() -> u32 {
         sysinfo::RefreshKind::nothing().with_memory(sysinfo::MemoryRefreshKind::everything()),
     );
     (sys.total_memory() / (1024 * 1024)) as u32
+}
+
+/// Detect available (free) system memory in MB using the sysinfo crate.
+/// This is sandbox-compatible (no subprocess spawning).
+#[allow(dead_code)]
+fn get_available_memory_mb() -> u32 {
+    use sysinfo::System;
+    let sys = System::new_with_specifics(
+        sysinfo::RefreshKind::nothing().with_memory(sysinfo::MemoryRefreshKind::everything()),
+    );
+    (sys.available_memory() / (1024 * 1024)) as u32
 }
 
 #[tauri::command]
@@ -120,6 +132,7 @@ pub async fn get_available_models(
 
         let llm_state = app.state::<crate::llm::LlmState>();
         let sys_mem = get_system_memory_mb();
+        let avail_mem = get_available_memory_mb();
         Ok(vec![ModelStatus {
             id: GEMMA2_2B.id.to_string(),
             display_name: GEMMA2_2B.display_name.to_string(),
@@ -128,6 +141,7 @@ pub async fn get_available_models(
             file_size_mb: GEMMA2_2B.file_size_mb,
             ram_requirement_mb: GEMMA2_2B.ram_requirement_mb,
             system_memory_mb: sys_mem,
+            available_memory_mb: avail_mem,
         }])
     }
 }

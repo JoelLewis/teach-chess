@@ -29,6 +29,76 @@ pub const GEMMA2_2B: ModelConfig = ModelConfig {
     sha256_hash: None,
 };
 
+/// Tracks cumulative download progress and emits throttled events.
+struct DownloadProgress<'a> {
+    app_handle: &'a tauri::AppHandle,
+    cumulative_downloaded: u64,
+    total_bytes: u64,
+    bytes_since_emit: u64,
+    last_emit: std::time::Instant,
+}
+
+impl<'a> DownloadProgress<'a> {
+    fn new(app_handle: &'a tauri::AppHandle) -> Self {
+        Self {
+            app_handle,
+            cumulative_downloaded: 0,
+            total_bytes: 0,
+            bytes_since_emit: 0,
+            last_emit: std::time::Instant::now(),
+        }
+    }
+
+    fn record(&mut self, bytes: u64) {
+        use tauri::Emitter;
+
+        const BYTE_THRESHOLD: u64 = 256 * 1024;
+        let time_threshold = std::time::Duration::from_millis(200);
+
+        self.cumulative_downloaded += bytes;
+        self.bytes_since_emit += bytes;
+
+        if self.bytes_since_emit >= BYTE_THRESHOLD || self.last_emit.elapsed() >= time_threshold {
+            let _ = self.app_handle.emit(
+                "llm-download-progress",
+                serde_json::json!({
+                    "downloadedBytes": self.cumulative_downloaded,
+                    "totalBytes": self.total_bytes,
+                }),
+            );
+            self.bytes_since_emit = 0;
+            self.last_emit = std::time::Instant::now();
+        }
+    }
+}
+
+/// Stream an HTTP response body to a file, updating progress.
+async fn stream_to_file(
+    response: reqwest::Response,
+    dest: &std::path::Path,
+    progress: &mut DownloadProgress<'_>,
+) -> Result<(), LlmError> {
+    use futures_util::StreamExt;
+    use tokio::io::AsyncWriteExt;
+
+    let mut file = tokio::fs::File::create(dest)
+        .await
+        .map_err(|e| LlmError::DownloadError(format!("Create file: {e}")))?;
+
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| LlmError::DownloadError(format!("Stream read: {e}")))?;
+        file.write_all(&chunk)
+            .await
+            .map_err(|e| LlmError::DownloadError(format!("Write: {e}")))?;
+        progress.record(chunk.len() as u64);
+    }
+    file.flush()
+        .await
+        .map_err(|e| LlmError::DownloadError(format!("Flush: {e}")))?;
+    Ok(())
+}
+
 /// Manages model download, storage, and lifecycle.
 ///
 /// Supports two-tier resolution: bundled models in `resource_dir` (read-only,
@@ -144,48 +214,69 @@ impl ModelManager {
         }
     }
 
-    /// Download a model from HuggingFace Hub.
+    /// Download a model from HuggingFace Hub using streaming HTTP.
     ///
-    /// Emits `llm-download-progress` events via the app handle.
+    /// Emits `llm-download-progress` events via the app handle with combined
+    /// progress across both GGUF and tokenizer files.
     pub async fn download(
         &self,
         config: &ModelConfig,
         app_handle: &tauri::AppHandle,
     ) -> Result<(), LlmError> {
-        use hf_hub::api::tokio::ApiBuilder;
         use tauri::Emitter;
 
         let model_dir = self.models_dir.join(config.repo_id);
-        std::fs::create_dir_all(&model_dir)
+        tokio::fs::create_dir_all(&model_dir)
+            .await
             .map_err(|e| LlmError::DownloadError(format!("Failed to create dir: {e}")))?;
 
-        let api = ApiBuilder::new()
-            .with_cache_dir(self.models_dir.clone())
+        let client = reqwest::Client::builder()
+            .user_agent("ChessMentor/0.1")
             .build()
-            .map_err(|e| LlmError::DownloadError(format!("HF Hub API init: {e}")))?;
+            .map_err(|e| LlmError::DownloadError(format!("HTTP client init: {e}")))?;
 
-        let repo = api.model(config.repo_id.to_string());
+        let fallback_total = config.file_size_mb as u64 * 1024 * 1024;
+        let mut progress = DownloadProgress::new(app_handle);
 
-        // Download GGUF model file
+        let gguf_url = format!(
+            "https://huggingface.co/{}/resolve/main/{}",
+            config.repo_id, config.gguf_filename
+        );
+        let tokenizer_url = format!(
+            "https://huggingface.co/{}/resolve/main/{}",
+            config.repo_id, config.tokenizer_filename
+        );
+
+        // --- Download GGUF model file ---
         tracing::info!("Downloading model: {}", config.gguf_filename);
-        let handle = app_handle.clone();
-        let _model_path = repo
-            .download(config.gguf_filename)
+        let gguf_response = client
+            .get(&gguf_url)
+            .send()
             .await
-            .map_err(|e| LlmError::DownloadError(format!("Model download: {e}")))?;
+            .map_err(|e| LlmError::DownloadError(format!("Model request: {e}")))?
+            .error_for_status()
+            .map_err(|e| LlmError::DownloadError(format!("Model request status: {e}")))?;
 
-        // Copy/symlink to our expected location if not already there
+        let gguf_size = gguf_response.content_length().unwrap_or(fallback_total);
+
+        // Get tokenizer size estimate via HEAD request
+        let tokenizer_size = client
+            .head(&tokenizer_url)
+            .send()
+            .await
+            .ok()
+            .and_then(|r| r.content_length())
+            .unwrap_or(1024 * 1024); // 1MB fallback
+
+        progress.total_bytes = gguf_size + tokenizer_size;
+
         let target_model = self
             .models_dir
             .join(config.repo_id)
             .join(config.gguf_filename);
-        if !target_model.exists() {
-            if let Some(parent) = target_model.parent() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| LlmError::DownloadError(format!("Create dir: {e}")))?;
-            }
-            std::fs::copy(&_model_path, &target_model)
-                .map_err(|e| LlmError::DownloadError(format!("Copy model: {e}")))?;
+        if let Err(e) = stream_to_file(gguf_response, &target_model, &mut progress).await {
+            let _ = tokio::fs::remove_file(&target_model).await;
+            return Err(e);
         }
 
         // Verify SHA256 hash if configured
@@ -195,27 +286,32 @@ impl ModelManager {
             tracing::info!("SHA256 hash verified for {}", config.gguf_filename);
         }
 
-        // Download tokenizer
+        // --- Download tokenizer ---
         tracing::info!("Downloading tokenizer: {}", config.tokenizer_filename);
-        let _tokenizer_path = repo
-            .download(config.tokenizer_filename)
+        let tok_response = client
+            .get(&tokenizer_url)
+            .send()
             .await
-            .map_err(|e| LlmError::DownloadError(format!("Tokenizer download: {e}")))?;
+            .map_err(|e| LlmError::DownloadError(format!("Tokenizer request: {e}")))?
+            .error_for_status()
+            .map_err(|e| LlmError::DownloadError(format!("Tokenizer request status: {e}")))?;
 
         let target_tokenizer = self
             .models_dir
             .join(config.repo_id)
             .join(config.tokenizer_filename);
-        if !target_tokenizer.exists() {
-            std::fs::copy(&_tokenizer_path, &target_tokenizer)
-                .map_err(|e| LlmError::DownloadError(format!("Copy tokenizer: {e}")))?;
+        if let Err(e) = stream_to_file(tok_response, &target_tokenizer, &mut progress).await {
+            let _ = tokio::fs::remove_file(&target_tokenizer).await;
+            let _ = tokio::fs::remove_file(&target_model).await;
+            return Err(e);
         }
 
-        let _ = handle.emit(
+        // Emit final 100% progress
+        let _ = app_handle.emit(
             "llm-download-progress",
             serde_json::json!({
-                "downloadedBytes": config.file_size_mb as u64 * 1024 * 1024,
-                "totalBytes": config.file_size_mb as u64 * 1024 * 1024,
+                "downloadedBytes": progress.total_bytes,
+                "totalBytes": progress.total_bytes,
             }),
         );
 
@@ -282,14 +378,14 @@ mod tests {
     #[test]
     fn is_available_returns_false_for_missing_files() {
         let tmp = tempfile::tempdir().unwrap();
-        let mgr = ModelManager::new(tmp.path());
+        let mgr = ModelManager::new(tmp.path(), None);
         assert!(!mgr.is_available(&GEMMA2_2B));
     }
 
     #[test]
     fn is_available_returns_false_for_truncated_model() {
         let tmp = tempfile::tempdir().unwrap();
-        let mgr = ModelManager::new(tmp.path());
+        let mgr = ModelManager::new(tmp.path(), None);
 
         let config = ModelConfig {
             id: "test",
@@ -316,7 +412,7 @@ mod tests {
     #[test]
     fn is_available_returns_true_for_adequate_size() {
         let tmp = tempfile::tempdir().unwrap();
-        let mgr = ModelManager::new(tmp.path());
+        let mgr = ModelManager::new(tmp.path(), None);
 
         let config = ModelConfig {
             id: "test",
@@ -369,10 +465,8 @@ mod tests {
 
     #[test]
     fn bundled_resource_dir_preferred_when_exists() {
-        // With a resource dir that doesn't have files, falls back to models_dir
         let mgr = ModelManager::new(Path::new("/tmp/test"), Some(PathBuf::from("/tmp/nonexistent")));
         let path = mgr.get_model_path(&GEMMA2_2B);
-        // Should fall back to models_dir path since resource dir files don't exist
         assert!(path.to_str().unwrap().contains("bartowski"));
     }
 

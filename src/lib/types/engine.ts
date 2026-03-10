@@ -274,4 +274,5 @@ export type ModelStatus = {
   fileSizeMb: number;
   ramRequirementMb: number;
   systemMemoryMb: number;
+  availableMemoryMb: number;
 };
