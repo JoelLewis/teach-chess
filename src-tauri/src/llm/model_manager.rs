@@ -66,12 +66,14 @@ impl ModelManager {
         }
 
         // Verify model file isn't truncated (within 10% of expected size)
-        if let Ok(metadata) = std::fs::metadata(&model_path) {
-            let expected_bytes = config.file_size_mb as u64 * 1024 * 1024;
-            let actual_bytes = metadata.len();
-            if actual_bytes < expected_bytes * 9 / 10 {
-                return false;
+        match std::fs::metadata(&model_path) {
+            Ok(metadata) => {
+                let expected_bytes = config.file_size_mb as u64 * 1024 * 1024;
+                if metadata.len() < expected_bytes * 9 / 10 {
+                    return false;
+                }
             }
+            Err(_) => return false,
         }
 
         true

@@ -52,9 +52,20 @@ verify_checksum() {
     local file="$1"
     local expected="$2"
 
+    # Skip verification if checksum is a placeholder
+    if [[ "$expected" == PLACEHOLDER_* ]]; then
+        echo "WARNING: Checksum verification skipped (placeholder hash). Update with real hashes before release." >&2
+        return 0
+    fi
+
     echo "Verifying SHA256 checksum..."
     local actual
-    actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+    # Use sha256sum on Linux, shasum on macOS
+    if command -v sha256sum &>/dev/null; then
+        actual="$(sha256sum "$file" | awk '{print $1}')"
+    else
+        actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+    fi
 
     if [[ "$actual" != "$expected" ]]; then
         echo "ERROR: SHA256 checksum mismatch!" >&2

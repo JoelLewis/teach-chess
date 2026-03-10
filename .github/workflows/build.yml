@@ -88,7 +88,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
 
       - name: Import Apple Developer Certificate
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != ''
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -102,9 +102,10 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
           security find-identity -v -p codesigning build.keychain
+          rm -f certificate.p12
 
       - name: Extract signing identity
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != ''
         run: |
           CERT_INFO=$(security find-identity -v -p codesigning build.keychain | head -1)
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
