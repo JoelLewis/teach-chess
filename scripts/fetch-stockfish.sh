@@ -5,6 +5,13 @@ set -euo pipefail
 # into src-tauri/binaries/ with the Tauri sidecar naming convention.
 
 STOCKFISH_VERSION="17"
+
+# SHA256 checksums for Stockfish 17 binaries (of the downloaded archive)
+# Verify these against: https://github.com/official-stockfish/Stockfish/releases/tag/sf_17
+CHECKSUM_LINUX="PLACEHOLDER_VERIFY_FROM_RELEASE"
+CHECKSUM_MACOS="PLACEHOLDER_VERIFY_FROM_RELEASE"
+CHECKSUM_WINDOWS="PLACEHOLDER_VERIFY_FROM_RELEASE"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BINARIES_DIR="$SCRIPT_DIR/../src-tauri/binaries"
 mkdir -p "$BINARIES_DIR"
@@ -41,23 +48,48 @@ detect_target() {
     echo "$target"
 }
 
+verify_checksum() {
+    local file="$1"
+    local expected="$2"
+
+    echo "Verifying SHA256 checksum..."
+    local actual
+    actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+
+    if [[ "$actual" != "$expected" ]]; then
+        echo "ERROR: SHA256 checksum mismatch!" >&2
+        echo "  Expected: $expected" >&2
+        echo "  Actual:   $actual" >&2
+        echo "  File:     $file" >&2
+        exit 1
+    fi
+
+    echo "Checksum verified."
+}
+
 download_stockfish() {
     local target="$1"
-    local url filename ext=""
+    local url filename ext="" expected_checksum
 
     case "$target" in
         *linux*)
             url="https://github.com/official-stockfish/Stockfish/releases/download/sf_${STOCKFISH_VERSION}/stockfish-ubuntu-x86-64-avx2.tar"
             filename="stockfish-ubuntu-x86-64-avx2.tar"
+            expected_checksum="$CHECKSUM_LINUX"
             ;;
         *darwin*)
+            # The macOS download (stockfish-macos-x86-64-avx2.tar) is a universal
+            # binary that works on both x86_64 and aarch64 (Apple Silicon) Macs.
+            # This is why the same URL is used for both Darwin targets.
             url="https://github.com/official-stockfish/Stockfish/releases/download/sf_${STOCKFISH_VERSION}/stockfish-macos-x86-64-avx2.tar"
             filename="stockfish-macos-x86-64-avx2.tar"
+            expected_checksum="$CHECKSUM_MACOS"
             ;;
         *windows*)
             url="https://github.com/official-stockfish/Stockfish/releases/download/sf_${STOCKFISH_VERSION}/stockfish-windows-x86-64-avx2.zip"
             filename="stockfish-windows-x86-64-avx2.zip"
             ext=".exe"
+            expected_checksum="$CHECKSUM_WINDOWS"
             ;;
     esac
 
@@ -75,6 +107,8 @@ download_stockfish() {
 
     curl -fSL "$url" -o "$tmpdir/$filename"
 
+    verify_checksum "$tmpdir/$filename" "$expected_checksum"
+
     echo "Extracting..."
     if [[ "$filename" == *.tar ]]; then
         tar xf "$tmpdir/$filename" -C "$tmpdir"
@@ -89,6 +123,12 @@ download_stockfish() {
     fi
 
     chmod +x "$BINARIES_DIR/$sidecar_name"
+
+    # Clear macOS quarantine attributes to prevent code signing failures
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        xattr -cr "$BINARIES_DIR/$sidecar_name" 2>/dev/null || true
+    fi
+
     echo "Stockfish installed to $BINARIES_DIR/$sidecar_name"
 }
 
