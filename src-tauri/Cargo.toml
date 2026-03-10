@@ -31,12 +31,13 @@ candle-transformers = { version = "0.9", optional = true }
 tokenizers = { version = "0.22", default-features = false, features = ["onig"], optional = true }
 hf-hub = { version = "0.5", features = ["tokio"], optional = true }
 tokio-util = { version = "0.7", features = ["rt"], optional = true }
+sha2 = { version = "0.10", optional = true }
 
 [dev-dependencies]
 tempfile = "3"
 
 [features]
 default = []
-llm = ["dep:candle-core", "dep:candle-transformers", "dep:tokenizers", "dep:hf-hub", "dep:tokio-util"]
+llm = ["dep:candle-core", "dep:candle-transformers", "dep:tokenizers", "dep:hf-hub", "dep:tokio-util", "dep:sha2"]
 llm-cuda = ["llm", "candle-core/cuda", "candle-transformers/cuda"]
 llm-metal = ["llm", "candle-core/metal", "candle-transformers/metal"]

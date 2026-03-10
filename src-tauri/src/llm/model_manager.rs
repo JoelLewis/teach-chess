@@ -13,6 +13,8 @@ pub struct ModelConfig {
     pub tokenizer_filename: &'static str,
     pub file_size_mb: u32,
     pub ram_requirement_mb: u32,
+    /// Expected SHA256 hash of the GGUF file (hex string). None to skip verification.
+    pub sha256_hash: Option<&'static str>,
 }
 
 pub const GEMMA2_2B: ModelConfig = ModelConfig {
@@ -23,6 +25,8 @@ pub const GEMMA2_2B: ModelConfig = ModelConfig {
     tokenizer_filename: "tokenizer.json",
     file_size_mb: 1500,
     ram_requirement_mb: 2500,
+    // TODO: fill in actual SHA256 hash after verifying the model file
+    sha256_hash: None,
 };
 
 /// Manages model download, storage, and lifecycle.
@@ -51,8 +55,60 @@ impl ModelManager {
     }
 
     /// Check if a model's files are already downloaded.
+    ///
+    /// Verifies both files exist and the GGUF file size is within 10% of the expected size.
     pub fn is_available(&self, config: &ModelConfig) -> bool {
-        self.get_model_path(config).exists() && self.get_tokenizer_path(config).exists()
+        let model_path = self.get_model_path(config);
+        let tokenizer_path = self.get_tokenizer_path(config);
+
+        if !model_path.exists() || !tokenizer_path.exists() {
+            return false;
+        }
+
+        // Verify model file isn't truncated (within 10% of expected size)
+        if let Ok(metadata) = std::fs::metadata(&model_path) {
+            let expected_bytes = config.file_size_mb as u64 * 1024 * 1024;
+            let actual_bytes = metadata.len();
+            if actual_bytes < expected_bytes * 9 / 10 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Verify the SHA256 hash of a file matches the expected value.
+    ///
+    /// Reads the file in 8KB chunks to avoid loading large files into memory.
+    fn verify_hash(path: &Path, expected_hex: &str) -> Result<(), LlmError> {
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let mut file = std::fs::File::open(path)
+            .map_err(|e| LlmError::DownloadError(format!("Failed to open file for hash verification: {e}")))?;
+
+        let mut hasher = Sha256::new();
+        let mut buffer = [0u8; 8192];
+        loop {
+            let bytes_read = file
+                .read(&mut buffer)
+                .map_err(|e| LlmError::DownloadError(format!("Failed to read file for hash verification: {e}")))?;
+            if bytes_read == 0 {
+                break;
+            }
+            hasher.update(&buffer[..bytes_read]);
+        }
+
+        let actual_hex = format!("{:x}", hasher.finalize());
+        if actual_hex != expected_hex {
+            return Err(LlmError::DownloadError(format!(
+                "SHA256 hash mismatch for {}: expected {expected_hex}, got {actual_hex}. \
+                 The file may be corrupted — please delete it and re-download.",
+                path.display()
+            )));
+        }
+
+        Ok(())
     }
 
     /// Download a model from HuggingFace Hub.
@@ -94,6 +150,13 @@ impl ModelManager {
             }
             std::fs::copy(&_model_path, &target_model)
                 .map_err(|e| LlmError::DownloadError(format!("Copy model: {e}")))?;
+        }
+
+        // Verify SHA256 hash if configured
+        if let Some(expected_hash) = config.sha256_hash {
+            tracing::info!("Verifying SHA256 hash for {}", config.gguf_filename);
+            Self::verify_hash(&target_model, expected_hash)?;
+            tracing::info!("SHA256 hash verified for {}", config.gguf_filename);
         }
 
         // Download tokenizer
@@ -144,6 +207,7 @@ impl ModelManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
 
     #[test]
     fn model_paths_are_constructed_correctly() {
@@ -173,5 +237,94 @@ mod tests {
         assert_eq!(GEMMA2_2B.file_size_mb, 1500);
         assert_eq!(GEMMA2_2B.ram_requirement_mb, 2500);
         assert!(!GEMMA2_2B.repo_id.is_empty());
+        assert!(GEMMA2_2B.sha256_hash.is_none()); // TODO: update when hash is known
+    }
+
+    #[test]
+    fn is_available_returns_false_for_missing_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mgr = ModelManager::new(tmp.path());
+        assert!(!mgr.is_available(&GEMMA2_2B));
+    }
+
+    #[test]
+    fn is_available_returns_false_for_truncated_model() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mgr = ModelManager::new(tmp.path());
+
+        let config = ModelConfig {
+            id: "test",
+            display_name: "Test",
+            repo_id: "test/repo",
+            gguf_filename: "model.gguf",
+            tokenizer_filename: "tokenizer.json",
+            file_size_mb: 1, // expect ~1MB
+            ram_requirement_mb: 100,
+            sha256_hash: None,
+        };
+
+        let model_path = mgr.get_model_path(&config);
+        let tokenizer_path = mgr.get_tokenizer_path(&config);
+        std::fs::create_dir_all(model_path.parent().unwrap()).unwrap();
+
+        // Write a tiny file (way below 90% of 1MB)
+        std::fs::write(&model_path, b"tiny").unwrap();
+        std::fs::write(&tokenizer_path, b"{}").unwrap();
+
+        assert!(!mgr.is_available(&config));
+    }
+
+    #[test]
+    fn is_available_returns_true_for_adequate_size() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mgr = ModelManager::new(tmp.path());
+
+        let config = ModelConfig {
+            id: "test",
+            display_name: "Test",
+            repo_id: "test/repo",
+            gguf_filename: "model.gguf",
+            tokenizer_filename: "tokenizer.json",
+            file_size_mb: 1, // expect ~1MB
+            ram_requirement_mb: 100,
+            sha256_hash: None,
+        };
+
+        let model_path = mgr.get_model_path(&config);
+        let tokenizer_path = mgr.get_tokenizer_path(&config);
+        std::fs::create_dir_all(model_path.parent().unwrap()).unwrap();
+
+        // Write a file that's at least 90% of 1MB
+        let data = vec![0u8; 1024 * 1024]; // exactly 1MB
+        std::fs::write(&model_path, &data).unwrap();
+        std::fs::write(&tokenizer_path, b"{}").unwrap();
+
+        assert!(mgr.is_available(&config));
+    }
+
+    #[test]
+    fn verify_hash_succeeds_for_correct_hash() {
+        let tmp = tempfile::tempdir().unwrap();
+        let file_path = tmp.path().join("test.bin");
+        let mut f = std::fs::File::create(&file_path).unwrap();
+        f.write_all(b"hello world").unwrap();
+        drop(f);
+
+        // SHA256 of "hello world"
+        let expected = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+        assert!(ModelManager::verify_hash(&file_path, expected).is_ok());
+    }
+
+    #[test]
+    fn verify_hash_fails_for_wrong_hash() {
+        let tmp = tempfile::tempdir().unwrap();
+        let file_path = tmp.path().join("test.bin");
+        std::fs::write(&file_path, b"hello world").unwrap();
+
+        let wrong = "0000000000000000000000000000000000000000000000000000000000000000";
+        let result = ModelManager::verify_hash(&file_path, wrong);
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("hash mismatch"));
     }
 }
