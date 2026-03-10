@@ -24,9 +24,12 @@ jobs:
           - name: Linux
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-          - name: macOS
+          - name: macOS (Apple Silicon)
             os: macos-latest
             target: aarch64-apple-darwin
+          - name: macOS (Intel)
+            os: macos-latest
+            target: x86_64-apple-darwin
 
     steps:
       - uses: actions/checkout@v4
@@ -85,15 +88,37 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
 
+      - name: Import Apple Developer Certificate
+        if: runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          security find-identity -v -p codesigning build.keychain
+          rm -f certificate.p12
+
+      - name: Extract signing identity
+        if: runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != ''
+        run: |
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | head -1)
+          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
+          echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> $GITHUB_ENV
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing (set these secrets in GitHub repo settings)
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          # macOS notarization via App Store Connect API key
+          APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_PATH: ${{ secrets.APPLE_API_KEY_PATH }}
@@ -103,16 +128,17 @@ jobs:
           releaseBody: See CHANGELOG.md for details.
           releaseDraft: true
           prerelease: false
+          args: --target ${{ matrix.target }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chessmentor-${{ matrix.target }}
           path: |
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/macos/*.app
+            src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+            src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app
           if-no-files-found: ignore
 
   # Mac App Store build (separate job with MAS-specific signing)
