@@ -57,7 +57,7 @@ pub fn run() {
         )
         .init();
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -90,6 +90,17 @@ pub fn run() {
                     .ok()
                     .map(|d| d.join("models"));
                 app.manage(llm::LlmState::new(app_data_dir, resource_dir));
+            }
+
+            // Clean up expired coaching cache entries
+            {
+                let db_lock = app.state::<std::sync::Mutex<db::connection::Database>>();
+                let db = db_lock.lock().expect("DB lock for cache cleanup");
+                match db.cleanup_expired_cache() {
+                    Ok(n) if n > 0 => tracing::info!("Cleaned up {n} expired coaching cache entries"),
+                    Ok(_) => {}
+                    Err(e) => tracing::warn!("Failed to clean up coaching cache: {e}"),
+                }
             }
 
             // Import bundled starter data if tables are empty
@@ -158,6 +169,21 @@ pub fn run() {
             commands::theme::get_theme,
             commands::theme::set_theme,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error building tauri application");
+
+    app.run(|app_handle: &tauri::AppHandle, event: tauri::RunEvent| {
+        if let tauri::RunEvent::Exit = event {
+            let engine_state =
+                app_handle.state::<tokio::sync::Mutex<engine::process::EngineProcess>>();
+            let lock_result = engine_state.try_lock();
+            if let Ok(mut engine) = lock_result {
+                // Use a new runtime since we're in a sync callback during shutdown
+                if let Ok(rt) = tokio::runtime::Runtime::new() {
+                    let _ = rt.block_on(engine.stop());
+                }
+                tracing::info!("Engine stopped on app exit");
+            }
+        }
+    });
 }

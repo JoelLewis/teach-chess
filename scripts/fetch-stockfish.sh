@@ -91,6 +91,7 @@ download_stockfish() {
         *aarch64*darwin*)
             url="https://github.com/official-stockfish/Stockfish/releases/download/sf_${STOCKFISH_VERSION}/stockfish-macos-m1-apple-silicon.tar"
             filename="stockfish-macos-m1-apple-silicon.tar"
+            expected_checksum="$CHECKSUM_MACOS"
             ;;
         *darwin*)
             # The macOS download (stockfish-macos-x86-64-avx2.tar) is a universal

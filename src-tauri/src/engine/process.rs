@@ -15,11 +15,14 @@ use crate::models::game::GameRecord;
 
 use super::uci;
 
+const MAX_RESTART_ATTEMPTS: u32 = 3;
+
 #[derive(Default)]
 pub struct EngineProcess {
     child: Option<CommandChild>,
     stdout_rx: Option<mpsc::Receiver<String>>,
     is_running: bool,
+    app_handle: Option<AppHandle>,
 }
 
 impl EngineProcess {
@@ -72,6 +75,7 @@ impl EngineProcess {
         self.child = Some(child);
         self.stdout_rx = Some(stdout_rx);
         self.is_running = true;
+        self.app_handle = Some(app.clone());
 
         // Initialize UCI protocol
         self.send("uci").await?;
@@ -81,6 +85,69 @@ impl EngineProcess {
 
         info!("Stockfish engine started and ready");
         Ok(())
+    }
+
+    /// Reset dead process state so a fresh `start()` can proceed.
+    fn clear_process_state(&mut self) {
+        self.child = None;
+        self.stdout_rx = None;
+        self.is_running = false;
+    }
+
+    /// Attempt to restart the engine after a crash. Tries up to MAX_RESTART_ATTEMPTS times
+    /// with exponential backoff.
+    async fn try_restart(&mut self) -> Result<(), AppError> {
+        let app = self
+            .app_handle
+            .clone()
+            .ok_or(EngineError::ProcessError("No app handle for restart".to_string()))?;
+
+        self.clear_process_state();
+
+        for attempt in 1..=MAX_RESTART_ATTEMPTS {
+            let backoff = Duration::from_millis(100 * 2u64.pow(attempt - 1));
+            warn!("Engine restart attempt {attempt}/{MAX_RESTART_ATTEMPTS} (backoff {backoff:?})");
+            tokio::time::sleep(backoff).await;
+
+            match self.start(&app).await {
+                Ok(()) => {
+                    info!("Engine restarted successfully on attempt {attempt}");
+                    return Ok(());
+                }
+                Err(e) => {
+                    warn!("Engine restart attempt {attempt} failed: {e}");
+                    self.clear_process_state();
+                }
+            }
+        }
+
+        Err(EngineError::ProcessError(format!(
+            "Engine restart failed after {MAX_RESTART_ATTEMPTS} attempts"
+        ))
+        .into())
+    }
+
+    /// Ensure the engine is alive, restarting if necessary.
+    ///
+    /// Fast path: just checks the `is_running` flag (no I/O). Restart is only
+    /// attempted when the flag indicates the engine was never started or has
+    /// been marked dead. Actual crash detection happens when `send()` or
+    /// `read_line()` fails in the calling method — callers should propagate
+    /// those errors, which will cause the next `ensure_alive()` call to
+    /// trigger a restart (since `stop()` / error paths set `is_running = false`).
+    async fn ensure_alive(&mut self) -> Result<(), AppError> {
+        if self.is_running {
+            return Ok(());
+        }
+
+        // Engine was never started or has been marked dead — try restart if
+        // we have an app handle (meaning it was started at least once before).
+        if self.app_handle.is_some() {
+            warn!("Engine appears dead, attempting restart");
+            return self.try_restart().await;
+        }
+
+        Err(EngineError::NotRunning.into())
     }
 
     pub async fn stop(&mut self) -> Result<(), AppError> {
@@ -125,6 +192,18 @@ impl EngineProcess {
         }
     }
 
+    /// Signal to the engine that a new game is starting, clearing its internal state.
+    pub async fn new_game(&mut self) -> Result<(), AppError> {
+        self.ensure_alive().await?;
+
+        self.send("ucinewgame").await?;
+        self.send("isready").await?;
+        self.wait_for("readyok").await?;
+
+        info!("Engine reset for new game");
+        Ok(())
+    }
+
     pub async fn get_move(
         &mut self,
         fen: &str,
@@ -133,9 +212,7 @@ impl EngineProcess {
         skill_level: Option<u8>,
         app: Option<&AppHandle>,
     ) -> Result<EngineMove, AppError> {
-        if !self.is_running {
-            return Err(EngineError::NotRunning.into());
-        }
+        self.ensure_alive().await?;
 
         // Cancel any in-progress analysis before starting a new one
         let _ = self.stop_and_drain().await;
@@ -159,9 +236,7 @@ impl EngineProcess {
     }
 
     pub async fn analyze(&mut self, fen: &str, depth: u32) -> Result<EngineEvaluation, AppError> {
-        if !self.is_running {
-            return Err(EngineError::NotRunning.into());
-        }
+        self.ensure_alive().await?;
 
         // Cancel any in-progress analysis before starting a new one
         let _ = self.stop_and_drain().await;
@@ -201,9 +276,7 @@ impl EngineProcess {
         depth: u32,
         num_pvs: u32,
     ) -> Result<Vec<uci::MultiPvLine>, AppError> {
-        if !self.is_running {
-            return Err(EngineError::NotRunning.into());
-        }
+        self.ensure_alive().await?;
 
         // Cancel any in-progress analysis before starting a new one
         let _ = self.stop_and_drain().await;
@@ -266,9 +339,7 @@ impl EngineProcess {
         depth: u32,
         app: Option<&AppHandle>,
     ) -> Result<Vec<MoveEvaluation>, AppError> {
-        if !self.is_running {
-            return Err(EngineError::NotRunning.into());
-        }
+        self.ensure_alive().await?;
 
         // Replay the PGN to extract positions and moves
         let replay = replay_pgn(&game.pgn)?;
@@ -350,9 +421,10 @@ impl EngineProcess {
 
         debug!("-> Engine: {cmd}");
         let cmd_with_newline = format!("{cmd}\n");
-        child
-            .write(cmd_with_newline.as_bytes())
-            .map_err(|e| EngineError::ProcessError(e.to_string()))?;
+        if let Err(e) = child.write(cmd_with_newline.as_bytes()) {
+            self.is_running = false;
+            return Err(EngineError::ProcessError(e.to_string()).into());
+        }
 
         Ok(())
     }
@@ -362,7 +434,10 @@ impl EngineProcess {
 
         match tokio::time::timeout(Duration::from_secs(30), rx.recv()).await {
             Ok(Some(line)) => Ok(line),
-            Ok(None) => Err(EngineError::ProcessError("Engine stdout closed".to_string()).into()),
+            Ok(None) => {
+                self.is_running = false;
+                Err(EngineError::ProcessError("Engine stdout closed".to_string()).into())
+            }
             Err(_) => Err(EngineError::Timeout.into()),
         }
     }

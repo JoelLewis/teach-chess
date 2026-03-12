@@ -216,47 +216,55 @@ pub async fn generate_coaching(
             .model_manager
             .is_available(&crate::llm::model_manager::GEMMA2_2B)
         {
-            match try_llm_generation(
-                &llm_state,
-                &app,
-                request_id.as_deref(),
-                &level,
-                &classification,
-                &coaching_context,
-                &player_move_san,
-                &engine_best_san,
+            let params = LlmCoachingParams {
+                level: &level,
+                classification: &classification,
+                coaching_context: &coaching_context,
+                player_move_san: &player_move_san,
+                engine_best_san: &engine_best_san,
+            };
+            match tokio::time::timeout(
+                std::time::Duration::from_secs(30),
+                try_llm_generation(&llm_state, &app, request_id.as_deref(), &params),
             )
             .await
             {
-                Ok(text) => {
-                    // Cache the LLM result
-                    if let Ok(db_lock) = db
-                        .lock()
-                        .map_err(|e| crate::error::AppError::Lock(e.to_string()))
-                    {
-                        let _ = db_lock.set_cached_coaching(
-                            &cache_key,
-                            &text,
-                            level_str,
-                            &classification,
-                            &fen,
-                            30,
-                        );
+                Err(_) => {
+                    tracing::warn!("LLM generation timed out after 30s, falling back to template");
+                    emit_llm_error(&app, request_id.as_deref(), "Generation timed out");
+                }
+                Ok(inner) => match inner {
+                    Ok(text) => {
+                        // Cache the LLM result
+                        if let Ok(db_lock) = db
+                            .lock()
+                            .map_err(|e| crate::error::AppError::Lock(e.to_string()))
+                        {
+                            let _ = db_lock.set_cached_coaching(
+                                &cache_key,
+                                &text,
+                                level_str,
+                                &classification,
+                                &fen,
+                                30,
+                            );
+                        }
+                        return Ok(CoachingResponse {
+                            text,
+                            source: CoachingSource::Llm,
+                        });
                     }
-                    return Ok(CoachingResponse {
-                        text,
-                        source: CoachingSource::Llm,
-                    });
-                }
-                Err(e) => {
-                    tracing::warn!("LLM generation failed, falling back to template: {e}");
-                }
+                    Err(e) => {
+                        tracing::warn!("LLM generation failed, falling back to template: {e}");
+                        emit_llm_error(&app, request_id.as_deref(), &e.to_string());
+                    }
+                },
             }
         }
     }
 
     #[cfg(not(feature = "llm"))]
-    let _ = &app;
+    let _ = (&app, &request_id);
 
     // Fall back to template
     let template_text = generate_template_fallback(
@@ -272,31 +280,39 @@ pub async fn generate_coaching(
     })
 }
 
+/// Parameters for LLM coaching generation, grouped to keep the function signature clean.
+#[cfg(feature = "llm")]
+struct LlmCoachingParams<'a> {
+    level: &'a crate::llm::PlayerLevel,
+    classification: &'a str,
+    coaching_context: &'a Option<serde_json::Value>,
+    player_move_san: &'a str,
+    engine_best_san: &'a Option<String>,
+}
+
 /// Attempt LLM-based coaching text generation.
 #[cfg(feature = "llm")]
 async fn try_llm_generation(
     llm_state: &crate::llm::LlmState,
     app: &tauri::AppHandle,
     request_id: Option<&str>,
-    level: &crate::llm::PlayerLevel,
-    classification: &str,
-    coaching_context: &Option<serde_json::Value>,
-    player_move_san: &str,
-    engine_best_san: &Option<String>,
+    params: &LlmCoachingParams<'_>,
 ) -> Result<String, crate::llm::LlmError> {
     use crate::llm::model_manager::GEMMA2_2B;
     use crate::llm::LlmTokenEvent;
     use tauri::Emitter;
 
-    let phase = coaching_context
+    let phase = params
+        .coaching_context
         .as_ref()
         .and_then(|ctx| ctx.get("phase"))
         .and_then(|p| p.as_str())
         .unwrap_or("middlegame");
 
-    let themes = extract_string_array(coaching_context, "themes");
+    let themes = extract_string_array(params.coaching_context, "themes");
 
-    let tactics: Vec<String> = coaching_context
+    let tactics: Vec<String> = params
+        .coaching_context
         .as_ref()
         .and_then(|ctx| ctx.get("tactics"))
         .and_then(|t| t.as_array())
@@ -312,7 +328,8 @@ async fn try_llm_generation(
         })
         .unwrap_or_default();
 
-    let material_balance = coaching_context
+    let material_balance = params
+        .coaching_context
         .as_ref()
         .and_then(|ctx| ctx.get("material"))
         .and_then(|m| m.get("balanceCp"))
@@ -320,11 +337,11 @@ async fn try_llm_generation(
         .unwrap_or(0) as i32;
 
     let prompt = crate::llm::prompts::build_prompt(
-        level,
-        classification,
+        params.level,
+        params.classification,
         phase,
-        player_move_san,
-        engine_best_san.as_deref(),
+        params.player_move_san,
+        params.engine_best_san.as_deref(),
         &themes,
         &tactics,
         material_balance,
@@ -431,4 +448,19 @@ fn generate_template_fallback(
     }
 
     crate::coaching::templates::generic_template(mc).to_string()
+}
+
+/// Emit an LLM error event to the frontend so it can handle the failure gracefully.
+fn emit_llm_error(app: &tauri::AppHandle, request_id: Option<&str>, message: &str) {
+    use tauri::Emitter;
+
+    if let Some(rid) = request_id {
+        let _ = app.emit(
+            "llm-token",
+            crate::llm::LlmTokenEvent::Error {
+                message: message.to_string(),
+                request_id: rid.to_string(),
+            },
+        );
+    }
 }

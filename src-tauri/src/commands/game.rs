@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use tauri::State;
 
 use crate::db::connection::Database;
+use crate::engine::process::EngineProcess;
 use crate::error::AppError;
 use crate::game::state::GameState;
 use crate::models::chess::Position;
@@ -11,10 +12,19 @@ use crate::models::game::GameRecord;
 use crate::CurrentPlayerId;
 
 #[tauri::command]
-pub fn new_game(
+pub async fn new_game(
     config: GameConfig,
     state: State<'_, Mutex<GameState>>,
+    engine_state: State<'_, tokio::sync::Mutex<EngineProcess>>,
 ) -> Result<Position, AppError> {
+    // Reset engine hash tables for the new game (best-effort — engine may not be running yet)
+    {
+        let mut engine = engine_state.lock().await;
+        if let Err(e) = engine.new_game().await {
+            tracing::debug!("Engine new_game skipped (not yet running): {e}");
+        }
+    }
+
     let mut game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     game.new_game(config);
     Ok(game.to_position())

@@ -42,7 +42,7 @@
     ],
     "macOS": {
       "entitlements": "Entitlements.plist",
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "13.0"
     },
     "license": "GPL-3.0-only"
   }
