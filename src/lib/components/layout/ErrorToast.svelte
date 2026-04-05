@@ -17,7 +17,7 @@
         Retry
       </button>
     {/if}
-    <button class="toast-dismiss" onclick={() => errorStore.dismiss()}>
+    <button class="toast-dismiss" aria-label="Dismiss" onclick={() => errorStore.dismiss()}>
       &times;
     </button>
   </div>
@@ -91,7 +91,7 @@
     color: inherit;
     font-size: 20px;
     cursor: pointer;
-    padding: 0 4px;
+    padding: 4px 8px;
     line-height: 1;
     opacity: 0.8;
   }

@@ -95,7 +95,7 @@
 
   .review-btn {
     margin-top: 8px;
-    padding: 4px 12px;
+    padding: 8px 16px;
     font-size: 12px;
     background: var(--cm-bg-hover);
     border: 1px solid var(--cm-border-medium);

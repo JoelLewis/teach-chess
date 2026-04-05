@@ -201,7 +201,7 @@
   }
 
   .expand-btn {
-    padding: 2px 8px;
+    padding: 4px 10px;
     border: 1px solid var(--cm-border-medium);
     border-radius: 3px;
     background: var(--cm-bg-surface);

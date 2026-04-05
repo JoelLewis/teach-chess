@@ -100,7 +100,7 @@
   }
 
   .cat-btn {
-    padding: 4px 10px;
+    padding: 8px 14px;
     font-size: 12px;
     border: 1px solid var(--cm-border-medium);
     border-radius: 4px;

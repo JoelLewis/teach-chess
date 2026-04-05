@@ -92,7 +92,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 2px 6px;
+    padding: 4px 8px;
     border-radius: 3px;
     color: inherit;
     font-family: inherit;

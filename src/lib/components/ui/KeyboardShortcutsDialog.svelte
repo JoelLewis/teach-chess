@@ -18,7 +18,7 @@
     <div class="dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">Keyboard Shortcuts</h3>
-        <button class="close-btn" onclick={onClose}>&times;</button>
+        <button class="close-btn" aria-label="Close" onclick={onClose}>&times;</button>
       </div>
       <div class="shortcut-list">
         {#each shortcuts as { key, description }}
@@ -73,7 +73,7 @@
     font-size: 20px;
     cursor: pointer;
     color: var(--cm-text-muted);
-    padding: 0 4px;
+    padding: 4px 8px;
   }
 
   .shortcut-list {
