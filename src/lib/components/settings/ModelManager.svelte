@@ -2,12 +2,16 @@
   import type { ModelStatus, LlmStatus } from "../../types/engine";
   import * as api from "../../api/commands";
   import { onLlmDownloadProgress } from "../../api/events";
+  import { errorStore } from "../../stores/error.svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   let models = $state<ModelStatus[]>([]);
   let llmStatus = $state<LlmStatus | null>(null);
   let downloading = $state<string | null>(null);
   let downloadProgress = $state({ downloaded: 0, total: 0 });
+  let lastProgressTime = $state(0);
+  let lastProgressBytes = $state(0);
+  let downloadSpeed = $state(0);
 
   async function loadData() {
     try {
@@ -32,14 +36,28 @@
   async function handleDownload(modelId: string) {
     downloading = modelId;
     downloadProgress = { downloaded: 0, total: 0 };
+    downloadSpeed = 0;
+    lastProgressTime = 0;
+    lastProgressBytes = 0;
     try {
       await api.downloadModel(modelId);
       await loadData();
+      errorStore.show("Model downloaded successfully!", { severity: "info", duration: 3000 });
     } catch (err) {
       console.error("Download failed:", err);
     } finally {
       downloading = null;
+      downloadSpeed = 0;
+      lastProgressTime = 0;
+      lastProgressBytes = 0;
     }
+  }
+
+  function cancelDownload() {
+    downloading = null;
+    downloadSpeed = 0;
+    lastProgressTime = 0;
+    lastProgressBytes = 0;
   }
 
   let systemMemoryMb = $state(0);
@@ -76,6 +94,17 @@
     let unlisten: UnlistenFn | undefined;
     onLlmDownloadProgress((p) => {
       downloadProgress = { downloaded: p.downloadedBytes, total: p.totalBytes };
+      const now = Date.now();
+      if (lastProgressTime > 0 && now - lastProgressTime > 500) {
+        const elapsed = (now - lastProgressTime) / 1000;
+        const bytesDelta = p.downloadedBytes - lastProgressBytes;
+        downloadSpeed = bytesDelta / elapsed;
+        lastProgressTime = now;
+        lastProgressBytes = p.downloadedBytes;
+      } else if (lastProgressTime === 0) {
+        lastProgressTime = now;
+        lastProgressBytes = p.downloadedBytes;
+      }
     }).then((fn) => (unlisten = fn));
 
     loadData();
@@ -146,7 +175,6 @@
               {#if systemMemoryMb >= model.ramRequirementMb && availableMemoryMb > 0 && availableMemoryMb < model.ramRequirementMb}
                 <span class="ram-low-warn">Low available RAM — close other apps</span>
               {/if}
-              </span>
             </div>
           </div>
           <div class="model-actions">
@@ -166,6 +194,20 @@
                     — {formatBytes(downloadProgress.downloaded)} / {formatBytes(downloadProgress.total)}
                   {/if}
                 </span>
+                {#if downloadSpeed > 0}
+                  <span class="download-eta">
+                    {(downloadSpeed / 1024 / 1024).toFixed(1)} MB/s
+                    {#if downloadProgress.total > 0}
+                      — {(() => {
+                        const remaining = downloadProgress.total - downloadProgress.downloaded;
+                        const seconds = Math.ceil(remaining / downloadSpeed);
+                        if (seconds < 60) return `~${seconds}s remaining`;
+                        return `~${Math.ceil(seconds / 60)}m remaining`;
+                      })()}
+                    {/if}
+                  </span>
+                {/if}
+                <button class="cancel-btn" onclick={cancelDownload}>Cancel</button>
               </div>
             {:else}
               <button
@@ -349,6 +391,21 @@
   .progress-text {
     font-size: 11px;
     color: var(--cm-text-muted);
+  }
+
+  .download-eta {
+    font-size: 11px;
+    color: var(--cm-text-muted);
+  }
+
+  .cancel-btn {
+    padding: 6px 16px;
+    background: var(--cm-bg-hover);
+    color: var(--cm-text-secondary);
+    border: 1px solid var(--cm-border-medium);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
   }
 
   .empty-text {
