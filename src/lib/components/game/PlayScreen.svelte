@@ -30,6 +30,7 @@
   });
 
   let showPersonalityBadge = $state(false);
+  let confirmingResign = $state(false);
 
   $effect(() => {
     if (personalityLabel) {
@@ -169,6 +170,11 @@
   }
 
   async function handleResign() {
+    if (!confirmingResign) {
+      confirmingResign = true;
+      return;
+    }
+    confirmingResign = false;
     try {
       const record = await api.resign();
       gameStore.lastGameRecord = record;
@@ -252,7 +258,15 @@
 
     <div class="panel-footer">
       {#if !position?.isGameOver}
-        <button class="btn-resign" onclick={handleResign}>Resign</button>
+        {#if confirmingResign}
+          <div class="resign-confirm">
+            <span class="resign-prompt">Resign this game?</span>
+            <button class="btn-resign-yes" onclick={handleResign}>Yes</button>
+            <button class="btn-resign-no" onclick={() => (confirmingResign = false)}>No</button>
+          </div>
+        {:else}
+          <button class="btn-resign" onclick={handleResign}>Resign</button>
+        {/if}
       {/if}
     </div>
   </div>
@@ -344,6 +358,38 @@
 
   .btn-resign:hover {
     background: var(--cm-status-error-muted);
+  }
+
+  .resign-confirm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .resign-prompt {
+    font-size: 13px;
+    color: var(--cm-text-secondary);
+    flex: 1;
+  }
+
+  .btn-resign-yes {
+    padding: 6px 12px;
+    background: var(--cm-status-error);
+    color: var(--cm-text-inverse);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .btn-resign-no {
+    padding: 6px 12px;
+    background: var(--cm-bg-hover);
+    color: var(--cm-text-secondary);
+    border: 1px solid var(--cm-border-medium);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
   }
 
   .personality-badge {
