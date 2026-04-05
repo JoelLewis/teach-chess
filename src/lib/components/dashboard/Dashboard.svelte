@@ -233,7 +233,8 @@
   .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 20px;
+    row-gap: 24px;
   }
 
   @media (max-width: 600px) {
