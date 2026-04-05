@@ -91,7 +91,17 @@
       <ModelDownloadCard {onNavigate} />
     {/if}
 
-    <!-- Skill Overview + Recommendation -->
+    <!-- Daily Recommendation Hero -->
+    {#if data.dailyRecommendation}
+      <div class="hero-recommendation">
+        <RecommendationCard
+          recommendation={data.dailyRecommendation}
+          onAction={handleRecommendationAction}
+        />
+      </div>
+    {/if}
+
+    <!-- Skill Overview -->
     <div class="dashboard-grid">
       <div class="card skill-card">
         <div class="card-header">Skill Overview</div>
@@ -106,11 +116,6 @@
           </div>
         {/if}
       </div>
-
-      <RecommendationCard
-        recommendation={data.dailyRecommendation}
-        onAction={handleRecommendationAction}
-      />
     </div>
 
     <!-- Quick Start -->
@@ -229,9 +234,16 @@
     margin: 0;
   }
 
+  .hero-recommendation {
+    margin-bottom: 20px;
+    border-left: 4px solid var(--cm-accent-primary);
+    border-radius: var(--cm-radius-md);
+    overflow: hidden;
+  }
+
   .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
     row-gap: 24px;
   }
