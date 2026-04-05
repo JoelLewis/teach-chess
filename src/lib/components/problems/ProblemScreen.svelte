@@ -37,6 +37,16 @@
     }
   }
 
+  function checkMilestones(streak: number) {
+    const milestones = [5, 10, 25, 50, 100];
+    if (milestones.includes(streak)) {
+      errorStore.show(`Puzzle streak: ${streak} in a row!`, {
+        severity: "info",
+        duration: 4000,
+      });
+    }
+  }
+
   async function handleMove(from: string, to: string) {
     if (!canMove) return;
 
@@ -60,6 +70,9 @@
           // Refresh stats
           const stats = await api.getPuzzleStats();
           puzzleStore.sessionStats = stats;
+
+          // Check for milestone achievements
+          checkMilestones(stats.currentStreak);
         } else {
           // Show brief correct feedback, then auto-continue
           puzzleStore.phase = "correct";
