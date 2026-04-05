@@ -17,10 +17,12 @@
 </script>
 
 <div class="openings-screen">
-  <div class="tabs">
+  <div class="tabs" role="tablist">
     <button
       class="tab"
       class:active={activeTab === "library"}
+      role="tab"
+      aria-selected={activeTab === "library"}
       onclick={() => setTab("library")}
     >
       Library
@@ -28,6 +30,8 @@
     <button
       class="tab"
       class:active={activeTab === "repertoire"}
+      role="tab"
+      aria-selected={activeTab === "repertoire"}
       onclick={() => setTab("repertoire")}
     >
       My Repertoire
@@ -35,6 +39,8 @@
     <button
       class="tab"
       class:active={activeTab === "drill"}
+      role="tab"
+      aria-selected={activeTab === "drill"}
       onclick={() => setTab("drill")}
     >
       Drill

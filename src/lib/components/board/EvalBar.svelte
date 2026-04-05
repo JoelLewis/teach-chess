@@ -31,6 +31,9 @@
   aria-label="Position evaluation: {displayValue}"
 >
   <div class="eval-black" style="height: {100 - whiteHeight}%">
+    {#if 100 - whiteHeight > 15}
+      <span class="side-label">B</span>
+    {/if}
     {#if whiteHeight < 50}
       <span class="eval-label">{displayValue}</span>
     {/if}
@@ -38,6 +41,9 @@
   <div class="eval-white" style="height: {whiteHeight}%">
     {#if whiteHeight >= 50}
       <span class="eval-label">{displayValue}</span>
+    {/if}
+    {#if whiteHeight > 15}
+      <span class="side-label">W</span>
     {/if}
   </div>
 </div>
@@ -81,5 +87,14 @@
     font-family: var(--cm-font-mono);
     max-height: 100%;
     overflow: hidden;
+  }
+
+  .side-label {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    user-select: none;
   }
 </style>
