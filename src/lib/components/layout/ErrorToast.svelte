@@ -3,8 +3,20 @@
 </script>
 
 {#if errorStore.message}
-  <div class="toast" role="alert">
+  <div class="toast toast-{errorStore.severity}" role="alert">
     <span class="toast-msg">{errorStore.message}</span>
+    {#if errorStore.retry}
+      <button
+        class="toast-retry"
+        onclick={() => {
+          const fn = errorStore.retry;
+          errorStore.dismiss();
+          fn?.();
+        }}
+      >
+        Retry
+      </button>
+    {/if}
     <button class="toast-dismiss" onclick={() => errorStore.dismiss()}>
       &times;
     </button>
@@ -17,7 +29,6 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--cm-status-error);
     color: var(--cm-text-inverse);
     padding: 10px 20px;
     border-radius: 8px;
@@ -29,6 +40,19 @@
     font-size: 14px;
     max-width: 500px;
     animation: toast-in 0.2s ease;
+  }
+
+  .toast-error {
+    background: var(--cm-status-error);
+  }
+
+  .toast-warning {
+    background: var(--cm-status-warning);
+    color: var(--cm-text-primary);
+  }
+
+  .toast-info {
+    background: var(--cm-accent-secondary);
   }
 
   @keyframes toast-in {
@@ -46,10 +70,25 @@
     flex: 1;
   }
 
+  .toast-retry {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: inherit;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .toast-retry:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
   .toast-dismiss {
     background: none;
     border: none;
-    color: var(--cm-text-inverse);
+    color: inherit;
     font-size: 20px;
     cursor: pointer;
     padding: 0 4px;
