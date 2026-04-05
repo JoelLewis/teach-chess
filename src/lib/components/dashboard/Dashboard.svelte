@@ -8,7 +8,6 @@
   import LoadingSpinner from "../ui/LoadingSpinner.svelte";
   import * as api from "../../api/commands";
   import { errorStore } from "../../stores/error.svelte";
-  import { playerStore } from "../../stores/player.svelte";
   import type { DashboardData, AdaptivePrompt } from "../../types/dashboard";
 
   type Props = {
