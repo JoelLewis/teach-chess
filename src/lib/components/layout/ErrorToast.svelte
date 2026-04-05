@@ -71,8 +71,8 @@
   }
 
   .toast-retry {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: var(--cm-overlay-subtle);
+    border: 1px solid var(--cm-overlay-border);
     color: inherit;
     font-size: 13px;
     padding: 4px 12px;
@@ -82,7 +82,7 @@
   }
 
   .toast-retry:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--cm-overlay-medium);
   }
 
   .toast-dismiss {

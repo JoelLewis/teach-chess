@@ -90,7 +90,7 @@
   }
 
   :global([data-theme="grid"]) .btn-primary:hover:not(:disabled) {
-    background: rgba(0, 229, 255, 0.1);
+    background: var(--cm-accent-primary-bg);
     box-shadow: var(--cm-glow-primary);
   }
 </style>
