@@ -353,7 +353,7 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.15s;
+    transition: background var(--cm-transition-fast);
   }
 
   .btn-resign:hover {

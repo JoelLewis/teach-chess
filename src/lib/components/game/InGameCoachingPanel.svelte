@@ -172,7 +172,7 @@
     background: var(--cm-bg-surface-alt);
     border: 1px solid var(--cm-border-default);
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: all var(--cm-transition-normal);
   }
 
   .feedback-header {

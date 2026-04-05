@@ -392,7 +392,7 @@
   .progress-fill {
     height: 100%;
     background: var(--cm-accent-secondary);
-    transition: width 0.3s;
+    transition: width var(--cm-transition-slow);
   }
 
   .progress-text {
