@@ -158,6 +158,7 @@
     {:else if evaluations.length === 0}
       <div class="empty-state">
         <p>No moves to review</p>
+        <p class="empty-hint">Play a game first, then come back here to review your moves and learn from the analysis.</p>
       </div>
     {:else}
       <div class="summary">
@@ -398,6 +399,14 @@
     text-align: center;
     color: var(--cm-text-muted);
     font-size: 14px;
+  }
+
+  .empty-hint {
+    font-size: 13px;
+    color: var(--cm-text-muted);
+    margin-top: 8px;
+    max-width: 300px;
+    line-height: 1.5;
   }
 
   .critical-marker {

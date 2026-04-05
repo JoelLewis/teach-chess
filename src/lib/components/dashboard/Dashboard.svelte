@@ -83,7 +83,7 @@
   <div class="dashboard">
     <!-- Welcome & Streak -->
     <div class="dashboard-header">
-      <h1 class="welcome">Welcome back, {playerStore.displayName}</h1>
+      <h1 class="welcome">Dashboard</h1>
       <StreakBanner streak={data.streak} />
     </div>
 
