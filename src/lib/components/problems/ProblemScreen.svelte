@@ -5,6 +5,14 @@
   import { errorStore } from "../../stores/error.svelte";
   import * as api from "../../api/commands";
 
+  type Props = {
+    firstRun?: boolean;
+    onSkip?: () => void;
+    onComplete?: () => void;
+  };
+
+  let { firstRun = false, onSkip = undefined, onComplete = undefined }: Props = $props();
+
   const fen = $derived(puzzleStore.currentFen);
   const orientation = $derived(puzzleStore.playerColor);
   const phase = $derived(puzzleStore.phase);
@@ -67,6 +75,11 @@
           }
           puzzleStore.phase = "complete";
 
+          if (firstRun) {
+            onComplete?.();
+            return;
+          }
+
           // Refresh stats
           const stats = await api.getPuzzleStats();
           puzzleStore.sessionStats = stats;
@@ -103,6 +116,13 @@
   });
 </script>
 
+{#if firstRun}
+  <div class="onboarding-banner">
+    <p class="onboarding-text">Welcome! Try solving this puzzle to see how coaching works.</p>
+    <button class="skip-link" onclick={onSkip}>Skip to dashboard →</button>
+  </div>
+{/if}
+
 <div class="problem-screen">
   <div class="board-area">
     <Chessboard
@@ -133,5 +153,29 @@
     display: flex;
     gap: 8px;
     align-items: center;
+  }
+
+  .onboarding-banner {
+    padding: 12px 16px;
+    background: var(--cm-accent-primary-bg);
+    border-bottom: 1px solid var(--cm-accent-primary-lighter);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .onboarding-text {
+    font-size: 14px;
+    color: var(--cm-accent-primary-text);
+    margin: 0;
+  }
+
+  .skip-link {
+    background: none;
+    border: none;
+    color: var(--cm-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
   }
 </style>

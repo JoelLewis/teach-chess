@@ -20,6 +20,17 @@
 
   type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
   let page = $state<Page>("home");
+
+  let onboardingComplete = $state(
+    typeof localStorage !== "undefined" &&
+    localStorage.getItem("chessMentor.onboardingComplete") === "true"
+  );
+
+  function completeOnboarding() {
+    localStorage.setItem("chessMentor.onboardingComplete", "true");
+    onboardingComplete = true;
+    navigate("home");
+  }
   let sidebarCollapsed = $derived(["play", "problems", "review"].includes(page));
   let reviewGameId = $state("");
   let gameStarting = $state(false);
@@ -126,7 +137,15 @@
       {#key screenKey}
         <div class="screen-transition">
           {#if page === "home"}
-            <Dashboard onNavigate={(p) => navigate(p as Page)} onReview={handleReview} />
+            {#if !onboardingComplete}
+              <ProblemScreen
+                firstRun={true}
+                onSkip={completeOnboarding}
+                onComplete={completeOnboarding}
+              />
+            {:else}
+              <Dashboard onNavigate={(p) => navigate(p as Page)} onReview={handleReview} />
+            {/if}
           {:else if page === "play" && gameStore.phase === "idle"}
             <GameConfigForm onStart={startGame} starting={gameStarting} />
           {:else if page === "play" && (gameStore.phase === "playing" || gameStore.phase === "game-over")}
