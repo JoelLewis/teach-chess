@@ -22,6 +22,33 @@
   let adaptivePrompt = $state<AdaptivePrompt | null>(null);
   let showModelPrompt = $state(false);
 
+  let pulsing = $state<Set<string>>(new Set());
+
+  function triggerPulse(key: string) {
+    pulsing = new Set([...pulsing, key]);
+    setTimeout(() => {
+      const next = new Set(pulsing);
+      next.delete(key);
+      pulsing = next;
+    }, 250);
+  }
+
+  let prevSolved = 0;
+  let prevStreak = 0;
+
+  $effect(() => {
+    if (data?.puzzleStats) {
+      if (data.puzzleStats.totalSolved > prevSolved && prevSolved > 0) {
+        triggerPulse("solved");
+      }
+      if (data.puzzleStats.bestStreak > prevStreak && prevStreak > 0) {
+        triggerPulse("streak");
+      }
+      prevSolved = data.puzzleStats.totalSolved;
+      prevStreak = data.puzzleStats.bestStreak;
+    }
+  });
+
   async function loadDashboard() {
     loading = true;
     try {
@@ -155,11 +182,11 @@
         <div class="card-header">Puzzle Progress</div>
         <div class="puzzle-stats">
           <div class="stat">
-            <span class="stat-value">{data.puzzleStats.totalSolved}</span>
+            <span class="stat-value" class:stat-pulse={pulsing.has("solved")}>{data.puzzleStats.totalSolved}</span>
             <span class="stat-label">solved</span>
           </div>
           <div class="stat">
-            <span class="stat-value">
+            <span class="stat-value" class:stat-pulse={pulsing.has("solved")}>
               {data.puzzleStats.totalAttempts > 0
                 ? Math.round((data.puzzleStats.totalSolved / data.puzzleStats.totalAttempts) * 100)
                 : 0}%
@@ -167,7 +194,7 @@
             <span class="stat-label">solve rate</span>
           </div>
           <div class="stat">
-            <span class="stat-value">{data.puzzleStats.bestStreak}</span>
+            <span class="stat-value" class:stat-pulse={pulsing.has("streak")}>{data.puzzleStats.bestStreak}</span>
             <span class="stat-label">best streak</span>
           </div>
         </div>

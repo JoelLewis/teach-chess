@@ -360,6 +360,19 @@
   --cm-border-glow: rgba(0, 229, 255, 0.4);
 }
 
+/* ─── Stat Pulse Animation ─────────────────────────────────── */
+
+@keyframes stat-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.stat-pulse {
+  animation: stat-pulse 200ms ease;
+  display: inline-block;
+}
+
 /* ─── Global Focus Styles ─────────────────────────────────── */
 
 :focus-visible {
