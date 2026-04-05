@@ -13,6 +13,7 @@
 </script>
 
 {#if open}
+  <!-- svelte-ignore a11y_interactive_supports_focus -->
   <div class="overlay" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onkeydown={handleKeydown}>
     <div class="dialog">
       <div class="dialog-header">
