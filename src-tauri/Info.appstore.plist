@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Additional Info.plist keys for Mac App Store submission.
+  Merge these into the generated Info.plist or reference via tauri.conf.json.
+
+  Before submitting, update:
+    - ITSAppUsesNonExemptEncryption: set to true if you add encryption beyond HTTPS
+    - LSApplicationCategoryType: already set to Education
+-->
+<plist version="1.0">
+<dict>
+	<!-- App Store category -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.education</string>
+
+	<!-- Minimum macOS version -->
+	<key>LSMinimumSystemVersion</key>
+	<string>11.0</string>
+
+	<!-- High-resolution capable -->
+	<key>NSHighResolutionCapable</key>
+	<true/>
+
+	<!-- Supports both Apple Silicon and Intel -->
+	<key>LSArchitecturePriority</key>
+	<array>
+		<string>arm64</string>
+		<string>x86_64</string>
+	</array>
+
+	<!-- App does not use non-exempt encryption (no custom crypto, only HTTPS) -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- Copyright notice -->
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2024-2026 ChessMentor contributors. Licensed under GPL-3.0.</string>
+</dict>
+</plist>
