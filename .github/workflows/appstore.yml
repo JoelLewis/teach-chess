@@ -121,7 +121,7 @@ jobs:
         run: |
           APP_PATH=$(find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -maxdepth 1)
 
-          codesign --force --deep --options runtime \
+          codesign --force --options runtime --timestamp \
             --entitlements src-tauri/entitlements/ChessMentor.entitlements \
             --sign "$APPLE_SIGNING_IDENTITY" \
             "$APP_PATH"

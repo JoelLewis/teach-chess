@@ -99,7 +99,7 @@ echo "==> Found app: $APP_PATH"
 SIDECAR=$(find "$APP_PATH" -name "stockfish-*" -type f | head -1)
 if [ -n "$SIDECAR" ]; then
     echo "==> Signing sidecar: $(basename "$SIDECAR")"
-    codesign --force --options runtime \
+    codesign --force --options runtime --timestamp \
         --entitlements "$ENTITLEMENTS_SIDECAR" \
         --sign "$APPLE_SIGNING_IDENTITY" \
         "$SIDECAR"
@@ -107,7 +107,7 @@ fi
 
 # Step 6: Sign the main app bundle
 echo "==> Signing app bundle..."
-codesign --force --deep --options runtime \
+codesign --force --options runtime --timestamp \
     --entitlements "$ENTITLEMENTS_APP" \
     --sign "$APPLE_SIGNING_IDENTITY" \
     "$APP_PATH"
