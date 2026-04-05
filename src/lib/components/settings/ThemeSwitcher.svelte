@@ -208,4 +208,10 @@
     color: var(--cm-text-muted);
     line-height: 1.4;
   }
+
+  @media (max-width: 500px) {
+    .theme-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
 </style>
