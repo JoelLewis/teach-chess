@@ -186,6 +186,8 @@
         </div>
       {/if}
 
+      <CoachingPanel evaluation={selectedEval} />
+
       <PatternSummaryPanel summary={patternSummary} suggestions={studySuggestions} />
 
       <div class="nav-buttons">
@@ -196,8 +198,6 @@
           &#9654;
         </button>
       </div>
-
-      <CoachingPanel evaluation={selectedEval} />
 
       <div class="move-list">
         {#each evaluations as evaluation, i (i)}
