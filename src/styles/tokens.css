@@ -148,6 +148,28 @@
   --cm-font-heading: "Playfair Display", Georgia, serif;
   --cm-font-mono: "JetBrains Mono", ui-monospace, monospace;
 
+  /* ── Font Sizes ── */
+  --cm-text-xs: 10px;
+  --cm-text-sm: 12px;
+  --cm-text-base: 14px;
+  --cm-text-lg: 16px;
+  --cm-text-xl: 20px;
+  --cm-text-2xl: 24px;
+
+  /* ── Spacing ── */
+  --cm-space-1: 4px;
+  --cm-space-2: 8px;
+  --cm-space-3: 12px;
+  --cm-space-4: 16px;
+  --cm-space-5: 20px;
+  --cm-space-6: 24px;
+  --cm-space-8: 32px;
+
+  /* ── Overlay Opacity ── */
+  --cm-overlay-subtle: rgba(255, 255, 255, 0.2);
+  --cm-overlay-medium: rgba(255, 255, 255, 0.3);
+  --cm-overlay-border: rgba(255, 255, 255, 0.4);
+
   /* ── Shadows (warm-tinted) ── */
   --cm-shadow-sm: 0 1px 3px rgba(139, 109, 71, 0.12);
   --cm-shadow-md: 2px 4px 12px rgba(139, 109, 71, 0.15);
@@ -312,6 +334,11 @@
   --cm-font-body: "IBM Plex Sans", system-ui, sans-serif;
   --cm-font-heading: "Orbitron", system-ui, sans-serif;
   --cm-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* ── Overlay Opacity ── */
+  --cm-overlay-subtle: rgba(255, 255, 255, 0.15);
+  --cm-overlay-medium: rgba(255, 255, 255, 0.25);
+  --cm-overlay-border: rgba(255, 255, 255, 0.35);
 
   /* ── Eval Bar ── */
   --cm-eval-bar-black: #1a1a2e;
