@@ -390,7 +390,7 @@
 
   .critical-move {
     background: var(--cm-status-warning-lightest);
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
   }
 
   .empty-state {

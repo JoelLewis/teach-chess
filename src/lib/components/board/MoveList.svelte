@@ -93,7 +93,7 @@
     border: none;
     cursor: pointer;
     padding: 4px 8px;
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
     color: inherit;
     font-family: inherit;
     font-size: inherit;

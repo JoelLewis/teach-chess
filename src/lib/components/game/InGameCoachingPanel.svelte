@@ -117,7 +117,7 @@
     align-items: flex-start;
     gap: 8px;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: var(--cm-radius-md);
     font-size: 12px;
     line-height: 1.4;
     margin: 4px 0;
@@ -171,7 +171,7 @@
     margin: 4px 0;
     background: var(--cm-bg-surface-alt);
     border: 1px solid var(--cm-border-default);
-    border-radius: 6px;
+    border-radius: var(--cm-radius-md);
     transition: all var(--cm-transition-normal);
   }
 
@@ -186,7 +186,7 @@
     font-size: 10px;
     color: var(--cm-text-inverse);
     padding: 1px 8px;
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
     text-transform: capitalize;
     max-width: 100px;
     overflow: hidden;
@@ -203,7 +203,7 @@
   .expand-btn {
     padding: 4px 10px;
     border: 1px solid var(--cm-border-medium);
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
     background: var(--cm-bg-surface);
     cursor: pointer;
     font-size: 11px;
@@ -246,6 +246,6 @@
     color: var(--cm-text-muted);
     background: var(--cm-border-default);
     padding: 1px 5px;
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
   }
 </style>

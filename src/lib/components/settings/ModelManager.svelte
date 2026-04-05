@@ -318,7 +318,7 @@
     color: var(--cm-status-success);
     background: var(--cm-status-success-bg);
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
   }
 
   .recommended-badge {
@@ -327,7 +327,7 @@
     color: var(--cm-accent-secondary-hover);
     background: var(--cm-accent-secondary-bg);
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: var(--cm-radius-sm);
   }
 
   .ram-indicator.ram-ok {
@@ -365,7 +365,7 @@
     background: var(--cm-accent-secondary);
     color: var(--cm-text-inverse);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--cm-radius-md);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -410,7 +410,7 @@
     background: var(--cm-bg-hover);
     color: var(--cm-text-secondary);
     border: 1px solid var(--cm-border-medium);
-    border-radius: 6px;
+    border-radius: var(--cm-radius-md);
     font-size: 13px;
     cursor: pointer;
   }
