@@ -132,7 +132,7 @@
 
     <!-- Recent Games -->
     {#if data.recentGames.length > 0}
-      <div class="card">
+      <div class="card card-flush">
         <div class="card-header">
           Recent Games
           <button class="view-all" onclick={() => onNavigate("history")}>View All</button>
@@ -262,6 +262,14 @@
   :global([data-theme="grid"]) .card:hover {
     border-color: var(--cm-border-glow);
     box-shadow: var(--cm-glow-primary);
+  }
+
+  .card-flush {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
   }
 
   .card-header {
