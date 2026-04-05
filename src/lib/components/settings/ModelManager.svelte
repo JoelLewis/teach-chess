@@ -182,7 +182,14 @@
               <span class="downloaded-badge">Downloaded</span>
             {:else if downloading === model.id}
               <div class="download-progress">
-                <div class="progress-bar">
+                <div
+                  class="progress-bar"
+                  role="progressbar"
+                  aria-valuenow={downloadPercent()}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Model download progress"
+                >
                   <div
                     class="progress-fill"
                     style="width: {downloadPercent()}%"

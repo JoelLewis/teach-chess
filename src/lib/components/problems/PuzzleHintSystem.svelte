@@ -29,9 +29,9 @@
 
 <div class="hint-system">
   {#if puzzleStore.hintsRevealed.length > 0}
-    <div class="hints-list">
+    <div class="hints-list" aria-live="polite">
       {#each puzzleStore.hintsRevealed as hint, i}
-        <div class="hint-card tier-{i + 1}">
+        <div class="hint-card tier-{i + 1}" role="note" aria-label="Hint {i + 1} of {maxHints}">
           <span class="hint-label">Hint {i + 1}</span>
           <p class="hint-text">{hint}</p>
         </div>
