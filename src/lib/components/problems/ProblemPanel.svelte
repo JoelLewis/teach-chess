@@ -118,7 +118,9 @@
   .problem-panel {
     display: flex;
     flex-direction: column;
-    width: 280px;
+    width: 100%;
+    max-width: 280px;
+    flex-shrink: 0;
     background: var(--cm-bg-surface);
     border-radius: 8px;
     box-shadow: var(--cm-shadow-sm);
