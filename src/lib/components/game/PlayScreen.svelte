@@ -349,4 +349,21 @@
     0%, 80% { opacity: 1; }
     100% { opacity: 0; }
   }
+
+  @media (max-width: 900px) {
+    .play-screen {
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 16px;
+    }
+
+    .side-panel {
+      min-width: unset;
+      max-width: 560px;
+      width: 100%;
+      flex: unset;
+      max-height: 40vh;
+    }
+  }
 </style>

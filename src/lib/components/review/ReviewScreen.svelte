@@ -390,4 +390,21 @@
     flex-shrink: 0;
     text-align: center;
   }
+
+  @media (max-width: 900px) {
+    .review-screen {
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 16px;
+    }
+
+    .review-panel {
+      min-width: unset;
+      max-width: 560px;
+      width: 100%;
+      flex: unset;
+      max-height: 40vh;
+    }
+  }
 </style>
