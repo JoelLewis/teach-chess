@@ -216,10 +216,6 @@
     height: 300px;
   }
 
-  .loading-text {
-    color: var(--cm-text-disabled);
-    font-size: 14px;
-  }
 
   .dashboard-header {
     display: flex;
