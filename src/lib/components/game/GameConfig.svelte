@@ -48,7 +48,33 @@
     { value: "coachPicks", label: "Coach picks", desc: "Targets your weak areas" },
   ];
 
+  let advancedOpen = $state(false);
+
+  function loadPreferences() {
+    try {
+      const saved = localStorage.getItem("chessMentor.gamePrefs");
+      if (saved) {
+        const prefs = JSON.parse(saved);
+        if (prefs.playerColor) playerColor = prefs.playerColor;
+        if (prefs.strengthPreset) strengthPreset = prefs.strengthPreset;
+        if (prefs.coachingLevel) coachingLevel = prefs.coachingLevel;
+        if (prefs.opponentMode) opponentMode = prefs.opponentMode;
+        if (prefs.personality) personality = prefs.personality;
+        if (prefs.teachingMode !== undefined) teachingMode = prefs.teachingMode;
+      }
+    } catch { /* ignore corrupt localStorage */ }
+  }
+
+  function savePreferences() {
+    localStorage.setItem("chessMentor.gamePrefs", JSON.stringify({
+      playerColor, strengthPreset, coachingLevel, opponentMode, personality, teachingMode,
+    }));
+  }
+
+  loadPreferences();
+
   function handleStart() {
+    savePreferences();
     onStart({
       playerColor,
       engineStrength,
@@ -119,63 +145,6 @@
     </label>
   </div>
 
-  <div class="mb-4">
-    <span class="block text-sm font-medium mb-2">In-Game Coaching</span>
-    <div class="coaching-options">
-      {#each COACHING_OPTIONS as option}
-        <button
-          class="coaching-btn"
-          class:active={coachingLevel === option.value}
-          onclick={() => (coachingLevel = option.value)}
-        >
-          <span class="coaching-label">{option.label}</span>
-          <span class="coaching-desc">{option.desc}</span>
-        </button>
-      {/each}
-    </div>
-  </div>
-
-  <div class="mb-4">
-    <span class="block text-sm font-medium mb-2">Opponent Style</span>
-    <div class="flex gap-2 mb-2" role="group" aria-label="Opponent mode">
-      {#each MODE_OPTIONS as option}
-        <button
-          class="btn text-xs"
-          class:active={opponentMode === option.value}
-          onclick={() => (opponentMode = option.value)}
-          title={option.desc}
-        >
-          {option.label}
-        </button>
-      {/each}
-    </div>
-    {#if opponentMode === "choose"}
-      <div class="coaching-options">
-        {#each PERSONALITY_OPTIONS as option}
-          <button
-            class="coaching-btn"
-            class:active={personality === option.value}
-            onclick={() => (personality = option.value)}
-          >
-            <span class="coaching-label">{option.label}</span>
-            <span class="coaching-desc">{option.desc}</span>
-          </button>
-        {/each}
-      </div>
-    {:else}
-      <p class="mode-desc">
-        {opponentMode === "surprise"
-          ? "A random personality will be assigned at game start."
-          : "The coach will pick a style that challenges your weaknesses."}
-      </p>
-    {/if}
-    <label class="flex items-center gap-2 mt-3 text-sm">
-      <input type="checkbox" bind:checked={teachingMode} />
-      Teaching mode
-      <span class="teaching-desc">— engine steers into positions that challenge your weak areas</span>
-    </label>
-  </div>
-
   <Button variant="primary" size="lg" onclick={handleStart} disabled={starting}>
     {#if starting}
       <LoadingSpinner size="sm" />
@@ -184,6 +153,83 @@
       Start Game
     {/if}
   </Button>
+
+  <div class="advanced-section">
+    <button class="disclosure-toggle" onclick={() => (advancedOpen = !advancedOpen)}>
+      <span class="disclosure-arrow">{advancedOpen ? "▾" : "▸"}</span>
+      Customize coaching, opponent style, and more...
+    </button>
+
+    <div class="disclosure-body" class:open={advancedOpen}>
+      <div class="disclosure-inner">
+        <div class="mb-4">
+          <span class="block text-sm font-medium mb-2">In-Game Coaching</span>
+          <div class="coaching-options">
+            {#each COACHING_OPTIONS as option}
+              <button
+                class="coaching-btn"
+                class:active={coachingLevel === option.value}
+                onclick={() => (coachingLevel = option.value)}
+              >
+                <span class="coaching-label">{option.label}</span>
+                <span class="coaching-desc">{option.desc}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <span class="block text-sm font-medium mb-2">Opponent Style</span>
+          <div class="flex gap-2 mb-2" role="group" aria-label="Opponent mode">
+            {#each MODE_OPTIONS as option}
+              <button
+                class="btn text-xs"
+                class:active={opponentMode === option.value}
+                onclick={() => (opponentMode = option.value)}
+                title={option.desc}
+              >
+                {option.label}
+              </button>
+            {/each}
+          </div>
+          {#if opponentMode === "choose"}
+            <div class="coaching-options">
+              {#each PERSONALITY_OPTIONS as option}
+                <button
+                  class="coaching-btn"
+                  class:active={personality === option.value}
+                  onclick={() => (personality = option.value)}
+                >
+                  <span class="coaching-label">{option.label}</span>
+                  <span class="coaching-desc">{option.desc}</span>
+                </button>
+              {/each}
+            </div>
+          {:else}
+            <p class="mode-desc">
+              {opponentMode === "surprise"
+                ? "A random personality will be assigned at game start."
+                : "The coach will pick a style that challenges your weaknesses."}
+            </p>
+          {/if}
+        </div>
+
+        <div class="mb-4">
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" bind:checked={teachingMode} />
+            Teaching mode
+            <span class="teaching-desc">— engine steers into positions that challenge your weak areas</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    {#if !advancedOpen}
+      <p class="defaults-note">
+        Defaults: {COACHING_OPTIONS.find(o => o.value === coachingLevel)?.label ?? "Full Coach"} coaching, {PERSONALITY_OPTIONS.find(o => o.value === personality)?.label ?? "Solid"} opponent
+      </p>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -274,5 +320,54 @@
 
   .coaching-btn.active .coaching-label {
     color: var(--cm-accent-secondary-deep);
+  }
+
+  .advanced-section {
+    margin-top: 16px;
+    border-top: 1px solid var(--cm-border-light);
+    padding-top: 12px;
+  }
+
+  .disclosure-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--cm-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+
+  .disclosure-toggle:hover {
+    color: var(--cm-text-secondary);
+  }
+
+  .disclosure-arrow {
+    font-size: 12px;
+    width: 12px;
+  }
+
+  .disclosure-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--cm-transition-normal);
+  }
+
+  .disclosure-body.open {
+    grid-template-rows: 1fr;
+  }
+
+  .disclosure-inner {
+    overflow: hidden;
+    padding-top: 12px;
+  }
+
+  .defaults-note {
+    font-size: 12px;
+    color: var(--cm-text-muted);
+    margin-top: 8px;
+    font-style: italic;
   }
 </style>
