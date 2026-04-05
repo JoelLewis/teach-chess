@@ -4,9 +4,10 @@
   type Props = {
     currentPage: Page;
     onNavigate: (page: Page) => void;
+    collapsed?: boolean;
   };
 
-  let { currentPage, onNavigate }: Props = $props();
+  let { currentPage, onNavigate, collapsed = false }: Props = $props();
 
   const navItems: { page: Page; label: string; icon: string }[] = [
     { page: "home", label: "Home", icon: "\u2302" },
@@ -18,7 +19,7 @@
   ];
 </script>
 
-<nav class="sidebar" aria-label="Main navigation">
+<nav class="sidebar" class:collapsed aria-label="Main navigation">
   <div class="logo" aria-label="ChessMentor">
     <span class="logo-icon" aria-hidden="true">\u265E</span>
     <span class="logo-text">ChessMentor</span>
@@ -30,6 +31,7 @@
         class="nav-item"
         class:active={currentPage === item.page}
         aria-current={currentPage === item.page ? "page" : undefined}
+        title={collapsed ? item.label : undefined}
         onclick={() => onNavigate(item.page)}
       >
         <span class="nav-icon">{item.icon}</span>
@@ -113,5 +115,44 @@
   .sidebar-footer {
     margin-top: auto;
     padding: 16px 20px;
+  }
+
+  .sidebar.collapsed {
+    width: 56px;
+    transition: width var(--cm-transition-normal);
+  }
+
+  .sidebar:not(.collapsed) {
+    transition: width var(--cm-transition-normal);
+  }
+
+  .sidebar.collapsed .logo-text {
+    opacity: 0;
+    overflow: hidden;
+    width: 0;
+  }
+
+  .sidebar.collapsed .nav-label {
+    opacity: 0;
+    overflow: hidden;
+    width: 0;
+  }
+
+  .sidebar.collapsed .nav-item {
+    padding: 10px 0;
+    justify-content: center;
+  }
+
+  .sidebar.collapsed .nav-item.active {
+    padding-left: 0;
+  }
+
+  .sidebar.collapsed .logo {
+    padding: 8px 0 24px;
+    justify-content: center;
+  }
+
+  .sidebar.collapsed .sidebar-footer {
+    display: none;
   }
 </style>

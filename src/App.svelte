@@ -20,6 +20,7 @@
 
   type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
   let page = $state<Page>("home");
+  let sidebarCollapsed = $derived(["play", "problems", "review"].includes(page));
   let reviewGameId = $state("");
   let gameStarting = $state(false);
 
@@ -116,7 +117,7 @@
 
 <a href="#main-content" class="skip-link">Skip to content</a>
 <div class="app-layout">
-  <Sidebar currentPage={page} onNavigate={navigate} />
+  <Sidebar currentPage={page} onNavigate={navigate} collapsed={sidebarCollapsed} />
 
   <div class="main-area">
     <Header playerName={playerStore.displayName} />
