@@ -5,6 +5,7 @@
   import AdaptivePromptDialog from "./AdaptivePromptDialog.svelte";
   import ModelDownloadCard from "./ModelDownloadCard.svelte";
   import GameCard from "../history/GameCard.svelte";
+  import LoadingSpinner from "../ui/LoadingSpinner.svelte";
   import * as api from "../../api/commands";
   import { errorStore } from "../../stores/error.svelte";
   import { playerStore } from "../../stores/player.svelte";
@@ -76,7 +77,7 @@
 
 {#if loading}
   <div class="dashboard-loading">
-    <p class="loading-text">Loading dashboard...</p>
+    <LoadingSpinner size="lg" message="Loading dashboard..." />
   </div>
 {:else if data}
   <div class="dashboard">
@@ -173,6 +174,7 @@
   <div class="dashboard-empty">
     <h1 class="welcome">Welcome to ChessMentor</h1>
     <p class="empty-tagline">Your AI chess coach. Play, learn, improve.</p>
+    <p class="empty-hint">Start with a game or puzzles below. Your progress and skill profile will build as you play.</p>
     {#if showModelPrompt}
       <div class="empty-model-prompt">
         <ModelDownloadCard {onNavigate} />
@@ -424,6 +426,15 @@
     color: var(--cm-text-muted);
     font-size: 16px;
     margin: 0;
+  }
+
+  .empty-hint {
+    font-size: 13px;
+    color: var(--cm-text-muted);
+    max-width: 400px;
+    text-align: center;
+    margin: 0 auto 8px;
+    line-height: 1.5;
   }
 
   .empty-model-prompt {
