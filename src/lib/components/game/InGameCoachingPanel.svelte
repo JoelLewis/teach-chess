@@ -6,7 +6,7 @@
   let expanded = $state(false);
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Auto-fade post-move feedback after 8s (unless expanded)
+  // Auto-fade post-move feedback after 15s (unless expanded)
   $effect(() => {
     const coaching = gameStore.latestCoaching;
     if (coaching && coaching.coachingText) {
@@ -16,7 +16,7 @@
       if (fadeTimer) clearTimeout(fadeTimer);
       fadeTimer = setTimeout(() => {
         if (!expanded) visible = false;
-      }, 8000);
+      }, 15000);
     }
 
     return () => {
@@ -67,6 +67,15 @@
         i
       {/if}
     </span>
+    <span class="hint-type-label">
+      {#if gameStore.preMoveHint.hintType === "tacticalAlert"}
+        Tactic
+      {:else if gameStore.preMoveHint.hintType === "phaseTransition"}
+        Phase
+      {:else}
+        Strategy
+      {/if}
+    </span>
     <span class="hint-text">{gameStore.preMoveHint.hintText}</span>
   </div>
 {/if}
@@ -88,7 +97,7 @@
           }
         }}
       >
-        {expanded ? "−" : "+"}
+        {expanded ? "Show less" : "Show more"}
       </button>
     </div>
     <p class="feedback-text">{gameStore.latestCoaching.coachingText}</p>
@@ -145,6 +154,14 @@
     background: var(--cm-bg-scrim);
   }
 
+  .hint-type-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
   .hint-text {
     flex: 1;
   }
@@ -184,18 +201,18 @@
   }
 
   .expand-btn {
-    width: 20px;
-    height: 20px;
+    padding: 2px 8px;
     border: 1px solid var(--cm-border-medium);
     border-radius: 3px;
     background: var(--cm-bg-surface);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--cm-text-muted);
+    white-space: nowrap;
   }
 
   .expand-btn:hover {
@@ -203,16 +220,16 @@
   }
 
   .feedback-text {
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.6;
     color: var(--cm-text-primary);
-    margin: 4px 0 0;
+    margin: 6px 0 0;
   }
 
   .coaching-feedback:not(.expanded) .feedback-text {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
