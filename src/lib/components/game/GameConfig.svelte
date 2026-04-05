@@ -4,6 +4,7 @@
   import type { CoachingLevel } from "../../types/engine";
   import { ENGINE_PRESETS } from "../../types/game";
   import LoadingSpinner from "../ui/LoadingSpinner.svelte";
+  import Button from "../ui/Button.svelte";
 
   type Props = {
     onStart: (config: GameConfig) => void;
@@ -175,14 +176,14 @@
     </label>
   </div>
 
-  <button class="btn-primary mt-4" onclick={handleStart} disabled={starting}>
+  <Button variant="primary" size="lg" onclick={handleStart} disabled={starting}>
     {#if starting}
       <LoadingSpinner size="sm" />
       Starting...
     {:else}
       Start Game
     {/if}
-  </button>
+  </Button>
 </div>
 
 <style>
@@ -230,39 +231,6 @@
     background: var(--cm-accent-secondary-deep);
     color: var(--cm-text-inverse);
     border-color: var(--cm-accent-secondary-deep);
-  }
-
-  .btn-primary {
-    padding: 10px 24px;
-    background: var(--cm-accent-secondary-deep);
-    color: var(--cm-text-inverse);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background 0.15s;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--cm-accent-secondary-deeper);
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  /* Grid: outlined primary button with glow */
-  :global([data-theme="grid"]) .btn-primary {
-    background: transparent;
-    border: 1px solid var(--cm-accent-primary);
-    color: var(--cm-accent-primary);
-  }
-
-  :global([data-theme="grid"]) .btn-primary:hover {
-    background: rgba(0, 229, 255, 0.1);
-    box-shadow: var(--cm-glow-primary);
   }
 
   .coaching-options {
