@@ -77,7 +77,7 @@
 
 <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
   <div class="dialog" bind:this={dialogEl}>
-    <div id="game-over-title" class="result" class:win={isWin} class:loss={!isWin}>
+    <div id="game-over-title" class="result" class:win={isWin} class:loss={!isWin} aria-live="assertive">
       {resultText}
     </div>
     <p class="move-count">Game lasted {moveCount} moves</p>

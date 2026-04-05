@@ -202,6 +202,17 @@
 </script>
 
 <div class="play-screen">
+  <div class="sr-only" aria-live="polite" aria-atomic="true">
+    {#if gameStore.engineThinking}
+      Opponent is thinking.
+    {:else if position?.isGameOver}
+      Game over.
+    {:else if position?.turn === config?.playerColor}
+      Your turn to move.
+    {:else}
+      Opponent's turn.
+    {/if}
+  </div>
   <div class="board-area">
     <EvalBar score={gameStore.currentScore} orientation={config?.playerColor} />
     <Chessboard
@@ -348,6 +359,18 @@
   @keyframes fade-out {
     0%, 80% { opacity: 1; }
     100% { opacity: 0; }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 
   @media (max-width: 900px) {

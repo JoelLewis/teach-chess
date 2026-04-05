@@ -100,7 +100,7 @@
   });
 </script>
 
-<div class="board-container" role="img" aria-label="Chess board">
+<div class="board-container" role="img" aria-label="Chess board — position: {fen ?? 'starting position'}">
   <div bind:this={boardEl} class="board"></div>
 </div>
 
