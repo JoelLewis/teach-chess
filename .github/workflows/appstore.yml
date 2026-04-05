@@ -183,14 +183,12 @@ jobs:
         run: |
           security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
 
-  create-universal:
-    name: Create Universal Binary (App Store)
+  collect-packages:
+    name: Collect App Store Packages
     needs: build-appstore
     if: ${{ inputs.build_type == 'app-store' }}
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download arm64 package
         uses: actions/download-artifact@v4
         with:
