@@ -4,6 +4,7 @@
   import CoachingPanel from "./CoachingPanel.svelte";
   import PatternSummaryPanel from "./PatternSummaryPanel.svelte";
   import MoveAnnotation from "./MoveAnnotation.svelte";
+  import KeyboardShortcutsDialog from "../ui/KeyboardShortcutsDialog.svelte";
   import * as api from "../../api/commands";
   import { onReviewProgress } from "../../api/events";
   import { gameStore } from "../../stores/game.svelte";
@@ -29,6 +30,13 @@
   let criticalMoments = $state<CriticalMoment[]>([]);
   let patternSummary = $state<PatternSummary | null>(null);
   let studySuggestions = $state<StudySuggestion[]>([]);
+  let showShortcuts = $state(false);
+
+  const reviewShortcuts = [
+    { key: "\u2190", description: "Previous move" },
+    { key: "\u2192", description: "Next move" },
+    { key: "?", description: "Show this help" },
+  ];
 
   let selectedEval = $derived(
     selectedIndex >= 0 ? evaluations[selectedIndex] : null,
@@ -89,6 +97,10 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "ArrowLeft") navigateMove(-1);
     if (event.key === "ArrowRight") navigateMove(1);
+    if (event.key === "?" && !showShortcuts) {
+      showShortcuts = true;
+      event.preventDefault();
+    }
   }
 
   // Summary stats
@@ -203,6 +215,12 @@
     {/if}
   </div>
 </div>
+
+<KeyboardShortcutsDialog
+  open={showShortcuts}
+  onClose={() => (showShortcuts = false)}
+  shortcuts={reviewShortcuts}
+/>
 
 <style>
   .review-screen {
