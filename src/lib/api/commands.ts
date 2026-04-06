@@ -376,6 +376,28 @@ export function setTheme(theme: Theme): Promise<void> {
   return invoke<void>("set_theme", { theme });
 }
 
+export function generateGameSummary(params: {
+  result: string;
+  outcomeType: string;
+  moveCount: number;
+  accuracyPct: number;
+  bestMoves: number;
+  blunders: number;
+  mistakes: number;
+  inaccuracies: number;
+}): Promise<string> {
+  return invoke<string>("generate_game_summary", {
+    result: params.result,
+    outcomeType: params.outcomeType,
+    moveCount: params.moveCount,
+    accuracyPct: params.accuracyPct,
+    bestMoves: params.bestMoves,
+    blunders: params.blunders,
+    mistakes: params.mistakes,
+    inaccuracies: params.inaccuracies,
+  });
+}
+
 export function generateCoaching(
   fen: string,
   classification: string,

@@ -66,6 +66,35 @@ pub fn build_prompt(
     )
 }
 
+/// Build a prompt for generating a one-sentence post-game summary in Gemma 2 instruction format.
+#[allow(dead_code, clippy::too_many_arguments)]
+pub fn build_game_summary_prompt(
+    result: &str,
+    outcome_type: &str,
+    move_count: usize,
+    accuracy_pct: f64,
+    best_moves: usize,
+    blunders: usize,
+    mistakes: usize,
+    inaccuracies: usize,
+) -> String {
+    let context = format!(
+        r#"{{"result":"{}","outcome":"{}","moves":{},"accuracy":{:.0},"bestMoves":{},"blunders":{},"mistakes":{},"inaccuracies":{}}}"#,
+        result, outcome_type, move_count, accuracy_pct, best_moves, blunders, mistakes, inaccuracies
+    );
+
+    format!(
+        "<start_of_turn>user\n\
+         You are a chess coach writing a brief, encouraging one-sentence summary of a student's game. \
+         Be specific about what went well or what to improve. \
+         Reference concrete aspects like tactical play, endgame technique, or opening preparation. \
+         Keep it under 30 words. Do not start with \"Great\" or \"Good\".\n\n\
+         {}<end_of_turn>\n\
+         <start_of_turn>model\n",
+        context
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

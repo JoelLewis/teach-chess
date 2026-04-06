@@ -402,6 +402,106 @@ async fn try_llm_generation(
     Ok(result)
 }
 
+#[allow(clippy::too_many_arguments)]
+#[tauri::command]
+pub async fn generate_game_summary(
+    result: String,
+    outcome_type: String,
+    move_count: usize,
+    accuracy_pct: f64,
+    best_moves: usize,
+    blunders: usize,
+    mistakes: usize,
+    inaccuracies: usize,
+    app: tauri::AppHandle,
+) -> Result<String, crate::error::AppError> {
+    let prompt = crate::llm::prompts::build_game_summary_prompt(
+        &result,
+        &outcome_type,
+        move_count,
+        accuracy_pct,
+        best_moves,
+        blunders,
+        mistakes,
+        inaccuracies,
+    );
+
+    // Try LLM with 15s timeout, fallback to template
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        try_generate_summary(&app, &prompt),
+    )
+    .await
+    {
+        Ok(Ok(text)) if !text.trim().is_empty() => Ok(text.trim().to_string()),
+        _ => {
+            let template = if blunders == 0 && mistakes == 0 {
+                "Solid game with no major errors.".to_string()
+            } else if blunders > 2 {
+                "A challenging game — focus on avoiding blunders in critical moments.".to_string()
+            } else {
+                format!("A {}-move game with room to improve accuracy.", move_count)
+            };
+            Ok(template)
+        }
+    }
+}
+
+/// Attempt LLM-based game summary generation.
+#[cfg(feature = "llm")]
+async fn try_generate_summary(
+    app: &tauri::AppHandle,
+    prompt: &str,
+) -> Result<String, crate::llm::LlmError> {
+    use crate::llm::model_manager::GEMMA2_2B;
+
+    let llm_state = app.state::<crate::llm::LlmState>();
+    if !llm_state.model_manager.is_available(&GEMMA2_2B) {
+        return Err(crate::llm::LlmError::ModelNotFound(
+            "Model not available".to_string(),
+        ));
+    }
+
+    let submit_result = {
+        let mut channel_guard = llm_state.channel.lock().await;
+        if channel_guard.is_none() {
+            let model_path = llm_state.model_manager.get_model_path(&GEMMA2_2B);
+            let tokenizer_path = llm_state.model_manager.get_tokenizer_path(&GEMMA2_2B);
+            let (ch, dev_name) =
+                crate::llm::channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
+            let _ = llm_state.device_name.set(dev_name);
+            *channel_guard = Some(ch);
+        }
+
+        let channel = channel_guard.as_mut().unwrap();
+        channel.submit(prompt.to_string()).await?
+    };
+
+    // Drain token stream (we only need the final result)
+    let mut token_rx = submit_result.token_rx;
+    tokio::spawn(async move {
+        while token_rx.recv().await.is_some() {}
+    });
+
+    let result = submit_result
+        .response_rx
+        .await
+        .map_err(|_| crate::llm::LlmError::InferenceError("Channel closed".to_string()))??;
+
+    Ok(result)
+}
+
+/// No-op fallback when LLM feature is disabled.
+#[cfg(not(feature = "llm"))]
+async fn try_generate_summary(
+    _app: &tauri::AppHandle,
+    _prompt: &str,
+) -> Result<String, crate::llm::LlmError> {
+    Err(crate::llm::LlmError::ModelNotFound(
+        "LLM feature not compiled".to_string(),
+    ))
+}
+
 fn determine_player_level(
     db: &tauri::State<'_, std::sync::Mutex<crate::db::connection::Database>>,
     player_id: &tauri::State<'_, crate::CurrentPlayerId>,

@@ -139,6 +139,7 @@ pub fn run() {
             commands::llm::get_available_models,
             commands::llm::download_model,
             commands::llm::generate_coaching,
+            commands::llm::generate_game_summary,
             commands::coaching::evaluate_player_move,
             commands::coaching::analyze_pre_move_hints,
             commands::puzzle::load_next_puzzle,
