@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Color, GameOutcome } from "../../types/chess";
+  import GameSummaryCard from "./GameSummaryCard.svelte";
+  import { generateGameSummary } from "../../api/commands";
 
   type Props = {
     outcome: GameOutcome | null;
@@ -13,6 +15,7 @@
 
   let dialogEl: HTMLDivElement;
   let primaryBtnEl: HTMLButtonElement;
+  let aiQuote = $state<string | null>(null);
 
   let resultText = $derived.by(() => {
     if (!outcome) return "Game Over";
@@ -39,6 +42,50 @@
     if ("checkmate" in outcome) return outcome.checkmate.winner === playerColor;
     if ("resignation" in outcome) return outcome.resignation.winner === playerColor;
     return false;
+  });
+
+  let isLoss = $derived.by(() => {
+    if (!outcome) return false;
+    if ("checkmate" in outcome) return outcome.checkmate.winner !== playerColor;
+    if ("resignation" in outcome) return outcome.resignation.winner !== playerColor;
+    return false;
+  });
+
+  let cardResult = $derived<"win" | "loss" | "draw">(
+    isWin ? "win" : isLoss ? "loss" : "draw",
+  );
+
+  let outcomeDetail = $derived.by(() => {
+    if (!outcome) return "";
+    if ("checkmate" in outcome) return "by checkmate";
+    if ("resignation" in outcome) return "by resignation";
+    if ("stalemate" in outcome) return "by stalemate";
+    if ("insufficientMaterial" in outcome) return "by insufficient material";
+    if ("threefoldRepetition" in outcome) return "by threefold repetition";
+    if ("fiftyMoveRule" in outcome) return "by fifty-move rule";
+    return "by agreement";
+  });
+
+  // Fetch AI-generated game summary when dialog mounts
+  $effect(() => {
+    if (!outcome) return;
+    // TODO: Wire up real accuracy/bestMoves/blunders/inaccuracies from game review data
+    generateGameSummary({
+      result: cardResult,
+      outcomeType: outcomeDetail,
+      moveCount,
+      accuracyPct: 0,
+      bestMoves: 0,
+      blunders: 0,
+      mistakes: 0,
+      inaccuracies: 0,
+    })
+      .then((text) => {
+        aiQuote = text;
+      })
+      .catch(() => {
+        // Silently fail — the card renders fine without an AI quote
+      });
   });
 
   // Auto-focus primary button and set up focus trap + Escape key
@@ -85,6 +132,19 @@
       <button class="btn-review" bind:this={primaryBtnEl} onclick={onReview}>Review Game</button>
       <button class="btn-new" onclick={onNewGame}>New Game</button>
     </div>
+    {#if outcome}
+      <GameSummaryCard
+        result={cardResult}
+        {outcomeDetail}
+        opponentInfo="vs Opponent"
+        {moveCount}
+        accuracy={0}
+        bestMoves={0}
+        inaccuracies={0}
+        blunders={0}
+        {aiQuote}
+      />
+    {/if}
   </div>
 </div>
 
