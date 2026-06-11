@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import Chessboard from "../board/Chessboard.svelte";
   import ProblemPanel from "./ProblemPanel.svelte";
   import { puzzleStore } from "../../stores/puzzle.svelte";
@@ -103,8 +104,10 @@
     }
   }
 
-  // Load first puzzle and stats on mount
-  $effect(() => {
+  // Load first puzzle and stats once on mount. Deliberately not an $effect:
+  // a failed load resets phase to "idle", which would re-trigger the effect
+  // in an infinite retry loop. The idle state has a manual Start button.
+  onMount(() => {
     if (puzzleStore.phase === "idle") {
       loadNextPuzzle();
     }
