@@ -54,14 +54,31 @@ impl InferenceChannel {
         let placeholder_dev_name = dev_name;
 
         tokio::spawn(async move {
-            let mut backend = CandleBackend::new(device);
-            if let Err(e) = backend.load(&model_path, &tokenizer_path) {
-                tracing::error!("Failed to load model in worker: {e}");
-                while let Some(job) = request_rx.recv().await {
-                    let _ = job.response_tx.send(Err(LlmError::ModelNotLoaded));
+            // Load on a blocking thread — reading and dequantizing the GGUF
+            // takes seconds and must not stall the async runtime.
+            let load_result = tokio::task::spawn_blocking(move || {
+                let mut backend = CandleBackend::new(device);
+                backend.load(&model_path, &tokenizer_path).map(|()| backend)
+            })
+            .await;
+
+            let mut backend = match load_result {
+                Ok(Ok(backend)) => backend,
+                Ok(Err(e)) => {
+                    tracing::error!("Failed to load model in worker: {e}");
+                    while let Some(job) = request_rx.recv().await {
+                        let _ = job.response_tx.send(Err(LlmError::ModelNotLoaded));
+                    }
+                    return;
                 }
-                return;
-            }
+                Err(e) => {
+                    tracing::error!("Model load task panicked: {e}");
+                    while let Some(job) = request_rx.recv().await {
+                        let _ = job.response_tx.send(Err(LlmError::ModelNotLoaded));
+                    }
+                    return;
+                }
+            };
 
             tracing::info!("Inference worker ready on {placeholder_dev_name}");
 
@@ -76,8 +93,10 @@ impl InferenceChannel {
 
                     // Temporarily move backend into blocking task.
                     // The placeholder uses CPU since it's never used for inference.
-                    let mut moved_backend =
-                        std::mem::replace(&mut backend, CandleBackend::new(candle_core::Device::Cpu));
+                    let mut moved_backend = std::mem::replace(
+                        &mut backend,
+                        CandleBackend::new(candle_core::Device::Cpu),
+                    );
 
                     let cancel_clone = cancel.clone();
                     tokio::task::spawn_blocking(move || {

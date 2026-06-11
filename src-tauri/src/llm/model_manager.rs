@@ -10,6 +10,9 @@ pub struct ModelConfig {
     pub display_name: &'static str,
     pub repo_id: &'static str,
     pub gguf_filename: &'static str,
+    /// HuggingFace repo to fetch the tokenizer from. GGUF-only repos often
+    /// don't include tokenizer.json, so this may differ from `repo_id`.
+    pub tokenizer_repo_id: &'static str,
     pub tokenizer_filename: &'static str,
     pub file_size_mb: u32,
     pub ram_requirement_mb: u32,
@@ -17,16 +20,16 @@ pub struct ModelConfig {
     pub sha256_hash: Option<&'static str>,
 }
 
-pub const GEMMA2_2B: ModelConfig = ModelConfig {
-    id: "gemma-2-2b-it-q4",
-    display_name: "Gemma 2 2B (Q4_K_M)",
-    repo_id: "bartowski/gemma-2-2b-it-GGUF",
-    gguf_filename: "gemma-2-2b-it-Q4_K_M.gguf",
+pub const GEMMA3_1B: ModelConfig = ModelConfig {
+    id: "gemma-3-1b-it-q4",
+    display_name: "Gemma 3 1B (Q4_K_M)",
+    repo_id: "unsloth/gemma-3-1b-it-GGUF",
+    gguf_filename: "gemma-3-1b-it-Q4_K_M.gguf",
+    tokenizer_repo_id: "unsloth/gemma-3-1b-it",
     tokenizer_filename: "tokenizer.json",
-    file_size_mb: 1500,
-    ram_requirement_mb: 2500,
-    // TODO: fill in actual SHA256 hash after verifying the model file
-    sha256_hash: None,
+    file_size_mb: 769,
+    ram_requirement_mb: 1500,
+    sha256_hash: Some("8270790f3ab69fdfe860b7b64008d9a19986d8df7e407bb018184caa08798ebd"),
 };
 
 /// Tracks cumulative download progress and emits throttled events.
@@ -177,15 +180,16 @@ impl ModelManager {
         use sha2::{Digest, Sha256};
         use std::io::Read;
 
-        let mut file = std::fs::File::open(path)
-            .map_err(|e| LlmError::DownloadError(format!("Failed to open file for hash verification: {e}")))?;
+        let mut file = std::fs::File::open(path).map_err(|e| {
+            LlmError::DownloadError(format!("Failed to open file for hash verification: {e}"))
+        })?;
 
         let mut hasher = Sha256::new();
         let mut buffer = [0u8; 8192];
         loop {
-            let bytes_read = file
-                .read(&mut buffer)
-                .map_err(|e| LlmError::DownloadError(format!("Failed to read file for hash verification: {e}")))?;
+            let bytes_read = file.read(&mut buffer).map_err(|e| {
+                LlmError::DownloadError(format!("Failed to read file for hash verification: {e}"))
+            })?;
             if bytes_read == 0 {
                 break;
             }
@@ -207,8 +211,7 @@ impl ModelManager {
     /// Whether the model is available from the bundled resource directory.
     pub fn is_bundled(&self, config: &ModelConfig) -> bool {
         if let Some(ref res) = self.resource_dir {
-            res.join(config.gguf_filename).exists()
-                && res.join(config.tokenizer_filename).exists()
+            res.join(config.gguf_filename).exists() && res.join(config.tokenizer_filename).exists()
         } else {
             false
         }
@@ -244,7 +247,7 @@ impl ModelManager {
         );
         let tokenizer_url = format!(
             "https://huggingface.co/{}/resolve/main/{}",
-            config.repo_id, config.tokenizer_filename
+            config.tokenizer_repo_id, config.tokenizer_filename
         );
 
         // --- Download GGUF model file ---
@@ -266,7 +269,7 @@ impl ModelManager {
             .await
             .ok()
             .and_then(|r| r.content_length())
-            .unwrap_or(1024 * 1024); // 1MB fallback
+            .unwrap_or(34 * 1024 * 1024); // Gemma tokenizer.json is ~33MB
 
         progress.total_bytes = gguf_size + tokenizer_size;
 
@@ -301,8 +304,8 @@ impl ModelManager {
             .join(config.repo_id)
             .join(config.tokenizer_filename);
         if let Err(e) = stream_to_file(tok_response, &target_tokenizer, &mut progress).await {
+            // Keep the verified GGUF — only the (re-downloadable) tokenizer failed.
             let _ = tokio::fs::remove_file(&target_tokenizer).await;
-            let _ = tokio::fs::remove_file(&target_model).await;
             return Err(e);
         }
 
@@ -333,7 +336,7 @@ impl ModelManager {
     /// Get the model config by ID.
     pub fn get_config(model_id: &str) -> Option<&'static ModelConfig> {
         match model_id {
-            "gemma-2-2b-it-q4" => Some(&GEMMA2_2B),
+            "gemma-3-1b-it-q4" => Some(&GEMMA3_1B),
             _ => None,
         }
     }
@@ -347,39 +350,39 @@ mod tests {
     #[test]
     fn model_paths_without_resource_dir() {
         let mgr = ModelManager::new(Path::new("/tmp/test"), None);
-        let path = mgr.get_model_path(&GEMMA2_2B);
-        assert!(path.to_str().unwrap().contains("bartowski"));
+        let path = mgr.get_model_path(&GEMMA3_1B);
+        assert!(path.to_str().unwrap().contains("unsloth"));
         assert!(path.to_str().unwrap().ends_with(".gguf"));
     }
 
     #[test]
     fn tokenizer_path_separate_from_model() {
         let mgr = ModelManager::new(Path::new("/tmp/test"), None);
-        let model_path = mgr.get_model_path(&GEMMA2_2B);
-        let tok_path = mgr.get_tokenizer_path(&GEMMA2_2B);
+        let model_path = mgr.get_model_path(&GEMMA3_1B);
+        let tok_path = mgr.get_tokenizer_path(&GEMMA3_1B);
         assert_ne!(model_path, tok_path);
         assert!(tok_path.to_str().unwrap().ends_with("tokenizer.json"));
     }
 
     #[test]
     fn model_config_lookup() {
-        assert!(ModelManager::get_config("gemma-2-2b-it-q4").is_some());
+        assert!(ModelManager::get_config("gemma-3-1b-it-q4").is_some());
         assert!(ModelManager::get_config("nonexistent").is_none());
     }
 
     #[test]
-    fn gemma2_constants_are_reasonable() {
-        assert_eq!(GEMMA2_2B.file_size_mb, 1500);
-        assert_eq!(GEMMA2_2B.ram_requirement_mb, 2500);
-        assert!(!GEMMA2_2B.repo_id.is_empty());
-        assert!(GEMMA2_2B.sha256_hash.is_none()); // TODO: update when hash is known
+    fn gemma3_constants_are_reasonable() {
+        assert_eq!(GEMMA3_1B.file_size_mb, 769);
+        assert_eq!(GEMMA3_1B.ram_requirement_mb, 1500);
+        assert!(!GEMMA3_1B.repo_id.is_empty());
+        assert!(!GEMMA3_1B.tokenizer_repo_id.is_empty());
     }
 
     #[test]
     fn is_available_returns_false_for_missing_files() {
         let tmp = tempfile::tempdir().unwrap();
         let mgr = ModelManager::new(tmp.path(), None);
-        assert!(!mgr.is_available(&GEMMA2_2B));
+        assert!(!mgr.is_available(&GEMMA3_1B));
     }
 
     #[test]
@@ -392,6 +395,7 @@ mod tests {
             display_name: "Test",
             repo_id: "test/repo",
             gguf_filename: "model.gguf",
+            tokenizer_repo_id: "test/repo",
             tokenizer_filename: "tokenizer.json",
             file_size_mb: 1, // expect ~1MB
             ram_requirement_mb: 100,
@@ -419,6 +423,7 @@ mod tests {
             display_name: "Test",
             repo_id: "test/repo",
             gguf_filename: "model.gguf",
+            tokenizer_repo_id: "test/repo",
             tokenizer_filename: "tokenizer.json",
             file_size_mb: 1, // expect ~1MB
             ram_requirement_mb: 100,
@@ -465,20 +470,26 @@ mod tests {
 
     #[test]
     fn bundled_resource_dir_preferred_when_exists() {
-        let mgr = ModelManager::new(Path::new("/tmp/test"), Some(PathBuf::from("/tmp/nonexistent")));
-        let path = mgr.get_model_path(&GEMMA2_2B);
-        assert!(path.to_str().unwrap().contains("bartowski"));
+        let mgr = ModelManager::new(
+            Path::new("/tmp/test"),
+            Some(PathBuf::from("/tmp/nonexistent")),
+        );
+        let path = mgr.get_model_path(&GEMMA3_1B);
+        assert!(path.to_str().unwrap().contains("unsloth"));
     }
 
     #[test]
     fn is_bundled_false_without_resource_dir() {
         let mgr = ModelManager::new(Path::new("/tmp/test"), None);
-        assert!(!mgr.is_bundled(&GEMMA2_2B));
+        assert!(!mgr.is_bundled(&GEMMA3_1B));
     }
 
     #[test]
     fn is_bundled_false_when_files_missing() {
-        let mgr = ModelManager::new(Path::new("/tmp/test"), Some(PathBuf::from("/tmp/nonexistent")));
-        assert!(!mgr.is_bundled(&GEMMA2_2B));
+        let mgr = ModelManager::new(
+            Path::new("/tmp/test"),
+            Some(PathBuf::from("/tmp/nonexistent")),
+        );
+        assert!(!mgr.is_bundled(&GEMMA3_1B));
     }
 }

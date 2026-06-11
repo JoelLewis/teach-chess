@@ -10,11 +10,11 @@ test("app loads and shows the main layout", async ({ page }) => {
   await expect(page.locator("#app")).toBeVisible();
 });
 
-test("new game button is visible", async ({ page }) => {
+test("play navigation is visible", async ({ page }) => {
   await page.goto("/");
-  // Look for a new game action in the UI
-  const newGameButton = page.getByRole("button", { name: /new game/i });
-  await expect(newGameButton).toBeVisible();
+  // The sidebar offers the Play entry point for starting a game
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  await expect(nav.getByRole("button", { name: /play/i })).toBeVisible();
 });
 
 test("chessboard renders", async ({ page }) => {

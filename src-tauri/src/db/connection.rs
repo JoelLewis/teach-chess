@@ -100,8 +100,7 @@ impl Database {
 
     #[cfg(test)]
     pub fn open_in_memory() -> Result<Self, DatabaseError> {
-        let conn = Connection::open_in_memory()
-            .map_err(DatabaseError::Sqlite)?;
+        let conn = Connection::open_in_memory().map_err(DatabaseError::Sqlite)?;
         conn.pragma_update(None, "foreign_keys", "ON")
             .map_err(DatabaseError::Sqlite)?;
         let db = Self { conn };

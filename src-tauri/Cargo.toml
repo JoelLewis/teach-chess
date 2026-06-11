@@ -37,6 +37,12 @@ futures-util = "0.3"
 tokio-util = { version = "0.7", features = ["rt"] }
 sha2 = "0.10"
 
+# macOS builds always get Metal-accelerated inference compiled in (features
+# unify with the base candle dependencies above; no CLI flags needed).
+[target.'cfg(target_os = "macos")'.dependencies]
+candle-core = { version = "0.9", features = ["metal"] }
+candle-transformers = { version = "0.9", features = ["metal"] }
+
 [dev-dependencies]
 tempfile = "3"
 
@@ -45,3 +51,32 @@ default = ["llm"]
 llm = []
 llm-cuda = ["candle-core/cuda", "candle-transformers/cuda"]
 llm-metal = ["candle-core/metal", "candle-transformers/metal"]
+
+# Unoptimized candle is ~50x too slow for the in-app coaching timeouts, so keep
+# the inference stack optimized even in `tauri dev` (debug) builds.
+[profile.dev.package.candle-core]
+opt-level = 3
+[profile.dev.package.candle-nn]
+opt-level = 3
+[profile.dev.package.candle-transformers]
+opt-level = 3
+[profile.dev.package.candle-metal-kernels]
+opt-level = 3
+[profile.dev.package.gemm]
+opt-level = 3
+[profile.dev.package.gemm-common]
+opt-level = 3
+[profile.dev.package.gemm-f32]
+opt-level = 3
+[profile.dev.package.gemm-f16]
+opt-level = 3
+[profile.dev.package.gemm-f64]
+opt-level = 3
+[profile.dev.package.gemm-c32]
+opt-level = 3
+[profile.dev.package.gemm-c64]
+opt-level = 3
+[profile.dev.package.pulp]
+opt-level = 3
+[profile.dev.package.tokenizers]
+opt-level = 3

@@ -83,11 +83,11 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
 
     #[cfg(feature = "llm")]
     {
-        use crate::llm::model_manager::GEMMA2_2B;
+        use crate::llm::model_manager::GEMMA3_1B;
 
         let llm_state = app.state::<crate::llm::LlmState>();
-        let model_available = llm_state.model_manager.is_available(&GEMMA2_2B);
-        let model_bundled = llm_state.model_manager.is_bundled(&GEMMA2_2B);
+        let model_available = llm_state.model_manager.is_available(&GEMMA3_1B);
+        let model_bundled = llm_state.model_manager.is_bundled(&GEMMA3_1B);
         let channel_guard = llm_state.channel.lock().await;
         let model_loaded = channel_guard
             .as_ref()
@@ -105,7 +105,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
             available: model_available,
             model_loaded,
             model_id: if model_available {
-                Some(GEMMA2_2B.id.to_string())
+                Some(GEMMA3_1B.id.to_string())
             } else {
                 None
             },
@@ -128,18 +128,18 @@ pub async fn get_available_models(
 
     #[cfg(feature = "llm")]
     {
-        use crate::llm::model_manager::GEMMA2_2B;
+        use crate::llm::model_manager::GEMMA3_1B;
 
         let llm_state = app.state::<crate::llm::LlmState>();
         let sys_mem = get_system_memory_mb();
         let avail_mem = get_available_memory_mb();
         Ok(vec![ModelStatus {
-            id: GEMMA2_2B.id.to_string(),
-            display_name: GEMMA2_2B.display_name.to_string(),
-            downloaded: llm_state.model_manager.is_available(&GEMMA2_2B),
-            bundled: llm_state.model_manager.is_bundled(&GEMMA2_2B),
-            file_size_mb: GEMMA2_2B.file_size_mb,
-            ram_requirement_mb: GEMMA2_2B.ram_requirement_mb,
+            id: GEMMA3_1B.id.to_string(),
+            display_name: GEMMA3_1B.display_name.to_string(),
+            downloaded: llm_state.model_manager.is_available(&GEMMA3_1B),
+            bundled: llm_state.model_manager.is_bundled(&GEMMA3_1B),
+            file_size_mb: GEMMA3_1B.file_size_mb,
+            ram_requirement_mb: GEMMA3_1B.ram_requirement_mb,
             system_memory_mb: sys_mem,
             available_memory_mb: avail_mem,
         }])
@@ -214,7 +214,7 @@ pub async fn generate_coaching(
         let llm_state = app.state::<crate::llm::LlmState>();
         if llm_state
             .model_manager
-            .is_available(&crate::llm::model_manager::GEMMA2_2B)
+            .is_available(&crate::llm::model_manager::GEMMA3_1B)
         {
             let params = LlmCoachingParams {
                 level: &level,
@@ -298,7 +298,6 @@ async fn try_llm_generation(
     request_id: Option<&str>,
     params: &LlmCoachingParams<'_>,
 ) -> Result<String, crate::llm::LlmError> {
-    use crate::llm::model_manager::GEMMA2_2B;
     use crate::llm::LlmTokenEvent;
     use tauri::Emitter;
 
@@ -347,19 +346,13 @@ async fn try_llm_generation(
         material_balance,
     );
 
-    // Lazy-spawn the inference channel if not yet created
+    // Spawn the inference channel if not yet created (normally warmed at startup)
+    llm_state.ensure_channel().await?;
     let submit_result = {
         let mut channel_guard = llm_state.channel.lock().await;
-        if channel_guard.is_none() {
-            let model_path = llm_state.model_manager.get_model_path(&GEMMA2_2B);
-            let tokenizer_path = llm_state.model_manager.get_tokenizer_path(&GEMMA2_2B);
-            let (ch, dev_name) =
-                crate::llm::channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
-            let _ = llm_state.device_name.set(dev_name);
-            *channel_guard = Some(ch);
-        }
-
-        let channel = channel_guard.as_mut().unwrap();
+        let channel = channel_guard
+            .as_mut()
+            .ok_or(crate::llm::LlmError::ModelNotLoaded)?;
         channel.submit(prompt).await?
         // channel_guard dropped here — BEFORE we await the result.
     };
@@ -453,35 +446,27 @@ async fn try_generate_summary(
     app: &tauri::AppHandle,
     prompt: &str,
 ) -> Result<String, crate::llm::LlmError> {
-    use crate::llm::model_manager::GEMMA2_2B;
+    use crate::llm::model_manager::GEMMA3_1B;
 
     let llm_state = app.state::<crate::llm::LlmState>();
-    if !llm_state.model_manager.is_available(&GEMMA2_2B) {
+    if !llm_state.model_manager.is_available(&GEMMA3_1B) {
         return Err(crate::llm::LlmError::ModelNotFound(
             "Model not available".to_string(),
         ));
     }
 
+    llm_state.ensure_channel().await?;
     let submit_result = {
         let mut channel_guard = llm_state.channel.lock().await;
-        if channel_guard.is_none() {
-            let model_path = llm_state.model_manager.get_model_path(&GEMMA2_2B);
-            let tokenizer_path = llm_state.model_manager.get_tokenizer_path(&GEMMA2_2B);
-            let (ch, dev_name) =
-                crate::llm::channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
-            let _ = llm_state.device_name.set(dev_name);
-            *channel_guard = Some(ch);
-        }
-
-        let channel = channel_guard.as_mut().unwrap();
+        let channel = channel_guard
+            .as_mut()
+            .ok_or(crate::llm::LlmError::ModelNotLoaded)?;
         channel.submit(prompt.to_string()).await?
     };
 
     // Drain token stream (we only need the final result)
     let mut token_rx = submit_result.token_rx;
-    tokio::spawn(async move {
-        while token_rx.recv().await.is_some() {}
-    });
+    tokio::spawn(async move { while token_rx.recv().await.is_some() {} });
 
     let result = submit_result
         .response_rx

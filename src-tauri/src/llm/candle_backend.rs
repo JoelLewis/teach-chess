@@ -10,11 +10,36 @@ use tokio_util::sync::CancellationToken;
 
 use super::LlmError;
 
-/// Select the best available compute device.
+/// Select the compute device for inference.
 ///
-/// Tries CUDA (if `llm-cuda` feature) → Metal (if `llm-metal` feature) → CPU fallback.
-/// Returns the device and a human-readable name.
+/// Default: CUDA if the `llm-cuda` feature is enabled and a GPU is present,
+/// otherwise CPU. Metal is compiled in on macOS but **opt-in** via
+/// `CHESS_MENTOR_DEVICE=metal`: candle 0.9's quantized-gemma3 Metal path is
+/// orders of magnitude slower than CPU on low-memory Apple Silicon (measured
+/// 783s vs 3.2s for the same generation on an 8 GB M3 — the 262k-vocab output
+/// projection appears to thrash), while CPU comfortably meets the app's
+/// coaching timeouts. `CHESS_MENTOR_DEVICE=cpu` forces CPU everywhere.
 pub fn select_device() -> (Device, &'static str) {
+    match std::env::var("CHESS_MENTOR_DEVICE").as_deref() {
+        Ok("cpu") => {
+            tracing::info!("CHESS_MENTOR_DEVICE=cpu — forcing CPU inference");
+            return (Device::Cpu, "cpu");
+        }
+        Ok("metal") => {
+            #[cfg(any(feature = "llm-metal", target_os = "macos"))]
+            match Device::new_metal(0) {
+                Ok(device) => {
+                    tracing::info!("CHESS_MENTOR_DEVICE=metal — using Metal GPU for inference");
+                    return (device, "metal");
+                }
+                Err(e) => tracing::warn!("Metal initialization failed: {e}, falling back"),
+            }
+            #[cfg(not(any(feature = "llm-metal", target_os = "macos")))]
+            tracing::warn!("CHESS_MENTOR_DEVICE=metal requested but Metal support not compiled");
+        }
+        _ => {}
+    }
+
     #[cfg(feature = "llm-cuda")]
     {
         match Device::cuda_if_available(0) {
@@ -24,17 +49,6 @@ pub fn select_device() -> (Device, &'static str) {
             }
             Ok(_) => tracing::info!("CUDA requested but no GPU available, falling back to CPU"),
             Err(e) => tracing::warn!("CUDA initialization failed: {e}, falling back to CPU"),
-        }
-    }
-
-    #[cfg(feature = "llm-metal")]
-    {
-        match Device::new_metal(0) {
-            Ok(device) => {
-                tracing::info!("Using Metal GPU for inference");
-                return (device, "metal");
-            }
-            Err(e) => tracing::warn!("Metal initialization failed: {e}, falling back to CPU"),
         }
     }
 
@@ -51,7 +65,7 @@ pub fn device_name(device: &Device) -> &'static str {
     }
 }
 
-/// Candle-based inference backend for quantized Gemma 2B GGUF models.
+/// Candle-based inference backend for quantized Gemma 3 GGUF models.
 pub struct CandleBackend {
     model: Option<ModelWeights>,
     tokenizer: Option<Tokenizer>,
@@ -139,11 +153,14 @@ impl CandleBackend {
             },
         );
 
-        let eos_token = tokenizer
-            .token_to_id("<eos>")
-            .or_else(|| tokenizer.token_to_id("</s>"))
-            .or_else(|| tokenizer.token_to_id("<end_of_turn>"))
-            .unwrap_or(1);
+        // Gemma instruction models end responses with <end_of_turn>, not <eos>,
+        // so treat every known terminator as a stop token.
+        let stop_tokens: Vec<u32> = ["<eos>", "<end_of_turn>", "</s>"]
+            .iter()
+            .filter_map(|t| tokenizer.token_to_id(t))
+            .collect();
+        let is_stop =
+            |token: u32| stop_tokens.contains(&token) || (stop_tokens.is_empty() && token == 1);
 
         let max_tokens: usize = 128;
         let mut output_tokens: Vec<u32> = Vec::with_capacity(max_tokens);
@@ -157,6 +174,7 @@ impl CandleBackend {
             .unsqueeze(0)
             .map_err(|e| LlmError::InferenceError(format!("Unsqueeze: {e}")))?;
 
+        // forward() narrows to the last position internally and returns [batch, vocab]
         let logits = model
             .forward(&input, 0)
             .map_err(|e| LlmError::InferenceError(format!("Forward pass: {e}")))?;
@@ -164,22 +182,14 @@ impl CandleBackend {
         let logits = logits
             .squeeze(0)
             .map_err(|e| LlmError::InferenceError(format!("Squeeze: {e}")))?;
-        let logits = logits
-            .get(
-                logits
-                    .dim(0)
-                    .map_err(|e| LlmError::InferenceError(e.to_string()))?
-                    - 1,
-            )
-            .map_err(|e| LlmError::InferenceError(format!("Get last: {e}")))?;
 
         let logits = apply_repeat_penalty(&logits, 1.1, &all_tokens)?;
 
-        let next_token = logits_processor
+        let mut next_token = logits_processor
             .sample(&logits)
             .map_err(|e| LlmError::InferenceError(format!("Sampling: {e}")))?;
 
-        if next_token == eos_token {
+        if is_stop(next_token) {
             return Ok(String::new());
         }
 
@@ -187,7 +197,12 @@ impl CandleBackend {
         all_tokens.push(next_token);
 
         // Emit first token incrementally
-        emit_new_text(tokenizer, &output_tokens, &mut prev_decoded_len, &mut on_token);
+        emit_new_text(
+            tokenizer,
+            &output_tokens,
+            &mut prev_decoded_len,
+            &mut on_token,
+        );
 
         // Generate remaining tokens one at a time
         for i in 0..max_tokens - 1 {
@@ -200,31 +215,34 @@ impl CandleBackend {
                 .unsqueeze(0)
                 .map_err(|e| LlmError::InferenceError(format!("Unsqueeze: {e}")))?;
 
-            let pos = prompt_tokens.len() + i + 1;
+            let pos = prompt_tokens.len() + i;
             let logits = model
                 .forward(&input, pos)
                 .map_err(|e| LlmError::InferenceError(format!("Forward: {e}")))?;
 
             let logits = logits
                 .squeeze(0)
-                .map_err(|e| LlmError::InferenceError(format!("Squeeze: {e}")))?
-                .get(0)
-                .map_err(|e| LlmError::InferenceError(format!("Get: {e}")))?;
+                .map_err(|e| LlmError::InferenceError(format!("Squeeze: {e}")))?;
 
             let logits = apply_repeat_penalty(&logits, 1.1, &all_tokens)?;
 
-            let next_token = logits_processor
+            next_token = logits_processor
                 .sample(&logits)
                 .map_err(|e| LlmError::InferenceError(format!("Sampling: {e}")))?;
 
-            if next_token == eos_token {
+            if is_stop(next_token) {
                 break;
             }
 
             output_tokens.push(next_token);
             all_tokens.push(next_token);
 
-            emit_new_text(tokenizer, &output_tokens, &mut prev_decoded_len, &mut on_token);
+            emit_new_text(
+                tokenizer,
+                &output_tokens,
+                &mut prev_decoded_len,
+                &mut on_token,
+            );
         }
 
         // Decode full output
@@ -274,4 +292,65 @@ fn apply_repeat_penalty(logits: &Tensor, penalty: f32, tokens: &[u32]) -> Result
 
     Tensor::from_vec(logits_vec, logits.shape(), device)
         .map_err(|e| LlmError::InferenceError(format!("From vec: {e}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// End-to-end inference smoke test against the real GGUF.
+    ///
+    /// Requires model files in src-tauri/models/ (run scripts/fetch-model.sh first).
+    /// Run with: cargo test --release -- --ignored llm_generates_coherent_text --nocapture
+    #[test]
+    #[ignore]
+    fn llm_generates_coherent_text() {
+        let models_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("models");
+        let model_path = models_dir.join(super::super::model_manager::GEMMA3_1B.gguf_filename);
+        let tokenizer_path =
+            models_dir.join(super::super::model_manager::GEMMA3_1B.tokenizer_filename);
+        assert!(
+            model_path.exists() && tokenizer_path.exists(),
+            "model files missing — run scripts/fetch-model.sh first"
+        );
+
+        let (device, dev_name) = select_device();
+        eprintln!("inference device: {dev_name}");
+        let mut backend = CandleBackend::new(device);
+        let t0 = std::time::Instant::now();
+        backend
+            .load(&model_path, &tokenizer_path)
+            .expect("model should load");
+        eprintln!("load took {:.1}s", t0.elapsed().as_secs_f32());
+
+        let prompt = "<start_of_turn>user\nReply with one short sentence: why is controlling \
+                      the center important in chess?<end_of_turn>\n<start_of_turn>model\n";
+        let cancel = CancellationToken::new();
+        let mut streamed = String::new();
+        let mut chunks = 0u32;
+        let t1 = std::time::Instant::now();
+        let text = backend
+            .generate(prompt, &cancel, |t| {
+                chunks += 1;
+                streamed.push_str(t);
+            })
+            .expect("generation should succeed");
+        let gen_secs = t1.elapsed().as_secs_f32();
+        eprintln!(
+            "generation took {gen_secs:.1}s for {chunks} chunks ({:.2} chunks/s)",
+            chunks as f32 / gen_secs
+        );
+        eprintln!("output: {text}");
+
+        assert!(text.len() > 20, "suspiciously short output: {text:?}");
+        assert!(
+            !text.contains("<end_of_turn>") && !text.contains("<start_of_turn>"),
+            "output leaked turn markers: {text:?}"
+        );
+        assert_eq!(
+            streamed.trim(),
+            text,
+            "streamed text should match final text"
+        );
+    }
 }

@@ -97,10 +97,9 @@ impl EngineProcess {
     /// Attempt to restart the engine after a crash. Tries up to MAX_RESTART_ATTEMPTS times
     /// with exponential backoff.
     async fn try_restart(&mut self) -> Result<(), AppError> {
-        let app = self
-            .app_handle
-            .clone()
-            .ok_or(EngineError::ProcessError("No app handle for restart".to_string()))?;
+        let app = self.app_handle.clone().ok_or(EngineError::ProcessError(
+            "No app handle for restart".to_string(),
+        ))?;
 
         self.clear_process_state();
 

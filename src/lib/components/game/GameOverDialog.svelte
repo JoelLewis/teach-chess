@@ -1,21 +1,44 @@
 <script lang="ts">
   import type { Color, GameOutcome } from "../../types/chess";
   import GameSummaryCard from "./GameSummaryCard.svelte";
-  import { generateGameSummary } from "../../api/commands";
+  import { generateGameSummary, getGameReview } from "../../api/commands";
+  import { summarizeEvaluations, type GameStats } from "../../utils/reviewStats";
 
   type Props = {
     outcome: GameOutcome | null;
     playerColor: Color;
     moveCount: number;
+    gameId: string | null;
+    opponentInfo?: string;
     onReview: () => void;
     onNewGame: () => void;
   };
 
-  let { outcome, playerColor, moveCount, onReview, onNewGame }: Props = $props();
+  let {
+    outcome,
+    playerColor,
+    moveCount,
+    gameId,
+    opponentInfo = "vs Opponent",
+    onReview,
+    onNewGame,
+  }: Props = $props();
+
+  /** Depth for the quick post-game review that feeds the summary stats.
+   *  Kept shallow so stats arrive within a few seconds; the Review screen
+   *  re-analyzes at full depth. */
+  const SUMMARY_REVIEW_DEPTH = 10;
 
   let dialogEl: HTMLDivElement;
   let primaryBtnEl: HTMLButtonElement;
   let aiQuote = $state<string | null>(null);
+  let stats = $state<GameStats>({
+    accuracyPct: 0,
+    bestMoves: 0,
+    inaccuracies: 0,
+    mistakes: 0,
+    blunders: 0,
+  });
 
   let resultText = $derived.by(() => {
     if (!outcome) return "Game Over";
@@ -66,26 +89,44 @@
     return "by agreement";
   });
 
-  // Fetch AI-generated game summary when dialog mounts
+  // Run a quick review for real stats, then fetch the AI-generated summary.
+  // Both steps degrade gracefully: the card renders fine with zero stats
+  // and without an AI quote.
   $effect(() => {
     if (!outcome) return;
-    // TODO: Wire up real accuracy/bestMoves/blunders/inaccuracies from game review data
-    generateGameSummary({
-      result: cardResult,
-      outcomeType: outcomeDetail,
-      moveCount,
-      accuracyPct: 0,
-      bestMoves: 0,
-      blunders: 0,
-      mistakes: 0,
-      inaccuracies: 0,
-    })
-      .then((text) => {
-        aiQuote = text;
-      })
-      .catch(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (gameId) {
+        try {
+          const evaluations = await getGameReview(gameId, SUMMARY_REVIEW_DEPTH);
+          if (cancelled) return;
+          stats = summarizeEvaluations(evaluations, playerColor === "white");
+        } catch (err) {
+          console.error("Post-game review failed (non-blocking):", err);
+        }
+      }
+
+      try {
+        const text = await generateGameSummary({
+          result: cardResult,
+          outcomeType: outcomeDetail,
+          moveCount,
+          accuracyPct: stats.accuracyPct,
+          bestMoves: stats.bestMoves,
+          blunders: stats.blunders,
+          mistakes: stats.mistakes,
+          inaccuracies: stats.inaccuracies,
+        });
+        if (!cancelled) aiQuote = text;
+      } catch {
         // Silently fail — the card renders fine without an AI quote
-      });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   });
 
   // Auto-focus primary button and set up focus trap + Escape key
@@ -136,12 +177,12 @@
       <GameSummaryCard
         result={cardResult}
         {outcomeDetail}
-        opponentInfo="vs Opponent"
+        {opponentInfo}
         {moveCount}
-        accuracy={0}
-        bestMoves={0}
-        inaccuracies={0}
-        blunders={0}
+        accuracy={stats.accuracyPct}
+        bestMoves={stats.bestMoves}
+        inaccuracies={stats.inaccuracies}
+        blunders={stats.blunders}
         {aiQuote}
       />
     {/if}

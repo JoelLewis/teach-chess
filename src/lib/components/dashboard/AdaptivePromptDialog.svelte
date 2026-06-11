@@ -61,7 +61,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="overlay" role="dialog" aria-modal="true" onkeydown={handleKeydown}>
+<div class="overlay" role="dialog" aria-modal="true" tabindex="-1" onkeydown={handleKeydown}>
   <div class="dialog" style:border-top-color={accentColor} bind:this={dialogEl}>
     <div class="badge" style:color={accentColor}>{label}</div>
     <p class="message">{prompt.message}</p>

@@ -26,5 +26,8 @@ export default defineConfig(async () => ({
     include: ["src/**/*.test.ts"],
     environment: "jsdom",
     setupFiles: ["src/test/setup.ts"],
+    // Parallel jsdom workers thrash low-memory machines; the suite is small,
+    // so run files serially for reliability.
+    fileParallelism: false,
   },
 }));

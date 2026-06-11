@@ -29,6 +29,18 @@
     return `Playing against: ${name}`;
   });
 
+  // Opponent description for the post-game summary card
+  let opponentInfo = $derived.by(() => {
+    const personality = gameStore.resolvedPersonality ?? config?.personality;
+    const name = personality
+      ? personality.charAt(0).toUpperCase() + personality.slice(1)
+      : null;
+    const elo = config?.engineStrength.elo;
+    if (name && elo) return `vs ${name} (${elo} ELO)`;
+    if (elo) return `vs Engine (${elo} ELO)`;
+    return "vs Opponent";
+  });
+
   let showPersonalityBadge = $state(false);
   let confirmingResign = $state(false);
 
@@ -276,6 +288,8 @@
       outcome={position?.outcome ?? null}
       playerColor={config?.playerColor ?? "white"}
       moveCount={position?.sanHistory.length ?? 0}
+      gameId={gameStore.lastGameRecord?.id ?? null}
+      {opponentInfo}
       onReview={() => onReview?.(gameStore.lastGameRecord?.id ?? "")}
       onNewGame={() => onNewGame?.()}
     />

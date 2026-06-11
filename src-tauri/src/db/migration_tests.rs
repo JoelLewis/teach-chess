@@ -26,8 +26,7 @@ mod tests {
 
     #[test]
     fn migrations_are_idempotent() {
-        let db = Database::open_in_memory()
-            .expect("first migration run should succeed");
+        let db = Database::open_in_memory().expect("first migration run should succeed");
 
         // Running migrations again should not error
         db.run_migrations()
@@ -36,8 +35,7 @@ mod tests {
 
     #[test]
     fn dashboard_queries_on_fresh_db() {
-        let db = Database::open_in_memory()
-            .expect("migrations should apply");
+        let db = Database::open_in_memory().expect("migrations should apply");
 
         // Insert a test player
         db.conn()
@@ -52,28 +50,33 @@ mod tests {
         // These are the same queries the dashboard command uses:
 
         // get_game_history
-        let games = db.get_game_history(5, 0)
+        let games = db
+            .get_game_history(5, 0)
             .expect("get_game_history should work on fresh db");
         assert!(games.is_empty(), "no games yet");
 
         // get_puzzle_stats
-        let stats = db.get_puzzle_stats(player_id)
+        let stats = db
+            .get_puzzle_stats(player_id)
             .expect("get_puzzle_stats should work on fresh db");
         assert_eq!(stats.total_attempts, 0);
 
         // get_skill_profile
-        let profile = db.get_skill_profile(player_id)
+        let profile = db
+            .get_skill_profile(player_id)
             .expect("get_skill_profile should work on fresh db");
         assert!(profile.ratings.is_empty(), "no ratings yet");
 
         // get_today_counts
-        let (games_today, puzzles_today) = db.get_today_counts(player_id, "2026-01-01")
+        let (games_today, puzzles_today) = db
+            .get_today_counts(player_id, "2026-01-01")
             .expect("get_today_counts should work on fresh db");
         assert_eq!(games_today, 0);
         assert_eq!(puzzles_today, 0);
 
         // get_activity_dates
-        let dates = db.get_activity_dates(player_id)
+        let dates = db
+            .get_activity_dates(player_id)
             .expect("get_activity_dates should work on fresh db");
         assert!(dates.is_empty(), "no activity dates yet");
     }
@@ -84,10 +87,9 @@ mod tests {
         // but the runner forgot to register it" at test time.
         let migrations_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
 
-        let connection_rs = fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/db/connection.rs"),
-        )
-        .expect("should be able to read connection.rs");
+        let connection_rs =
+            fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/db/connection.rs"))
+                .expect("should be able to read connection.rs");
 
         let mut sql_files: Vec<String> = fs::read_dir(&migrations_dir)
             .expect("migrations directory should exist")

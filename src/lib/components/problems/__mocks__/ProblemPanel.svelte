@@ -1,6 +1,2 @@
-<script lang="ts">
-  // Mock ProblemPanel for testing
-  let { onLoadNext }: { onLoadNext?: () => void } = $props();
-</script>
-
+<!-- Mock ProblemPanel for testing. Incoming props are ignored by Svelte. -->
 <div data-testid="problem-panel"></div>

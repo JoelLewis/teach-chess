@@ -80,7 +80,14 @@ pub fn build_game_summary_prompt(
 ) -> String {
     let context = format!(
         r#"{{"result":"{}","outcome":"{}","moves":{},"accuracy":{:.0},"bestMoves":{},"blunders":{},"mistakes":{},"inaccuracies":{}}}"#,
-        result, outcome_type, move_count, accuracy_pct, best_moves, blunders, mistakes, inaccuracies
+        result,
+        outcome_type,
+        move_count,
+        accuracy_pct,
+        best_moves,
+        blunders,
+        mistakes,
+        inaccuracies
     );
 
     format!(

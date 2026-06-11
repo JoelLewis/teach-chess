@@ -90,6 +90,25 @@ pub fn run() {
                     .ok()
                     .map(|d| d.join("models"));
                 app.manage(llm::LlmState::new(app_data_dir, resource_dir));
+
+                // Warm the model in the background so the first coaching
+                // request doesn't pay the ~15s load. Failure is non-fatal —
+                // requests fall back to lazy init / templates.
+                let warm_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let llm_state = warm_handle.state::<llm::LlmState>();
+                    if llm_state
+                        .model_manager
+                        .is_available(&llm::model_manager::GEMMA3_1B)
+                    {
+                        match llm_state.ensure_channel().await {
+                            Ok(()) => tracing::info!("LLM warm-up started at app startup"),
+                            Err(e) => tracing::warn!("LLM warm-up failed (non-fatal): {e}"),
+                        }
+                    } else {
+                        tracing::info!("LLM model not available — skipping warm-up");
+                    }
+                });
             }
 
             // Clean up expired coaching cache entries
@@ -97,7 +116,9 @@ pub fn run() {
                 let db_lock = app.state::<std::sync::Mutex<db::connection::Database>>();
                 let db = db_lock.lock().expect("DB lock for cache cleanup");
                 match db.cleanup_expired_cache() {
-                    Ok(n) if n > 0 => tracing::info!("Cleaned up {n} expired coaching cache entries"),
+                    Ok(n) if n > 0 => {
+                        tracing::info!("Cleaned up {n} expired coaching cache entries")
+                    }
                     Ok(_) => {}
                     Err(e) => tracing::warn!("Failed to clean up coaching cache: {e}"),
                 }

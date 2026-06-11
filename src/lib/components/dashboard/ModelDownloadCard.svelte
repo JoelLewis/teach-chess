@@ -16,7 +16,7 @@
     downloading = true;
     error = null;
     try {
-      await api.downloadModel("gemma-2-2b-it-q4");
+      await api.downloadModel("gemma-3-1b-it-q4");
       downloaded = true;
     } catch (err) {
       error = `Download failed: ${err}`;
@@ -34,7 +34,7 @@
         <div class="card-icon">&#10003;</div>
         <div class="card-text">
           <h3 class="card-title">AI Coach Ready</h3>
-          <p class="card-desc">Gemma 2B is downloaded. You'll get personalized coaching during games.</p>
+          <p class="card-desc">Gemma 3 1B is downloaded. You'll get personalized coaching during games.</p>
         </div>
       </div>
       <div class="card-actions">
@@ -45,7 +45,7 @@
         <div class="card-icon spinner-icon">&#9881;</div>
         <div class="card-text">
           <h3 class="card-title">Downloading AI Coach...</h3>
-          <p class="card-desc">Downloading Gemma 2B (~1.5 GB). This may take a few minutes.</p>
+          <p class="card-desc">Downloading Gemma 3 1B (~800 MB). This may take a few minutes.</p>
         </div>
       </div>
       <div class="progress-bar">
@@ -59,14 +59,14 @@
           <p class="card-desc">
             Download a local AI model for personalized feedback during games. Without it, coaching uses basic templates.
           </p>
-          <p class="card-size">~1.5 GB download — runs locally, no internet needed after install</p>
+          <p class="card-size">~800 MB download — runs locally, no internet needed after install</p>
         </div>
       </div>
       {#if error}
         <p class="card-error">{error}</p>
       {/if}
       <div class="card-actions">
-        <button class="btn-primary" onclick={handleDownload}>Download Gemma 2B</button>
+        <button class="btn-primary" onclick={handleDownload}>Download Gemma 3 1B</button>
         <button class="btn-dismiss" onclick={() => { dismissed = true; }}>Not now</button>
         <button class="btn-dismiss" onclick={() => onNavigate("settings")}>Settings</button>
       </div>

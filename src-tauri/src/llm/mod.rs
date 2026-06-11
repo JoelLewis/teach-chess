@@ -37,6 +37,25 @@ impl LlmState {
             device_name: std::sync::OnceLock::new(),
         }
     }
+
+    /// Initialize the inference channel if it hasn't been created yet.
+    ///
+    /// The channel's worker loads the model on a blocking thread, so this
+    /// returns quickly; generation requests queue until the load completes.
+    /// Once created the channel is never reset to `None`.
+    pub async fn ensure_channel(&self) -> Result<(), LlmError> {
+        let mut channel_guard = self.channel.lock().await;
+        if channel_guard.is_none() {
+            let config = &model_manager::GEMMA3_1B;
+            let model_path = self.model_manager.get_model_path(config);
+            let tokenizer_path = self.model_manager.get_tokenizer_path(config);
+            let (ch, dev_name) = channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
+            let _ = self.device_name.set(dev_name.clone());
+            *channel_guard = Some(ch);
+            tracing::info!("Inference channel initialized on {dev_name}");
+        }
+        Ok(())
+    }
 }
 
 /// Player skill level for coaching tone adaptation
@@ -105,7 +124,16 @@ pub struct CoachingResponse {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum LlmTokenEvent {
-    Token { text: String, request_id: String },
-    Done { full_text: String, request_id: String },
-    Error { message: String, request_id: String },
+    Token {
+        text: String,
+        request_id: String,
+    },
+    Done {
+        full_text: String,
+        request_id: String,
+    },
+    Error {
+        message: String,
+        request_id: String,
+    },
 }
