@@ -21,7 +21,7 @@
 
 <nav class="sidebar" class:collapsed aria-label="Main navigation">
   <div class="logo" aria-label="ChessMentor">
-    <span class="logo-icon" aria-hidden="true">\u265E</span>
+    <span class="logo-icon" aria-hidden="true">{"\u265E"}</span>
     <span class="logo-text">ChessMentor</span>
   </div>
 
