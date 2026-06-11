@@ -28,6 +28,7 @@
   }: Props = $props();
 
   let boardEl: HTMLDivElement;
+  let containerEl: HTMLDivElement;
   let cg: Api | undefined = $state();
 
   function destsToMap(d: Record<string, string[]>): Map<Key, Key[]> {
@@ -38,16 +39,20 @@
     return map;
   }
 
-  // Mount chessground once — use untrack so prop changes don't recreate it
+  // Mount chessground — recreated only when viewOnly changes, since chessground
+  // binds pointer and bounds-invalidation listeners at construction and skips
+  // them all under viewOnly (set() never rebinds). Other prop changes sync via
+  // the effect below without recreating.
   $effect(() => {
     if (!boardEl) return;
+    const view = viewOnly;
 
     const instance = untrack(() =>
       Chessground(boardEl, {
         fen,
         orientation,
         turnColor,
-        viewOnly,
+        viewOnly: view,
         movable: {
           free: false,
           color: turnColor,
@@ -75,7 +80,18 @@
     );
     cg = instance;
 
+    // Chessground caches the board's screen position and only refreshes it
+    // when the board element itself resizes — a board that *moves* (sidebar
+    // collapse, window resize, panel changes) hit-tests against stale
+    // coordinates. Clear the cache right before chessground handles the
+    // event: capture phase on the container runs first.
+    const refreshBounds = () => instance.state.dom.bounds.clear();
+    containerEl.addEventListener("mousedown", refreshBounds, { capture: true });
+    containerEl.addEventListener("touchstart", refreshBounds, { capture: true, passive: true });
+
     return () => {
+      containerEl.removeEventListener("mousedown", refreshBounds, { capture: true });
+      containerEl.removeEventListener("touchstart", refreshBounds, { capture: true });
       instance.destroy();
       cg = undefined;
     };
@@ -100,7 +116,7 @@
   });
 </script>
 
-<div class="board-container" role="img" aria-label="Chess board — position: {fen ?? 'starting position'}">
+<div bind:this={containerEl} class="board-container" role="img" aria-label="Chess board — position: {fen ?? 'starting position'}">
   <div bind:this={boardEl} class="board"></div>
 </div>
 
