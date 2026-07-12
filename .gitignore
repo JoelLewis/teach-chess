@@ -5,6 +5,7 @@ node_modules/
 dist/
 
 # Rust
+/target/
 src-tauri/target/
 
 # Tauri auto-generated code

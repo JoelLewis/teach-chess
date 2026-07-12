@@ -1,10 +1,13 @@
 use std::path::Path;
 
+use mentor_llm::model::ModelManager;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
 use super::LlmError;
-use super::candle_backend::{CandleBackend, select_device};
+
+/// Maximum tokens generated per request (coaching text is 1-4 sentences).
+const MAX_TOKENS: u32 = 128;
 
 /// A job submitted to the inference worker.
 struct InferenceJob {
@@ -34,32 +37,26 @@ pub struct InferenceChannel {
 }
 
 impl InferenceChannel {
-    /// Spawn the inference worker with automatic device selection.
+    /// Spawn the inference worker.
     ///
-    /// Tries GPU (CUDA/Metal) first, falls back to CPU.
-    pub fn spawn(model_path: &Path, tokenizer_path: &Path) -> Result<(Self, String), LlmError> {
+    /// Returns the channel and the compute device name it will use.
+    /// The worker loads the model on a blocking thread; jobs queue until the
+    /// load completes and fail fast with `ModelNotLoaded` if it doesn't.
+    pub fn spawn(model_path: &Path) -> (Self, String) {
         let (request_tx, mut request_rx) = mpsc::channel::<InferenceJob>(4);
 
         let model_path = model_path.to_path_buf();
-        let tokenizer_path = tokenizer_path.to_path_buf();
-
-        let (device, dev_name) = select_device();
-        let device_name = dev_name.to_string();
-
-        // We need the device for the placeholder backend too
-        let placeholder_dev_name = dev_name;
+        let device_name = mentor_llm::model::device_name().to_string();
+        let worker_device = device_name.clone();
 
         tokio::spawn(async move {
-            // Load on a blocking thread — reading and dequantizing the GGUF
-            // takes seconds and must not stall the async runtime.
-            let load_result = tokio::task::spawn_blocking(move || {
-                let mut backend = CandleBackend::new(device);
-                backend.load(&model_path, &tokenizer_path).map(|()| backend)
-            })
-            .await;
+            // Load on a blocking thread — reading the GGUF and offloading
+            // weights takes seconds and must not stall the async runtime.
+            let load_result =
+                tokio::task::spawn_blocking(move || ModelManager::load(&model_path)).await;
 
-            let mut backend = match load_result {
-                Ok(Ok(backend)) => backend,
+            let manager = match load_result {
+                Ok(Ok(manager)) => manager,
                 Ok(Err(e)) => {
                     tracing::error!("Failed to load model in worker: {e}");
                     while let Some(job) = request_rx.recv().await {
@@ -76,43 +73,33 @@ impl InferenceChannel {
                 }
             };
 
-            tracing::info!("Inference worker ready on {placeholder_dev_name}");
+            tracing::info!("Inference worker ready on {worker_device}");
 
             while let Some(job) = request_rx.recv().await {
                 let prompt = job.prompt;
                 let cancel = job.cancel;
                 let token_tx = job.token_tx;
 
-                let result = {
-                    let (backend_tx, backend_rx) = oneshot::channel();
-                    let (result_tx, result_rx) = oneshot::channel();
-
-                    // Temporarily move backend into blocking task.
-                    // The placeholder uses CPU since it's never used for inference.
-                    let mut moved_backend = std::mem::replace(
-                        &mut backend,
-                        CandleBackend::new(candle_core::Device::Cpu),
-                    );
-
-                    let cancel_clone = cancel.clone();
-                    tokio::task::spawn_blocking(move || {
-                        let result = moved_backend.generate(&prompt, &cancel_clone, |text| {
+                // ModelManager is cheaply cloneable (Arc internals) and each
+                // generate call creates its own context, so the worker hands a
+                // clone to the blocking task.
+                let manager = manager.clone();
+                let result = tokio::task::spawn_blocking(move || {
+                    manager.generate_cancellable(
+                        &prompt,
+                        MAX_TOKENS,
+                        |text| {
                             if let Some(ref tx) = token_tx {
                                 let _ = tx.send(text.to_string());
                             }
-                        });
-                        let _ = result_tx.send(result);
-                        let _ = backend_tx.send(moved_backend);
-                    });
-
-                    if let Ok(returned_backend) = backend_rx.await {
-                        backend = returned_backend;
-                    }
-
-                    result_rx.await.unwrap_or(Err(LlmError::InferenceError(
-                        "Worker task panicked".to_string(),
-                    )))
-                };
+                        },
+                        || cancel.is_cancelled(),
+                    )
+                })
+                .await
+                .unwrap_or_else(|_| {
+                    Err(LlmError::InferenceError("Worker task panicked".to_string()))
+                });
 
                 let _ = job.response_tx.send(result);
             }
@@ -127,7 +114,7 @@ impl InferenceChannel {
             in_flight_rx: None,
         };
 
-        Ok((channel, device_name))
+        (channel, device_name)
     }
 
     /// Submit a prompt for inference.

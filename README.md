@@ -13,7 +13,7 @@ A desktop chess coach that combines Stockfish analysis with heuristic coaching, 
 - **Opponent personalities** — aggressive, positional, trappy, solid — with teaching mode targeting your weak areas
 - **Dashboard** — skill radar, streaks, recommendations, adaptive difficulty prompts
 - **Two themes** — The Study (warm parchment) and The Grid (cyberpunk neon), plus system auto-detection
-- **Local LLM coaching** — Gemma 3 1B inference via candle with token streaming (no cloud API)
+- **Local LLM coaching** — Gemma 4 E2B inference via llama.cpp with token streaming (no cloud API)
 
 ## Screenshot
 
@@ -51,7 +51,7 @@ pnpm run build:mac
 pnpm run tauri build
 ```
 
-Produces platform-specific installers in `src-tauri/target/release/bundle/`. `build:mac` runs `scripts/fetch-model.sh` first so the Gemma 3 1B GGUF (~770 MB) and tokenizer land in `src-tauri/models/`, which `tauri.conf.json` bundles as app resources — the DMG grows by roughly 0.8 GB.
+Produces platform-specific installers in `target/release/bundle/`. `build:mac` runs `scripts/fetch-model.sh` first so the Gemma 4 E2B GGUF (~3.1 GB) lands in `src-tauri/models/`, which `tauri.conf.json` bundles as app resources — the DMG grows by roughly 3 GB.
 
 > **Note:** bundling the model means redistributing Gemma weights, which are subject to [Google's Gemma Terms of Use](https://ai.google.dev/gemma/terms). Include the Gemma notice in release distributions.
 
@@ -68,22 +68,22 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed overview of the 
 
 ## LLM Coaching
 
-The `llm` feature is on by default. The model is **Gemma 3 1B (Q4_K_M GGUF)** running locally via candle — either bundled with the app (see Build) or downloaded on first use from Settings > Model Manager. To fetch it for development:
+The `llm` feature is on by default. The model is **Gemma 4 E2B (Q4_K_M GGUF)** running locally via [llama.cpp](https://github.com/ggml-org/llama.cpp) (the `mentor-llm` crate in `crates/`) — either bundled with the app (see Build) or downloaded on first use from Settings > Model Manager. To fetch it for development:
 
 ```bash
-./scripts/fetch-model.sh    # ~770 MB GGUF + ~33 MB tokenizer into src-tauri/models/
+./scripts/fetch-model.sh    # ~3.1 GB GGUF into src-tauri/models/
 pnpm run tauri dev
 ```
 
 ### Compute Device
 
-The default inference device is **CPU**, which comfortably meets the coaching latency targets for Gemma 3 1B (a few seconds per response on Apple Silicon).
+On macOS the default inference device is **Metal** (llama.cpp's Metal backend is always compiled in and all layers are offloaded to the GPU). Elsewhere the default is CPU.
 
 | Configuration | Device | Notes |
 |---|---|---|
-| default | CPU | recommended on macOS |
-| `CHESS_MENTOR_DEVICE=metal` | Apple GPU (Metal) | compiled in on macOS, but **opt-in**: candle 0.9's quantized-gemma3 Metal path measured ~250x slower than CPU on an 8 GB M3 (the 262k-vocab output projection thrashes); may be worth trying on 16 GB+ machines |
-| `llm-cuda` feature | NVIDIA GPU → CPU fallback | [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) with `nvcc` on PATH |
+| default (macOS) | Apple GPU (Metal) | compiled in on macOS; all layers offloaded |
+| default (Linux/Windows) | CPU | llama.cpp's optimized CPU backend |
+| `llm-cuda` feature | NVIDIA GPU | [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) with `nvcc` on PATH |
 | `CHESS_MENTOR_DEVICE=cpu` | CPU | force CPU everywhere |
 
 The active device is shown in Settings > Model Manager.
@@ -94,7 +94,7 @@ When an LLM model is loaded, coaching text streams progressively in the review p
 
 ### Model Management
 
-If the model isn't bundled, it can be downloaded on first use via Settings > Model Manager (the GGUF comes from `unsloth/gemma-3-1b-it-GGUF`, the tokenizer from `unsloth/gemma-3-1b-it` — GGUF-only repos don't ship `tokenizer.json`). When no model is available, the app falls back to template-based coaching text.
+If the model isn't bundled, it can be downloaded on first use via Settings > Model Manager (the GGUF comes from `unsloth/gemma-4-E2B-it-GGUF`; the tokenizer is embedded in the GGUF). When no model is available, the app falls back to template-based coaching text.
 
 ## License
 

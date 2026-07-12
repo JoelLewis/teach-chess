@@ -97,10 +97,7 @@ pub fn run() {
                 let warm_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let llm_state = warm_handle.state::<llm::LlmState>();
-                    if llm_state
-                        .model_manager
-                        .is_available(&llm::model_manager::GEMMA3_1B)
-                    {
+                    if llm_state.store.is_available(&llm::GEMMA4_E2B) {
                         match llm_state.ensure_channel().await {
                             Ok(()) => tracing::info!("LLM warm-up started at app startup"),
                             Err(e) => tracing::warn!("LLM warm-up failed (non-fatal): {e}"),

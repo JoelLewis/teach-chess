@@ -65,13 +65,13 @@ Expected timings on an 8 GB Apple Silicon machine: model warm-up ~15s after laun
 
 ## 9. Settings & model manager
 - [ ] Theme switch (The Study / The Grid) applies instantly and persists across restart.
-- [ ] Model Manager shows: model available, device **cpu**, size ~770 MB,
+- [ ] Model Manager shows: model available, device **metal** (macOS), size ~2.9 GB,
       **bundled: yes** on the installed app **[installed]**.
 - [ ] Keyboard shortcuts dialog opens with `?`.
 
 ## 10. Model download flow (dev only)
 Only meaningful when the model is NOT bundled (dev with `src-tauri/models/` emptied):
-- [ ] Dashboard card offers download; progress bar shows speed/ETA; completes ~800 MB.
+- [ ] Dashboard card offers download; progress bar shows speed/ETA; completes ~3.1 GB.
 - [ ] Coaching works right after download without restarting the app.
 
 ## 11. Offline & resource checks [installed]
