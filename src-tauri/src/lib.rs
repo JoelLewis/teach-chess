@@ -145,8 +145,21 @@ pub fn run() {
         )
         .init();
 
-    let app = tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_shell::init());
+
+    // Dev-only playtest socket (agent driving). Compiled in only with
+    // `--features mcp` (`pnpm playtest`); never part of default features.
+    #[cfg(feature = "mcp")]
+    {
+        builder = builder.plugin(tauri_plugin_mcp::init_with_config(
+            tauri_plugin_mcp::PluginConfig::new("ChessMentor".to_string())
+                .start_socket_server(true)
+                .socket_path("/tmp/chessmentor-mcp.sock".into()),
+        ));
+    }
+
+    let app = builder
         .setup(|app| {
             let app_handle = app.handle().clone();
             let db = db::connection::Database::open(&app_handle)?;
