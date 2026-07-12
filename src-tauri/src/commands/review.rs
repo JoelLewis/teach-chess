@@ -10,6 +10,7 @@ use crate::models::engine::{CriticalMoment, MoveEvaluation, PatternSummary, Stud
 use crate::models::game::GameRecord;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_game_review(
     game_id: String,
     depth: u32,
@@ -35,6 +36,7 @@ pub async fn get_game_review(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_game_history(
     limit: u32,
     offset: u32,
@@ -46,6 +48,7 @@ pub fn get_game_history(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_critical_moments(
     evaluations: Vec<MoveEvaluation>,
     is_player_white: bool,
@@ -54,6 +57,7 @@ pub fn get_critical_moments(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_pattern_summary(
     evaluations: Vec<MoveEvaluation>,
     is_player_white: bool,
@@ -62,6 +66,7 @@ pub fn get_pattern_summary(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_study_suggestions(summary: PatternSummary) -> Vec<StudySuggestion> {
     coaching::generate_study_suggestions(&summary)
 }

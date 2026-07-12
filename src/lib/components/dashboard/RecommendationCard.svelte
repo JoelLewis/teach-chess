@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { DailyRecommendation } from "../../types/dashboard";
+  import type { DailyRecommendation } from "../../api/bindings";
 
   type Props = {
     recommendation: DailyRecommendation;

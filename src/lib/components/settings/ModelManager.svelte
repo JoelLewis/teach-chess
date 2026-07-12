@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ModelStatus, LlmStatus } from "../../types/engine";
+  import type { ModelStatus, LlmStatus } from "../../api/bindings";
   import * as api from "../../api/commands";
   import { onLlmDownloadProgress } from "../../api/events";
   import { errorStore } from "../../stores/error.svelte";

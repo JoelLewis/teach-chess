@@ -1,6 +1,6 @@
 <script lang="ts">
   import { puzzleStore } from "../../stores/puzzle.svelte";
-  import type { PuzzleCategory } from "../../types/puzzle";
+  import type { PuzzleCategory } from "../../api/bindings";
 
   const categories: { value: PuzzleCategory; label: string }[] = [
     { value: "tactical", label: "Tactical" },

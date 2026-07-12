@@ -3,7 +3,7 @@ import type {
   PuzzleMoveResult,
   PuzzleFilter,
   PuzzleSessionStats,
-} from "../types/puzzle";
+} from "../api/bindings";
 
 export type PuzzlePhase =
   | "idle"
@@ -20,7 +20,7 @@ class PuzzleStore {
   hintsRevealed = $state<string[]>([]);
   sessionStats = $state<PuzzleSessionStats | null>(null);
   lastMoveResult = $state<PuzzleMoveResult | null>(null);
-  filter = $state<PuzzleFilter>({
+  filter = $state<Partial<PuzzleFilter>>({
     category: "tactical",
     minDifficulty: 400,
     maxDifficulty: 1600,
@@ -38,7 +38,7 @@ class PuzzleStore {
   }
 
   get playerColor(): "white" | "black" {
-    return this.currentPuzzle?.playerColor ?? "white";
+    return (this.currentPuzzle?.playerColor ?? "white") as "white" | "black";
   }
 
   get themes(): string[] {

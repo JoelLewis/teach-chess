@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MoveEvaluation, CoachingSource } from "../../types/engine";
+  import type { MoveEvaluation, CoachingSource } from "../../api/bindings";
   import { CLASSIFICATION_COLORS } from "../../types/engine";
   import { generateCoaching } from "../../api/commands";
   import { onLlmToken } from "../../api/events";

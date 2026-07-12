@@ -14,6 +14,7 @@ use crate::repertoire::RepertoireSessionState;
 use crate::repertoire::session;
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_openings(
     filter: RepertoireFilter,
     db: State<'_, Mutex<Database>>,
@@ -23,6 +24,7 @@ pub fn get_openings(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_opening_detail(
     opening_id: String,
     db: State<'_, Mutex<Database>>,
@@ -36,6 +38,7 @@ pub fn get_opening_detail(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_repertoire(
     opening_id: String,
     db: State<'_, Mutex<Database>>,
@@ -48,6 +51,7 @@ pub fn get_repertoire(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn add_to_repertoire(
     opening_id: String,
     position_fen: String,
@@ -73,6 +77,7 @@ pub fn add_to_repertoire(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn remove_from_repertoire(
     entry_id: String,
     db: State<'_, Mutex<Database>>,
@@ -83,6 +88,7 @@ pub fn remove_from_repertoire(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn start_repertoire_drill(
     opening_id: String,
     db: State<'_, Mutex<Database>>,
@@ -143,6 +149,7 @@ pub fn start_repertoire_drill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn submit_drill_move(
     uci: String,
     db: State<'_, Mutex<Database>>,
@@ -200,6 +207,7 @@ pub fn submit_drill_move(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_drill_stats(
     db: State<'_, Mutex<Database>>,
     player_state: State<'_, CurrentPlayerId>,
@@ -210,6 +218,7 @@ pub fn get_drill_stats(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn import_openings_from_json(
     path: String,
     db: State<'_, Mutex<Database>>,

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::engine::CoachingLevel;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub id: String,
@@ -12,7 +12,7 @@ pub struct Player {
     pub settings: PlayerSettings,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerSettings {
     /// Default engine strength preset

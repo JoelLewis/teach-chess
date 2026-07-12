@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Color, GameOutcome } from "../../types/chess";
+  import type { Color, GameOutcome } from "../../api/bindings";
   import GameSummaryCard from "./GameSummaryCard.svelte";
   import { generateGameSummary, getGameReview } from "../../api/commands";
   import { summarizeEvaluations, type GameStats } from "../../utils/reviewStats";
@@ -40,38 +40,53 @@
     blunders: 0,
   });
 
+  // Unit variants of GameOutcome cross the IPC boundary as plain strings
+  // ("stalemate", "draw", …); only checkmate/resignation carry a winner.
+  function decisive(
+    o: GameOutcome,
+  ): { kind: "checkmate" | "resignation"; winner: Color } | null {
+    if (typeof o === "string") return null;
+    if (o.checkmate) return { kind: "checkmate", winner: o.checkmate.winner };
+    if (o.resignation) return { kind: "resignation", winner: o.resignation.winner };
+    return null;
+  }
+
   let resultText = $derived.by(() => {
     if (!outcome) return "Game Over";
 
-    if ("checkmate" in outcome) {
-      return outcome.checkmate.winner === playerColor
+    const d = decisive(outcome);
+    if (d?.kind === "checkmate") {
+      return d.winner === playerColor
         ? "You win by checkmate!"
         : "You lost by checkmate";
     }
-    if ("resignation" in outcome) {
-      return outcome.resignation.winner === playerColor
+    if (d?.kind === "resignation") {
+      return d.winner === playerColor
         ? "Opponent resigned — you win!"
         : "You resigned";
     }
-    if ("stalemate" in outcome) return "Draw by stalemate";
-    if ("insufficientMaterial" in outcome) return "Draw by insufficient material";
-    if ("threefoldRepetition" in outcome) return "Draw by threefold repetition";
-    if ("fiftyMoveRule" in outcome) return "Draw by fifty-move rule";
-    return "Draw";
+    switch (outcome) {
+      case "stalemate":
+        return "Draw by stalemate";
+      case "insufficientmaterial":
+        return "Draw by insufficient material";
+      case "threefoldrepetition":
+        return "Draw by threefold repetition";
+      case "fiftymoverule":
+        return "Draw by fifty-move rule";
+      default:
+        return "Draw";
+    }
   });
 
   let isWin = $derived.by(() => {
-    if (!outcome) return false;
-    if ("checkmate" in outcome) return outcome.checkmate.winner === playerColor;
-    if ("resignation" in outcome) return outcome.resignation.winner === playerColor;
-    return false;
+    const d = outcome && decisive(outcome);
+    return d ? d.winner === playerColor : false;
   });
 
   let isLoss = $derived.by(() => {
-    if (!outcome) return false;
-    if ("checkmate" in outcome) return outcome.checkmate.winner !== playerColor;
-    if ("resignation" in outcome) return outcome.resignation.winner !== playerColor;
-    return false;
+    const d = outcome && decisive(outcome);
+    return d ? d.winner !== playerColor : false;
   });
 
   let cardResult = $derived<"win" | "loss" | "draw">(
@@ -80,13 +95,20 @@
 
   let outcomeDetail = $derived.by(() => {
     if (!outcome) return "";
-    if ("checkmate" in outcome) return "by checkmate";
-    if ("resignation" in outcome) return "by resignation";
-    if ("stalemate" in outcome) return "by stalemate";
-    if ("insufficientMaterial" in outcome) return "by insufficient material";
-    if ("threefoldRepetition" in outcome) return "by threefold repetition";
-    if ("fiftyMoveRule" in outcome) return "by fifty-move rule";
-    return "by agreement";
+    const d = decisive(outcome);
+    if (d) return `by ${d.kind}`;
+    switch (outcome) {
+      case "stalemate":
+        return "by stalemate";
+      case "insufficientmaterial":
+        return "by insufficient material";
+      case "threefoldrepetition":
+        return "by threefold repetition";
+      case "fiftymoverule":
+        return "by fifty-move rule";
+      default:
+        return "by agreement";
+    }
   });
 
   // Run a quick review for real stats, then fetch the AI-generated summary.

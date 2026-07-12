@@ -11,7 +11,7 @@ use crate::models::assessment::SkillProfile;
 use crate::models::game::GameRecord;
 use crate::models::puzzle::PuzzleSessionStats;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DashboardData {
     pub skill_profile: SkillProfile,
@@ -21,7 +21,7 @@ pub struct DashboardData {
     pub streak: SessionStreak,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DailyRecommendation {
     pub text: String,
@@ -29,7 +29,7 @@ pub struct DailyRecommendation {
     pub target_category: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionStreak {
     pub current_days: u32,
@@ -204,6 +204,7 @@ fn today_date_str() -> String {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_dashboard_data(
     db: State<'_, Mutex<Database>>,
     player_state: State<'_, CurrentPlayerId>,
@@ -260,6 +261,7 @@ pub fn get_dashboard_data(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn check_adaptive_difficulty(
     db: State<'_, Mutex<Database>>,
     player_state: State<'_, CurrentPlayerId>,

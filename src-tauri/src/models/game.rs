@@ -4,7 +4,7 @@ use super::chess::Color;
 use super::engine::CoachingLevel;
 use crate::opponent::personality::{OpponentMode, PersonalityProfile};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EngineStrength {
     /// UCI_Elo value (1320–3190 for Stockfish)
@@ -23,7 +23,7 @@ impl EngineStrength {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeControl {
     /// Initial time in seconds (0 = unlimited)
@@ -32,7 +32,7 @@ pub struct TimeControl {
     pub increment_secs: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GameConfig {
     pub player_color: Color,
@@ -48,7 +48,7 @@ pub struct GameConfig {
     pub teaching_mode: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GameRecord {
     pub id: String,

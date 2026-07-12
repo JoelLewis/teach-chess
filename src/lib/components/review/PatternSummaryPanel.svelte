@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PatternSummary, StudySuggestion } from "../../types/engine";
+  import type { PatternSummary, StudySuggestion } from "../../api/bindings";
 
   type Props = {
     summary: PatternSummary | null;

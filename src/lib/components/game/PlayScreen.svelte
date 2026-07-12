@@ -9,7 +9,7 @@
   import { errorStore } from "../../stores/error.svelte";
   import * as api from "../../api/commands";
   import { onEngineInfo } from "../../api/events";
-  import type { Position } from "../../types/chess";
+  import type { Position } from "../../api/bindings";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   type Props = {
@@ -83,7 +83,7 @@
             newPosition.fen,
             isPlayerWhite,
             moveNumber,
-            config.coachingLevel,
+            config.coachingLevel ?? "fullCoach",
           );
 
           gameStore.latestCoaching = feedback;
@@ -122,7 +122,7 @@
         const selected = await api.getOpponentMove(
           currentPosition.fen,
           gameStore.resolvedPersonality,
-          config.teachingMode,
+          config.teachingMode ?? false,
           gameStore.weakCategories.length > 0 ? gameStore.weakCategories : undefined,
         );
         moveUci = selected.uci;

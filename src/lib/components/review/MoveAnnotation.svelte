@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MoveEvaluation } from "../../types/engine";
+  import type { MoveEvaluation } from "../../api/bindings";
   import { formatScore, CLASSIFICATION_COLORS } from "../../types/engine";
 
   type Props = {

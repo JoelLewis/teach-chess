@@ -87,7 +87,7 @@
       <div class="board-area">
         <Chessboard
           fen={currentFen}
-          orientation={opening.color}
+          orientation={opening.color as "white" | "black"}
           viewOnly={true}
           {lastMove}
         />

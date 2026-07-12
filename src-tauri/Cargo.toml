@@ -16,6 +16,9 @@ tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 serde = { workspace = true }
 serde_json = { workspace = true }
+specta = { workspace = true }
+specta-typescript = "=0.0.12"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 shakmaty = "0.27"
 rusqlite = { version = "0.38", features = ["bundled"] }
 tokio = { version = "1", features = ["full"] }

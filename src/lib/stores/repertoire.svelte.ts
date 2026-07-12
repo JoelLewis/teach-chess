@@ -6,7 +6,7 @@ import type {
   DrillMoveResult,
   DrillStats,
   RepertoireFilter,
-} from "../types/repertoire";
+} from "../api/bindings";
 
 export type RepertoirePhase =
   | "idle"
@@ -25,7 +25,7 @@ class RepertoireStore {
   drillState = $state<DrillState | null>(null);
   lastDrillResult = $state<DrillMoveResult | null>(null);
   drillStats = $state<DrillStats | null>(null);
-  filter = $state<RepertoireFilter>({});
+  filter = $state<Partial<RepertoireFilter>>({});
   activeTab = $state<"library" | "repertoire" | "drill">("library");
 
   get drillFen(): string | null {
@@ -37,7 +37,7 @@ class RepertoireStore {
   }
 
   get drillColor(): "white" | "black" {
-    return this.drillState?.playerColor ?? "white";
+    return (this.drillState?.playerColor ?? "white") as "white" | "black";
   }
 
   get drillAccuracy(): string {

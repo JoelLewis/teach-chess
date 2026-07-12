@@ -12,7 +12,7 @@ use crate::opponent::selector;
 use crate::opponent::teaching;
 
 /// The result of selecting an opponent move with personality.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectedMove {
     pub uci: String,
@@ -28,6 +28,7 @@ pub struct SelectedMove {
 /// 3. Scores candidates against personality weights + optional teaching bonus
 /// 4. Selects via softmax-weighted random choice
 #[tauri::command]
+#[specta::specta]
 pub async fn get_opponent_move(
     fen: String,
     depth: Option<u32>,
@@ -140,6 +141,7 @@ pub async fn get_opponent_move(
 /// - Surprise: random selection
 /// - CoachPicks: selects based on player's skill weaknesses
 #[tauri::command]
+#[specta::specta]
 pub fn resolve_personality(
     mode: crate::opponent::personality::OpponentMode,
     explicit: Option<PersonalityProfile>,

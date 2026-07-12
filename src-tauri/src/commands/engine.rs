@@ -5,6 +5,7 @@ use crate::error::AppError;
 use crate::models::engine::{EngineEvaluation, EngineMove};
 
 #[tauri::command]
+#[specta::specta]
 pub async fn start_engine(
     app: AppHandle,
     state: State<'_, tokio::sync::Mutex<EngineProcess>>,
@@ -15,6 +16,7 @@ pub async fn start_engine(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn stop_engine(
     state: State<'_, tokio::sync::Mutex<EngineProcess>>,
 ) -> Result<(), AppError> {
@@ -24,6 +26,7 @@ pub async fn stop_engine(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_engine_move(
     fen: String,
     depth: Option<u32>,
@@ -42,6 +45,7 @@ pub async fn get_engine_move(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn analyze_position(
     fen: String,
     depth: u32,

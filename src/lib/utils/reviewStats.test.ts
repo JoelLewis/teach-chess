@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { summarizeEvaluations } from "./reviewStats";
-import type { MoveEvaluation } from "../types/engine";
+import type { MoveEvaluation } from "../api/bindings";
 
 function evaluation(
   isWhite: boolean,

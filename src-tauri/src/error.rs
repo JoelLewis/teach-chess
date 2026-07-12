@@ -114,6 +114,13 @@ pub enum DatabaseError {
     MigrationFailed(String),
 }
 
+// AppError serializes as a plain string, so its Specta type is `string`.
+impl specta::Type for AppError {
+    fn definition(types: &mut specta::Types) -> specta::datatype::DataType {
+        String::definition(types)
+    }
+}
+
 // Tauri requires errors to be Serialize
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

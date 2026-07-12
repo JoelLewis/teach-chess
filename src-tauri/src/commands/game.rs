@@ -12,6 +12,7 @@ use crate::models::game::GameConfig;
 use crate::models::game::GameRecord;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn new_game(
     config: GameConfig,
     state: State<'_, Mutex<GameState>>,
@@ -31,6 +32,7 @@ pub async fn new_game(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn make_move(uci: String, state: State<'_, Mutex<GameState>>) -> Result<Position, AppError> {
     let mut game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     game.make_move(&uci)?;
@@ -38,6 +40,7 @@ pub fn make_move(uci: String, state: State<'_, Mutex<GameState>>) -> Result<Posi
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn resign(
     state: State<'_, Mutex<GameState>>,
     db: State<'_, Mutex<Database>>,
@@ -56,6 +59,7 @@ pub fn resign(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_completed_game(
     state: State<'_, Mutex<GameState>>,
     db: State<'_, Mutex<Database>>,
@@ -74,6 +78,7 @@ pub fn save_completed_game(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_position(state: State<'_, Mutex<GameState>>) -> Result<Position, AppError> {
     let game = state.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     Ok(game.to_position())

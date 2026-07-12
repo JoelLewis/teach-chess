@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Personality profiles that make the AI opponent feel less engine-like.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum PersonalityProfile {
     /// Prefers sharp, tactical play with king attacks
@@ -15,7 +15,7 @@ pub enum PersonalityProfile {
 }
 
 /// How the personality is selected at game start.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum OpponentMode {
     /// Player picks from the 4 profiles

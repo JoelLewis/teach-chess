@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Score } from "../../types/engine";
+  import type { Score } from "../../api/bindings";
   import { formatScore, scoreToBarValue } from "../../types/engine";
 
   type Props = {

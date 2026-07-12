@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SkillRating } from "../../types/assessment";
+  import type { SkillRating } from "../../api/bindings";
 
   type Props = {
     ratings: SkillRating[];

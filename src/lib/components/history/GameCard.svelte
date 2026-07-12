@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GameRecord } from "../../types/game";
+  import type { GameRecord } from "../../api/bindings";
 
   type Props = {
     game: GameRecord;

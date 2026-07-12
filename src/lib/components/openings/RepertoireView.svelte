@@ -2,7 +2,7 @@
   import { repertoireStore } from "../../stores/repertoire.svelte";
   import { errorStore } from "../../stores/error.svelte";
   import * as api from "../../api/commands";
-  import type { Opening, RepertoireEntry } from "../../types/repertoire";
+  import type { Opening, RepertoireEntry } from "../../api/bindings";
 
   let openings = $state<Opening[]>([]);
   let entriesByOpening = $state<Map<string, RepertoireEntry[]>>(new Map());
