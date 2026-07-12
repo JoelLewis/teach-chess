@@ -1,3 +1,4 @@
+use crate::assessment::rank::RatingBand;
 use crate::models::engine::MoveClassification;
 use crate::models::heuristics::{GamePhase, PositionalTheme, TacticType};
 
@@ -147,6 +148,65 @@ pub fn theme_positive_template(
             Some("Well played — a rook on the seventh rank is a powerful asset.")
         }
         _ => None,
+    }
+}
+
+/// Rank-calibrated addendum appended to coaching text, keyed on
+/// (classification, band). Qualitative only — no fabricated statistics.
+///
+/// Returns None for classifications where level-relative framing adds
+/// nothing (Good/Excellent), so unranked and neutral feedback is unchanged.
+pub fn rank_addendum(classification: MoveClassification, band: RatingBand) -> Option<&'static str> {
+    match (classification, band) {
+        (MoveClassification::Blunder, RatingBand::Novice) => Some(
+            "Mistakes like this are the most common at your level - spotting them is the fastest way to improve.",
+        ),
+        (MoveClassification::Blunder, RatingBand::Developing) => Some(
+            "Oversights like this still decide many games at your level - a consistent blunder-check will pay off.",
+        ),
+        (MoveClassification::Blunder, RatingBand::Advancing) => Some(
+            "Players at your level usually catch this - treat it as a reminder to slow down on critical moves.",
+        ),
+        (MoveClassification::Blunder, RatingBand::Expert) => {
+            Some("Even stronger players miss this under pressure.")
+        }
+        (MoveClassification::Mistake, RatingBand::Novice) => {
+            Some("Errors like this are very common at your level - you're in good company.")
+        }
+        (MoveClassification::Mistake, RatingBand::Developing) => {
+            Some("This is one of the most frequent mistakes at your level.")
+        }
+        (MoveClassification::Mistake, RatingBand::Advancing) => {
+            Some("At your level this is usually avoidable with a careful check of candidate moves.")
+        }
+        (MoveClassification::Mistake, RatingBand::Expert) => {
+            Some("Even stronger players slip here occasionally.")
+        }
+        (MoveClassification::Inaccuracy, RatingBand::Novice) => {
+            Some("Don't worry - precision here comes with practice.")
+        }
+        (MoveClassification::Inaccuracy, RatingBand::Developing) => {
+            Some("Small improvements like this add up quickly at your level.")
+        }
+        (MoveClassification::Inaccuracy, RatingBand::Advancing) => {
+            Some("Sharpening these small decisions is what separates your level from the next.")
+        }
+        (MoveClassification::Inaccuracy, RatingBand::Expert) => {
+            Some("At your level, these fine margins are where games are decided.")
+        }
+        (MoveClassification::Best, RatingBand::Novice) => {
+            Some("Finds like this are rare at your level - great progress.")
+        }
+        (MoveClassification::Best, RatingBand::Developing) => {
+            Some("Spotting this consistently will carry you past many players at your level.")
+        }
+        (MoveClassification::Best, RatingBand::Advancing) => {
+            Some("That's exactly the standard expected at your level.")
+        }
+        (MoveClassification::Best, RatingBand::Expert) => {
+            Some("Strong play - even at your level this takes precision.")
+        }
+        (MoveClassification::Excellent | MoveClassification::Good, _) => None,
     }
 }
 
@@ -302,6 +362,49 @@ mod tests {
         for tactic in &tactics {
             let text = tactic_template(tactic);
             assert!(!text.is_empty(), "Empty tactic template for {tactic:?}");
+        }
+    }
+
+    #[test]
+    fn rank_addendum_covers_all_bands_for_errors_and_best() {
+        let bands = [
+            RatingBand::Novice,
+            RatingBand::Developing,
+            RatingBand::Advancing,
+            RatingBand::Expert,
+        ];
+        let ranked = [
+            MoveClassification::Best,
+            MoveClassification::Inaccuracy,
+            MoveClassification::Mistake,
+            MoveClassification::Blunder,
+        ];
+        for c in &ranked {
+            let mut texts = Vec::new();
+            for b in &bands {
+                let text = rank_addendum(*c, *b);
+                assert!(text.is_some(), "No rank addendum for {c:?} at {b:?}");
+                let text = text.unwrap();
+                assert!(!text.contains('%'), "No fabricated statistics: {text}");
+                texts.push(text);
+            }
+            // Each band gets distinct phrasing.
+            for pair in texts.windows(2) {
+                assert_ne!(pair[0], pair[1], "Duplicate addendum for {c:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn rank_addendum_absent_for_neutral_moves() {
+        for b in [
+            RatingBand::Novice,
+            RatingBand::Developing,
+            RatingBand::Advancing,
+            RatingBand::Expert,
+        ] {
+            assert!(rank_addendum(MoveClassification::Good, b).is_none());
+            assert!(rank_addendum(MoveClassification::Excellent, b).is_none());
         }
     }
 

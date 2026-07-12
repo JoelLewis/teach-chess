@@ -2,6 +2,7 @@ pub(crate) mod templates;
 
 use std::collections::HashMap;
 
+use crate::assessment::rank::PlayerRankContext;
 use crate::models::engine::{MoveClassification, MoveEvaluation, PatternSummary, StudySuggestion};
 use crate::models::heuristics::{CoachingContext, GamePhase, PositionalTheme, TacticType};
 
@@ -50,6 +51,22 @@ pub fn generate_coaching_text(
 
     // Fall back to generic classification template
     templates::generic_template(*classification).to_string()
+}
+
+/// Rank-calibrated variant of [`generate_coaching_text`]: appends a
+/// qualitative, level-relative addendum when the player's rating for the
+/// relevant skill category is known. Players without a trusted rating get
+/// the base template unchanged.
+pub fn generate_coaching_text_ranked(
+    classification: &MoveClassification,
+    context: &CoachingContext,
+    rank: Option<&PlayerRankContext>,
+) -> String {
+    let base = generate_coaching_text(classification, context);
+    match rank.and_then(|r| templates::rank_addendum(*classification, r.band)) {
+        Some(addendum) => format!("{base} {addendum}"),
+        None => base,
+    }
 }
 
 /// Analyze all move evaluations to find recurring weakness patterns across the game.
@@ -396,6 +413,76 @@ mod tests {
             let text = generate_coaching_text(c, &ctx);
             assert!(!text.is_empty(), "Empty coaching text for {c:?}");
         }
+    }
+
+    fn rank_ctx(rating: f64) -> PlayerRankContext {
+        use crate::models::assessment::SkillRating;
+        let skill = SkillRating {
+            games_count: 10,
+            rating,
+            ..SkillRating::default_for("p1", "tactical")
+        };
+        PlayerRankContext::from_skill_rating(&skill).unwrap()
+    }
+
+    #[test]
+    fn ranked_text_appends_band_addendum() {
+        let ctx = default_context();
+        let base = generate_coaching_text(&MoveClassification::Blunder, &ctx);
+        let ranked = generate_coaching_text_ranked(
+            &MoveClassification::Blunder,
+            &ctx,
+            Some(&rank_ctx(1000.0)),
+        );
+        assert!(ranked.starts_with(&base), "base text preserved: {ranked}");
+        assert!(
+            ranked.contains("most common at your level"),
+            "novice addendum appended: {ranked}"
+        );
+    }
+
+    #[test]
+    fn ranked_text_varies_by_band() {
+        let ctx = default_context();
+        let novice = generate_coaching_text_ranked(
+            &MoveClassification::Blunder,
+            &ctx,
+            Some(&rank_ctx(1000.0)),
+        );
+        let expert = generate_coaching_text_ranked(
+            &MoveClassification::Blunder,
+            &ctx,
+            Some(&rank_ctx(1900.0)),
+        );
+        assert_ne!(novice, expert);
+        assert!(expert.contains("Even stronger players"), "{expert}");
+    }
+
+    #[test]
+    fn ranked_text_without_rating_matches_base_template() {
+        let ctx = default_context();
+        for c in [
+            MoveClassification::Best,
+            MoveClassification::Good,
+            MoveClassification::Mistake,
+            MoveClassification::Blunder,
+        ] {
+            assert_eq!(
+                generate_coaching_text_ranked(&c, &ctx, None),
+                generate_coaching_text(&c, &ctx),
+                "unranked players must get existing templates unchanged"
+            );
+        }
+    }
+
+    #[test]
+    fn ranked_text_neutral_moves_unchanged_even_with_rating() {
+        let ctx = default_context();
+        let rank = rank_ctx(1300.0);
+        assert_eq!(
+            generate_coaching_text_ranked(&MoveClassification::Good, &ctx, Some(&rank)),
+            generate_coaching_text(&MoveClassification::Good, &ctx),
+        );
     }
 
     #[test]
