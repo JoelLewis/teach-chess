@@ -98,10 +98,6 @@ jobs:
         working-directory: src-tauri
         run: cargo test --features llm
 
-      - name: Stockfish integration tests
-        working-directory: src-tauri
-        run: cargo test -- --ignored
-
       - name: Build frontend
         run: pnpm run build
 

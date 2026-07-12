@@ -107,10 +107,10 @@ pub fn generate_pattern_summary(
 
     // Sort themes and tactics by frequency (descending)
     let mut error_themes: Vec<(PositionalTheme, u32)> = theme_counts.into_iter().collect();
-    error_themes.sort_by(|a, b| b.1.cmp(&a.1));
+    error_themes.sort_by_key(|e| std::cmp::Reverse(e.1));
 
     let mut missed_tactics: Vec<(TacticType, u32)> = tactic_counts.into_iter().collect();
-    missed_tactics.sort_by(|a, b| b.1.cmp(&a.1));
+    missed_tactics.sort_by_key(|t| std::cmp::Reverse(t.1));
 
     // Derive strengths — only if the overall error rate is reasonable
     let mut strengths = Vec::new();
