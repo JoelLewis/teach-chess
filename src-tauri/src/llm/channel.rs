@@ -12,8 +12,9 @@ const MAX_TOKENS: u32 = 128;
 /// Free-text GBNF grammar for coaching output: any text without `<` or `>`
 /// (hard-blocks turn/channel-marker leakage) capped at 600 characters
 /// (hard-blocks runaway generation). Chess coaching has no field to extract,
-/// so no tagged shape is forced.
-const FREE_TEXT_GRAMMAR: &str = "root ::= [^<>]{1,600}\n";
+/// so no tagged shape is forced. Public so the real-model grounding tests
+/// exercise exactly the production decoding constraint.
+pub const FREE_TEXT_GRAMMAR: &str = "root ::= [^<>]{1,600}\n";
 
 /// A job submitted to the inference worker.
 struct InferenceJob {
