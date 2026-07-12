@@ -60,6 +60,11 @@ jobs:
       - name: Fetch Stockfish sidecar
         run: ./scripts/fetch-stockfish.sh
 
+      - name: Create placeholder LLM model
+        # tauri.conf.json bundles models/* as a resource; the real model is
+        # ~770 MB (scripts/fetch-model.sh) and isn't needed for check/clippy/test
+        run: mkdir -p src-tauri/models && touch src-tauri/models/model-placeholder
+
       - name: Cargo fmt check
         working-directory: src-tauri
         run: cargo fmt --all -- --check
@@ -150,6 +155,11 @@ jobs:
 
       - name: Fetch Stockfish sidecar
         run: ./scripts/fetch-stockfish.sh
+
+      - name: Create placeholder LLM model
+        # tauri.conf.json bundles models/* as a resource; the real model is
+        # ~770 MB (scripts/fetch-model.sh) and isn't needed for check/clippy/test
+        run: mkdir -p src-tauri/models && touch src-tauri/models/model-placeholder
 
       - name: Clippy (default features)
         working-directory: src-tauri
