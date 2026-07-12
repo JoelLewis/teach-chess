@@ -85,21 +85,21 @@ fn detect_pins(chess: &Chess, color: Color) -> Vec<TacticalMotif> {
         if blockers.count() == 1 {
             let pinned_sq = blockers.first().unwrap();
             // Must be our piece (not enemy)
-            if board.by_color(color).contains(pinned_sq) {
-                if let Some(pinned_role) = board.role_at(pinned_sq) {
-                    motifs.push(TacticalMotif {
-                        tactic_type: TacticType::Pin,
-                        side,
-                        square: sq_name(slider_sq),
-                        description: format!(
-                            "{} on {} pins {} on {} to the king",
-                            role_name(slider_role),
-                            sq_name(slider_sq),
-                            role_name(pinned_role),
-                            sq_name(pinned_sq)
-                        ),
-                    });
-                }
+            if board.by_color(color).contains(pinned_sq)
+                && let Some(pinned_role) = board.role_at(pinned_sq)
+            {
+                motifs.push(TacticalMotif {
+                    tactic_type: TacticType::Pin,
+                    side,
+                    square: sq_name(slider_sq),
+                    description: format!(
+                        "{} on {} pins {} on {} to the king",
+                        role_name(slider_role),
+                        sq_name(slider_sq),
+                        role_name(pinned_role),
+                        sq_name(pinned_sq)
+                    ),
+                });
             }
         }
     }
@@ -294,21 +294,21 @@ fn detect_hanging(chess: &Chess, color: Color) -> Vec<TacticalMotif> {
             // Check if attacked by a lesser-value piece
             let our_value = piece_value(role);
             for atk_sq in attackers {
-                if let Some(atk_role) = board.role_at(atk_sq) {
-                    if piece_value(atk_role) < our_value {
-                        motifs.push(TacticalMotif {
-                            tactic_type: TacticType::HangingPiece,
-                            side,
-                            square: sq_name(sq),
-                            description: format!(
-                                "{} on {} is attacked by {} (lesser value)",
-                                role_name(role),
-                                sq_name(sq),
-                                role_name(atk_role)
-                            ),
-                        });
-                        break; // One report per piece
-                    }
+                if let Some(atk_role) = board.role_at(atk_sq)
+                    && piece_value(atk_role) < our_value
+                {
+                    motifs.push(TacticalMotif {
+                        tactic_type: TacticType::HangingPiece,
+                        side,
+                        square: sq_name(sq),
+                        description: format!(
+                            "{} on {} is attacked by {} (lesser value)",
+                            role_name(role),
+                            sq_name(sq),
+                            role_name(atk_role)
+                        ),
+                    });
+                    break; // One report per piece
                 }
             }
         }

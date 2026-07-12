@@ -110,16 +110,16 @@ pub async fn analyze_pre_move_hints(
     let ctx = heuristics::analyze_position(&chess);
 
     // Check for phase transition
-    if let Some(prev) = &previous_phase {
-        if *prev != ctx.phase {
-            let text = templates::phase_transition_text(prev, &ctx.phase);
-            if !text.is_empty() {
-                return Ok(PreMoveHint {
-                    hint_text: Some(text.to_string()),
-                    hint_type: PreMoveHintType::PhaseTransition,
-                    themes: ctx.themes,
-                });
-            }
+    if let Some(prev) = &previous_phase
+        && *prev != ctx.phase
+    {
+        let text = templates::phase_transition_text(prev, &ctx.phase);
+        if !text.is_empty() {
+            return Ok(PreMoveHint {
+                hint_text: Some(text.to_string()),
+                hint_type: PreMoveHintType::PhaseTransition,
+                themes: ctx.themes,
+            });
         }
     }
 

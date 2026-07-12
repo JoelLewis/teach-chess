@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::path::Path;
 
 use candle_core::{Device, Tensor};
@@ -104,18 +102,6 @@ impl CandleBackend {
             device_name(&self.device)
         );
         Ok(())
-    }
-
-    /// Whether a model is currently loaded.
-    pub fn is_loaded(&self) -> bool {
-        self.model.is_some() && self.tokenizer.is_some()
-    }
-
-    /// Unload model and tokenizer to free memory.
-    pub fn unload(&mut self) {
-        self.model = None;
-        self.tokenizer = None;
-        tracing::info!("Candle backend unloaded");
     }
 
     /// Generate text from a prompt using token-by-token decoding.
@@ -264,11 +250,11 @@ fn emit_new_text<F: FnMut(&str)>(
     prev_len: &mut usize,
     on_token: &mut F,
 ) {
-    if let Ok(decoded) = tokenizer.decode(tokens, true) {
-        if decoded.len() > *prev_len {
-            on_token(&decoded[*prev_len..]);
-            *prev_len = decoded.len();
-        }
+    if let Ok(decoded) = tokenizer.decode(tokens, true)
+        && decoded.len() > *prev_len
+    {
+        on_token(&decoded[*prev_len..]);
+        *prev_len = decoded.len();
     }
 }
 

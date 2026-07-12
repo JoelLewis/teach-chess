@@ -16,12 +16,10 @@ use std::path::PathBuf;
 
 /// Managed state for the LLM subsystem. Lazily initializes the inference channel.
 #[cfg(feature = "llm")]
-#[allow(dead_code)]
 pub struct LlmState {
     pub model_manager: model_manager::ModelManager,
     /// Lazy-initialized: None until the first coaching request with a downloaded model.
     pub channel: tokio::sync::Mutex<Option<channel::InferenceChannel>>,
-    pub app_data_dir: PathBuf,
     /// Which compute device the inference channel is using (e.g. "cpu", "cuda", "metal").
     pub device_name: std::sync::OnceLock<String>,
 }
@@ -33,7 +31,6 @@ impl LlmState {
         Self {
             model_manager,
             channel: tokio::sync::Mutex::new(None),
-            app_data_dir,
             device_name: std::sync::OnceLock::new(),
         }
     }
@@ -69,7 +66,6 @@ pub enum PlayerLevel {
 
 /// Errors from the LLM subsystem
 #[derive(Debug, Clone, thiserror::Error)]
-#[allow(dead_code)]
 pub enum LlmError {
     #[error("Model not loaded")]
     ModelNotLoaded,
@@ -99,19 +95,6 @@ pub enum CoachingSource {
     Template,
 }
 
-/// A coaching request from the frontend
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-pub struct CoachingRequest {
-    pub fen: String,
-    pub classification: String,
-    pub context: serde_json::Value,
-    pub player_level: PlayerLevel,
-    pub player_move_san: String,
-    pub engine_best_san: Option<String>,
-}
-
 /// A coaching response returned to the frontend
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -121,6 +104,7 @@ pub struct CoachingResponse {
 }
 
 /// Events emitted during streaming LLM token generation.
+#[cfg(feature = "llm")]
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum LlmTokenEvent {

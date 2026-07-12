@@ -42,13 +42,13 @@ pub fn parse_info(line: &str) -> Option<InfoLine> {
                 i += 2;
             }
             "score" => {
-                if let Some(score_type) = parts.get(i + 1) {
-                    if let Some(value) = parts.get(i + 2).and_then(|s| s.parse().ok()) {
-                        match *score_type {
-                            "cp" => info.score = Some(Score::cp(value)),
-                            "mate" => info.score = Some(Score::mate(value)),
-                            _ => {}
-                        }
+                if let Some(score_type) = parts.get(i + 1)
+                    && let Some(value) = parts.get(i + 2).and_then(|s| s.parse().ok())
+                {
+                    match *score_type {
+                        "cp" => info.score = Some(Score::cp(value)),
+                        "mate" => info.score = Some(Score::mate(value)),
+                        _ => {}
                     }
                 }
                 i += 3;
@@ -129,7 +129,6 @@ pub struct InfoLine {
 
 /// A single line from multi-PV engine output.
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct MultiPvLine {
     /// 1-based PV index (1 = best move)
     pub pv_index: u32,
@@ -137,8 +136,6 @@ pub struct MultiPvLine {
     pub uci_move: String,
     /// Engine evaluation score
     pub score: Score,
-    /// Search depth for this line
-    pub depth: u32,
 }
 
 #[cfg(test)]
@@ -200,11 +197,9 @@ mod tests {
                 pv_index: idx,
                 uci_move: info.pv.first().unwrap_or(&String::new()).clone(),
                 score,
-                depth: info.depth.unwrap_or(0),
             };
             assert_eq!(mpv.pv_index, 3);
             assert_eq!(mpv.uci_move, "c2c4");
-            assert_eq!(mpv.depth, 14);
         } else {
             panic!("Expected multipv and score");
         }

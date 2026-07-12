@@ -1,7 +1,7 @@
 use super::PlayerLevel;
 
 /// System prompt tailored to the player's skill level.
-#[allow(dead_code)]
+#[cfg_attr(not(feature = "llm"), allow(dead_code))]
 pub fn system_prompt(level: &PlayerLevel) -> &'static str {
     match level {
         PlayerLevel::Beginner => {
@@ -28,7 +28,8 @@ pub fn system_prompt(level: &PlayerLevel) -> &'static str {
 /// Build a full prompt in Gemma 2 instruction format.
 ///
 /// Format: `<start_of_turn>user\n{system}\n\n{json_context}<end_of_turn>\n<start_of_turn>model\n`
-#[allow(dead_code, clippy::too_many_arguments)]
+#[cfg_attr(not(feature = "llm"), allow(dead_code))]
+#[allow(clippy::too_many_arguments)]
 pub fn build_prompt(
     level: &PlayerLevel,
     classification: &str,
@@ -67,7 +68,7 @@ pub fn build_prompt(
 }
 
 /// Build a prompt for generating a one-sentence post-game summary in Gemma 2 instruction format.
-#[allow(dead_code, clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)]
 pub fn build_game_summary_prompt(
     result: &str,
     outcome_type: &str,

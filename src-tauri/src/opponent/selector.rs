@@ -6,10 +6,8 @@ use super::personality::PersonalityWeights;
 
 /// A scored candidate move with personality and teaching bonuses.
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct ScoredCandidate {
     pub uci_move: String,
-    pub score: Score,
     pub personality_score: f64,
     pub teaching_score: f64,
     pub combined_score: f64,
@@ -144,7 +142,6 @@ pub fn select_move(
         let c = &candidates[0];
         return Some(ScoredCandidate {
             uci_move: c.uci_move.clone(),
-            score: c.score.clone(),
             personality_score: 0.5,
             teaching_score: 0.0,
             combined_score: 1.0,
@@ -173,7 +170,6 @@ pub fn select_move(
 
             ScoredCandidate {
                 uci_move: c.uci_move.clone(),
-                score: c.score.clone(),
                 personality_score,
                 teaching_score,
                 combined_score: combined,
@@ -387,19 +383,16 @@ mod tests {
                 pv_index: 1,
                 uci_move: "e2e4".to_string(),
                 score: Score::cp(30),
-                depth: 14,
             },
             MultiPvLine {
                 pv_index: 2,
                 uci_move: "d2d4".to_string(),
                 score: Score::cp(25),
-                depth: 14,
             },
             MultiPvLine {
                 pv_index: 3,
                 uci_move: "c2c4".to_string(),
                 score: Score::cp(15),
-                depth: 14,
             },
         ];
 
@@ -429,13 +422,11 @@ mod tests {
                 pv_index: 1,
                 uci_move: "e2e4".to_string(),
                 score: Score::cp(100),
-                depth: 14,
             },
             MultiPvLine {
                 pv_index: 2,
                 uci_move: "a2a3".to_string(),
                 score: Score::cp(-150),
-                depth: 14,
             },
         ];
 

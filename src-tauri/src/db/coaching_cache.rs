@@ -24,7 +24,7 @@ impl Database {
     }
 
     /// Store a coaching text in the cache.
-    #[allow(dead_code)]
+    #[cfg_attr(not(feature = "llm"), allow(dead_code))]
     pub fn set_cached_coaching(
         &self,
         cache_key: &str,
@@ -44,7 +44,6 @@ impl Database {
     }
 
     /// Remove expired cache entries.
-    #[allow(dead_code)]
     pub fn cleanup_expired_cache(&self) -> Result<u64, DatabaseError> {
         let deleted = self.conn().execute(
             "DELETE FROM coaching_cache WHERE expires_at < datetime('now')",

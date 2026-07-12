@@ -296,12 +296,12 @@ impl EngineProcess {
         loop {
             let line = self.read_line().await?;
 
-            if let Some(info) = uci::parse_info(&line) {
-                if let Some(idx) = info.multipv {
-                    let existing_depth = best_lines.get(&idx).and_then(|i| i.depth).unwrap_or(0);
-                    if info.depth.unwrap_or(0) >= existing_depth {
-                        best_lines.insert(idx, info);
-                    }
+            if let Some(info) = uci::parse_info(&line)
+                && let Some(idx) = info.multipv
+            {
+                let existing_depth = best_lines.get(&idx).and_then(|i| i.depth).unwrap_or(0);
+                if info.depth.unwrap_or(0) >= existing_depth {
+                    best_lines.insert(idx, info);
                 }
             }
 
@@ -323,7 +323,6 @@ impl EngineProcess {
                     pv_index: idx,
                     uci_move,
                     score,
-                    depth: info.depth.unwrap_or(0),
                 })
             })
             .collect();
@@ -450,16 +449,6 @@ impl EngineProcess {
         }
     }
 
-    #[allow(dead_code)]
-    async fn wait_for_bestmove(&mut self) -> Result<EngineMove, AppError> {
-        loop {
-            let line = self.read_line().await?;
-            if let Some(bestmove) = uci::parse_bestmove(&line) {
-                return Ok(bestmove);
-            }
-        }
-    }
-
     async fn wait_for_bestmove_with_info(
         &mut self,
         app: Option<&AppHandle>,
@@ -467,20 +456,20 @@ impl EngineProcess {
         loop {
             let line = self.read_line().await?;
 
-            if let Some(info) = uci::parse_info(&line) {
-                if (info.multipv.is_none() || info.multipv == Some(1)) && info.score.is_some() {
-                    if let Some(app) = app {
-                        let _ = app.emit(
-                            "engine-info",
-                            EngineInfoPayload {
-                                depth: info.depth.unwrap_or(0),
-                                score: info.score.clone().unwrap(),
-                                nodes: info.nodes.unwrap_or(0),
-                                pv: info.pv.clone(),
-                            },
-                        );
-                    }
-                }
+            if let Some(info) = uci::parse_info(&line)
+                && (info.multipv.is_none() || info.multipv == Some(1))
+                && info.score.is_some()
+                && let Some(app) = app
+            {
+                let _ = app.emit(
+                    "engine-info",
+                    EngineInfoPayload {
+                        depth: info.depth.unwrap_or(0),
+                        score: info.score.clone().unwrap(),
+                        nodes: info.nodes.unwrap_or(0),
+                        pv: info.pv.clone(),
+                    },
+                );
             }
 
             if let Some(bestmove) = uci::parse_bestmove(&line) {

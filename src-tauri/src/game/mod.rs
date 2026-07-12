@@ -1,4 +1,3 @@
-pub mod moves;
 pub mod state;
 
 use shakmaty::{fen::Fen, CastlingMode, Chess};

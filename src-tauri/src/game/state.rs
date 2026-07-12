@@ -203,11 +203,6 @@ impl GameState {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn fen(&self) -> String {
-        Fen::from_position(self.chess.clone(), EnPassantMode::Legal).to_string()
-    }
-
     pub fn pgn(&self) -> String {
         let mut pgn = String::new();
         for (i, san) in self.san_history.iter().enumerate() {
@@ -231,21 +226,6 @@ impl GameState {
         }
 
         pgn.trim().to_string()
-    }
-
-    #[allow(dead_code)]
-    pub fn config(&self) -> Option<&GameConfig> {
-        self.config.as_ref()
-    }
-
-    #[allow(dead_code)]
-    pub fn fen_history(&self) -> &[String] {
-        &self.fen_history
-    }
-
-    #[allow(dead_code)]
-    pub fn san_history(&self) -> &[String] {
-        &self.san_history
     }
 
     fn build_game_record(&self, result: String) -> GameRecord {

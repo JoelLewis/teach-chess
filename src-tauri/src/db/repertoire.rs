@@ -147,26 +147,6 @@ impl Database {
         Ok(entries)
     }
 
-    /// Get all repertoire entries for a player (grouped by opening).
-    #[allow(dead_code)]
-    pub fn get_all_repertoire_entries(
-        &self,
-        player_id: &str,
-    ) -> Result<Vec<RepertoireEntry>, DatabaseError> {
-        let mut stmt = self.conn().prepare(
-            "SELECT id, player_id, opening_id, position_fen, move_uci, move_san, notes
-             FROM repertoire_entry WHERE player_id = ?1
-             ORDER BY opening_id, rowid",
-        )?;
-        let rows = stmt.query_map(params![player_id], row_to_repertoire_entry)?;
-
-        let mut entries = Vec::new();
-        for row in rows {
-            entries.push(row?);
-        }
-        Ok(entries)
-    }
-
     /// Add a repertoire entry (upsert — replaces move at same position).
     pub fn add_repertoire_entry(&self, entry: &RepertoireEntry) -> Result<(), DatabaseError> {
         self.conn().execute(
