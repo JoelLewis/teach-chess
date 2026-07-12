@@ -101,6 +101,20 @@ jobs:
         run: |
           pnpm run tauri build -- --target ${{ matrix.target }}
 
+      - name: Verify MCP playtest socket is excluded
+        run: |
+          # The dev-only tauri-plugin-mcp must never reach a distributed build.
+          if cargo tree --manifest-path src-tauri/Cargo.toml -i tauri-plugin-mcp >/dev/null 2>&1; then
+            echo "::error::tauri-plugin-mcp is in the default dependency graph — release would ship the playtest socket"
+            exit 1
+          fi
+          BINARY="target/${{ matrix.target }}/release/chess-mentor"
+          if strings "$BINARY" | grep -qiE 'tauri-mcp|chessmentor-mcp|TAURI_MCP'; then
+            echo "::error::release binary contains MCP socket strings"
+            exit 1
+          fi
+          echo "MCP exclusion verified"
+
       - name: Sign sidecar binary
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}

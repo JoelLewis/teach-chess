@@ -39,11 +39,16 @@ sysinfo = "0.33"
 # macOS via sensei-llm's target-specific llama-cpp-2 dependency.
 sensei-llm = { git = "https://github.com/JoelLewis/sensei-kit", rev = "ae29011c9328cff46eb9a0c8866731066c13782f", default-features = false }
 
+# Dev-only agent-driving socket server; NEVER in default features — release
+# builds (App Store included) must not ship the unauthenticated socket.
+tauri-plugin-mcp = { git = "https://github.com/P3GLEG/tauri-plugin-mcp", rev = "49fbecb2dcfac7f5739a79ae22bcf9452dd8d228", optional = true }
+
 [dev-dependencies]
 tempfile = "3"
 
 [features]
-default = ["llm"]
+default = ["llm"] # unchanged — mcp is opt-in (`pnpm playtest`)
+mcp = ["dep:tauri-plugin-mcp"]
 llm = ["sensei-llm/llm", "sensei-llm/download"]
 llm-cuda = ["llm", "sensei-llm/cuda"]
 llm-metal = ["llm", "sensei-llm/metal"]

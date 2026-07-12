@@ -39,3 +39,7 @@ Thumbs.db
 # Test artifacts
 playwright-report/
 test-results/
+
+# Playtest artifacts (screenshots etc.) — step files are checked in
+.playtest/*
+!.playtest/steps/
