@@ -4,14 +4,15 @@ use tauri::State;
 
 use crate::CurrentPlayerId;
 use crate::db::connection::Database;
+use crate::db::srs::SrsItemKind;
 use crate::error::{AppError, RepertoireError};
 use crate::models::repertoire::{
     DrillAttempt, DrillMoveResult, DrillState, DrillStats, Opening, OpeningPosition,
     RepertoireEntry, RepertoireFilter,
 };
-use crate::puzzle::srs;
 use crate::repertoire::RepertoireSessionState;
 use crate::repertoire::session;
+use crate::srs;
 
 #[tauri::command]
 pub fn get_openings(
@@ -166,13 +167,10 @@ pub fn submit_drill_move(
     let entry_id = active.entries[active.current_index].id.clone();
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
 
-    let (prev_interval, prev_ease) = db
-        .get_latest_drill_srs(&player_id, &entry_id)?
-        .unwrap_or((1.0, 2.5));
-    let attempt_count = db.get_drill_attempt_count(&player_id, &entry_id)? + 1;
-
-    let quality = session::drill_quality(result.correct, time_ms);
-    let srs_update = srs::compute_srs_update(prev_interval, prev_ease, quality, attempt_count);
+    let card = db.get_srs_card(&player_id, SrsItemKind::Drill, &entry_id)?;
+    let rating = srs::drill_to_rating(result.correct, time_ms);
+    let updated = srs::next_card(card, rating);
+    db.upsert_srs_card(&player_id, SrsItemKind::Drill, &entry_id, &updated)?;
 
     let attempt = DrillAttempt {
         id: uuid::Uuid::new_v4().to_string(),
@@ -180,9 +178,6 @@ pub fn submit_drill_move(
         repertoire_entry_id: entry_id,
         correct: result.correct,
         time_ms,
-        srs_interval: srs_update.interval,
-        srs_ease: srs_update.ease_factor,
-        srs_next_review: srs_update.next_review,
     };
     db.save_drill_attempt(&attempt)?;
 

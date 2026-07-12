@@ -5,13 +5,14 @@ use tauri::State;
 
 use crate::CurrentPlayerId;
 use crate::db::connection::Database;
+use crate::db::srs::SrsItemKind;
 use crate::error::{AppError, PuzzleError};
 use crate::models::puzzle::{
     PuzzleAttempt, PuzzleFilter, PuzzleMoveResult, PuzzleSessionStats, PuzzleState,
 };
 use crate::puzzle::PuzzleSessionState;
 use crate::puzzle::session;
-use crate::puzzle::srs;
+use crate::srs;
 
 #[tauri::command]
 pub fn load_next_puzzle(
@@ -139,15 +140,12 @@ pub fn abandon_puzzle(
         .as_millis() as u64;
     let time_ms = now_ms.saturating_sub(active.start_time_ms);
 
-    // Get previous SRS state
+    // Reschedule the FSRS card as a lapse
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let (prev_interval, prev_ease) = db
-        .get_latest_srs(&player_id, &active.puzzle.id)?
-        .unwrap_or((1.0, 2.5));
-    let attempt_count = db.get_attempt_count(&player_id, &active.puzzle.id)? + 1;
-
-    let quality = srs::quality_from_attempt(false, active.hints_revealed, time_ms);
-    let srs_update = srs::compute_srs_update(prev_interval, prev_ease, quality, attempt_count);
+    let card = db.get_srs_card(&player_id, SrsItemKind::Puzzle, &active.puzzle.id)?;
+    let rating = srs::solve_to_rating(false, active.hints_revealed);
+    let updated = srs::next_card(card, rating);
+    db.upsert_srs_card(&player_id, SrsItemKind::Puzzle, &active.puzzle.id, &updated)?;
 
     let attempt = PuzzleAttempt {
         id: uuid::Uuid::new_v4().to_string(),
@@ -156,10 +154,6 @@ pub fn abandon_puzzle(
         solved: false,
         time_ms,
         hints_used: active.hints_revealed,
-        attempted_at: srs_update.next_review.clone(), // will be overridden
-        srs_interval: srs_update.interval,
-        srs_ease: srs_update.ease_factor,
-        srs_next_review: srs_update.next_review,
     };
     db.save_puzzle_attempt(&attempt)?;
 
@@ -205,13 +199,10 @@ pub fn save_puzzle_result(
     let time_ms = now_ms.saturating_sub(active.start_time_ms);
 
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
-    let (prev_interval, prev_ease) = db
-        .get_latest_srs(&player_id, &active.puzzle.id)?
-        .unwrap_or((1.0, 2.5));
-    let attempt_count = db.get_attempt_count(&player_id, &active.puzzle.id)? + 1;
-
-    let quality = srs::quality_from_attempt(solved, active.hints_revealed, time_ms);
-    let srs_update = srs::compute_srs_update(prev_interval, prev_ease, quality, attempt_count);
+    let card = db.get_srs_card(&player_id, SrsItemKind::Puzzle, &active.puzzle.id)?;
+    let rating = srs::solve_to_rating(solved, active.hints_revealed);
+    let updated = srs::next_card(card, rating);
+    db.upsert_srs_card(&player_id, SrsItemKind::Puzzle, &active.puzzle.id, &updated)?;
 
     let attempt = PuzzleAttempt {
         id: uuid::Uuid::new_v4().to_string(),
@@ -220,10 +211,6 @@ pub fn save_puzzle_result(
         solved,
         time_ms,
         hints_used: active.hints_revealed,
-        attempted_at: srs_update.next_review.clone(),
-        srs_interval: srs_update.interval,
-        srs_ease: srs_update.ease_factor,
-        srs_next_review: srs_update.next_review,
     };
     db.save_puzzle_attempt(&attempt)?;
 

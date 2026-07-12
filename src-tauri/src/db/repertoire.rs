@@ -187,11 +187,11 @@ impl Database {
             .query_row(
                 "SELECT re.id, re.player_id, re.opening_id, re.position_fen, re.move_uci, re.move_san, re.notes
                  FROM repertoire_entry re
-                 INNER JOIN repertoire_drill_attempt rda ON rda.repertoire_entry_id = re.id
-                   AND rda.player_id = ?1
+                 INNER JOIN srs_card sc ON sc.item_id = re.id
+                   AND sc.player_id = ?1 AND sc.item_type = 'drill'
                  WHERE re.opening_id = ?2 AND re.player_id = ?1
-                   AND rda.srs_next_review <= datetime('now')
-                 ORDER BY rda.srs_next_review ASC
+                   AND sc.due <= datetime('now')
+                 ORDER BY sc.due ASC
                  LIMIT 1",
                 params![player_id, opening_id],
                 |row| {
@@ -223,7 +223,7 @@ impl Database {
                  FROM repertoire_entry re
                  WHERE re.opening_id = ?1 AND re.player_id = ?2
                    AND re.id NOT IN (
-                     SELECT repertoire_entry_id FROM repertoire_drill_attempt WHERE player_id = ?2
+                     SELECT item_id FROM srs_card WHERE player_id = ?2 AND item_type = 'drill'
                    )
                  ORDER BY re.rowid
                  LIMIT 1",
@@ -244,59 +244,21 @@ impl Database {
         Ok(result)
     }
 
-    /// Save a drill attempt with SRS data.
+    /// Save a drill attempt (attempted_at defaults to now in the schema).
     pub fn save_drill_attempt(&self, attempt: &DrillAttempt) -> Result<(), DatabaseError> {
         self.conn().execute(
             "INSERT INTO repertoire_drill_attempt
-             (id, player_id, repertoire_entry_id, correct, time_ms, attempted_at, srs_interval, srs_ease, srs_next_review)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+             (id, player_id, repertoire_entry_id, correct, time_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
             params![
                 attempt.id,
                 attempt.player_id,
                 attempt.repertoire_entry_id,
                 attempt.correct as i32,
                 attempt.time_ms as i64,
-                attempt.srs_next_review, // attempted_at defaults in DB, but we set it
-                attempt.srs_interval,
-                attempt.srs_ease,
-                attempt.srs_next_review,
             ],
         )?;
         Ok(())
-    }
-
-    /// Get latest SRS state for a drill entry.
-    pub fn get_latest_drill_srs(
-        &self,
-        player_id: &str,
-        entry_id: &str,
-    ) -> Result<Option<(f64, f64)>, DatabaseError> {
-        let result = self
-            .conn()
-            .query_row(
-                "SELECT srs_interval, srs_ease FROM repertoire_drill_attempt
-                 WHERE player_id = ?1 AND repertoire_entry_id = ?2
-                 ORDER BY attempted_at DESC LIMIT 1",
-                params![player_id, entry_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
-            )
-            .optional()?;
-        Ok(result)
-    }
-
-    /// Get drill attempt count for a specific entry.
-    pub fn get_drill_attempt_count(
-        &self,
-        player_id: &str,
-        entry_id: &str,
-    ) -> Result<u32, DatabaseError> {
-        let count: i64 = self.conn().query_row(
-            "SELECT COUNT(*) FROM repertoire_drill_attempt
-             WHERE player_id = ?1 AND repertoire_entry_id = ?2",
-            params![player_id, entry_id],
-            |row| row.get(0),
-        )?;
-        Ok(count as u32)
     }
 
     /// Get aggregate drill stats for a player.

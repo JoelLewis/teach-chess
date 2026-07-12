@@ -58,10 +58,6 @@ pub struct PuzzleAttempt {
     pub solved: bool,
     pub time_ms: u64,
     pub hints_used: u32,
-    pub attempted_at: String,
-    pub srs_interval: f64,
-    pub srs_ease: f64,
-    pub srs_next_review: String,
 }
 
 /// Sent to the frontend when a puzzle is loaded

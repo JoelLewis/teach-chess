@@ -82,6 +82,104 @@ mod tests {
     }
 
     #[test]
+    fn sm2_state_converts_to_fsrs_on_migration() {
+        use crate::db::srs::SrsItemKind;
+        use rs_fsrs::State;
+
+        // Build a pre-008 database: migrations 001–007 plus SM-2 rows the
+        // way the old code wrote them.
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        for sql in [
+            include_str!("../../migrations/001_initial.sql"),
+            include_str!("../../migrations/002_coaching_text.sql"),
+            include_str!("../../migrations/003_coaching_cache.sql"),
+            include_str!("../../migrations/004_problems.sql"),
+            include_str!("../../migrations/005_repertoire.sql"),
+            include_str!("../../migrations/006_assessment.sql"),
+            include_str!("../../migrations/007_opponent_personality.sql"),
+        ] {
+            // Mirror the runner: 002/007 add columns that 001 may already have
+            if let Err(e) = conn.execute_batch(sql) {
+                assert!(e.to_string().contains("duplicate column"), "{e}");
+            }
+        }
+
+        conn.execute_batch(
+            "INSERT INTO player (id, display_name) VALUES ('p1', 'Test');
+             INSERT INTO puzzle (id, fen, solution_moves) VALUES ('pz1', 'fen1', 'e2e4');
+             INSERT INTO opening (id, name, color, moves)
+                VALUES ('italian', 'Italian', 'white', 'e2e4');
+             INSERT INTO repertoire_entry (id, player_id, opening_id, position_fen, move_uci)
+                VALUES ('re1', 'p1', 'italian', 'startfen', 'e2e4');
+             -- SM-2 history: one lapse, then a pass at interval 6 / ease 2.28
+             INSERT INTO puzzle_attempt (id, player_id, puzzle_id, solved, time_ms, hints_used,
+                                         attempted_at, srs_interval, srs_ease, srs_next_review)
+                VALUES ('a1', 'p1', 'pz1', 0, 5000, 0,
+                        '2026-01-01 10:00:00', 1.0, 2.18, '2026-01-02 10:00:00');
+             INSERT INTO puzzle_attempt (id, player_id, puzzle_id, solved, time_ms, hints_used,
+                                         attempted_at, srs_interval, srs_ease, srs_next_review)
+                VALUES ('a2', 'p1', 'pz1', 1, 5000, 0,
+                        '2026-01-05 10:00:00', 6.0, 2.28, '2026-01-11 10:00:00');
+             INSERT INTO repertoire_drill_attempt (id, player_id, repertoire_entry_id, correct,
+                                                   time_ms, attempted_at, srs_interval, srs_ease,
+                                                   srs_next_review)
+                VALUES ('d1', 'p1', 're1', 1, 3000,
+                        '2026-01-28 00:00:00', 4.0, 2.5, '2026-02-01 00:00:00');",
+        )
+        .unwrap();
+
+        // Run the full migration chain (008 converts SM-2 → FSRS)
+        let db = Database::from_connection(conn);
+        db.run_migrations().unwrap();
+
+        // Puzzle card: latest attempt wins, due date is preserved
+        let card = db.get_srs_card("p1", SrsItemKind::Puzzle, "pz1").unwrap();
+        assert_eq!(
+            card.due.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2026-01-11 10:00:00",
+            "due date must carry over so the review queue does not reset"
+        );
+        assert!(
+            (card.stability - 6.0).abs() < 1e-9,
+            "stability seeds from interval"
+        );
+        // difficulty = clamp(5 + (2.5 - 2.28) * (5 / 1.2), 1, 10)
+        assert!((card.difficulty - (5.0 + 0.22 * (5.0 / 1.2))).abs() < 1e-6);
+        assert_eq!(card.reps, 2);
+        assert_eq!(card.lapses, 1);
+        assert_eq!(card.state, State::Review);
+        assert_eq!(card.scheduled_days, 6);
+        // last_review reconstructed as due - interval
+        assert_eq!(
+            card.last_review.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2026-01-05 10:00:00"
+        );
+
+        // Drill card: default ease 2.5 maps to mid difficulty 5.0
+        let drill = db.get_srs_card("p1", SrsItemKind::Drill, "re1").unwrap();
+        assert_eq!(
+            drill.due.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2026-02-01 00:00:00"
+        );
+        assert!((drill.stability - 4.0).abs() < 1e-9);
+        assert!((drill.difficulty - 5.0).abs() < 1e-6);
+        assert_eq!(drill.reps, 1);
+        assert_eq!(drill.lapses, 0);
+
+        // SM-2 columns are gone from the attempt tables
+        for table in ["puzzle_attempt", "repertoire_drill_attempt"] {
+            let result = db
+                .conn()
+                .prepare(&format!("SELECT srs_interval FROM {table}"));
+            assert!(result.is_err(), "{table}.srs_interval should be dropped");
+        }
+
+        // Re-running migrations is still safe post-conversion
+        db.run_migrations()
+            .expect("008 must be guarded and re-runnable");
+    }
+
+    #[test]
     fn all_migration_files_are_registered() {
         // This is the single highest-value test: it catches "file exists on disk
         // but the runner forgot to register it" at test time.
