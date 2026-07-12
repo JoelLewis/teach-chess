@@ -16,6 +16,10 @@ jobs:
   build:
     name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
+    # secrets can't be referenced in step `if:` conditions (workflow-validation
+    # error → startup failure). Map to a job env var, which `if:` does allow.
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
 
     strategy:
       fail-fast: false
@@ -90,7 +94,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
 
       - name: Import Apple Developer Certificate
-        if: runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != ''
+        if: runner.os == 'macOS' && env.APPLE_CERTIFICATE != ''
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -107,7 +111,7 @@ jobs:
           rm -f certificate.p12
 
       - name: Extract signing identity
-        if: runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != ''
+        if: runner.os == 'macOS' && env.APPLE_CERTIFICATE != ''
         run: |
           CERT_INFO=$(security find-identity -v -p codesigning build.keychain | head -1)
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
