@@ -22,15 +22,19 @@ use std::time::{Duration, Instant};
 use chess_mentor_lib::llm::PlayerLevel;
 use chess_mentor_lib::llm::channel::FREE_TEXT_GRAMMAR;
 use chess_mentor_lib::llm::coach_prompt::{build_user_prompt, system_prompt};
+use chess_mentor_lib::llm::llm_support::{CHESS_N_CTX, CHESS_SAMPLER, coaching_generate_options};
 use chess_mentor_lib::llm::position_facts::{
     EngineData, MoveInput, build_move_facts, uci_line_to_san,
 };
 use chess_mentor_lib::models::engine::Score;
 use chess_mentor_lib::models::heuristics::CoachingContext;
-use mentor_llm::model::ModelManager;
-use mentor_llm::prompts::format_chat;
+use sensei_llm::{GenerateOptions, ModelManager, device_name, format_chat};
 
 const MAX_TOKENS: u32 = 128;
+
+/// Serializes generation across tests: they run in parallel threads by
+/// default and concurrent contexts on the shared model flake.
+static GEN_LOCK: Mutex<()> = Mutex::new(());
 
 /// One case from `tests/fixtures/coaching_eval.json`.
 #[derive(Debug, serde::Deserialize)]
@@ -69,7 +73,7 @@ fn model() -> &'static ModelManager {
 fn load_model() -> ModelManager {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("models")
-        .join(mentor_llm::download::GEMMA4_E2B.gguf_filename);
+        .join(sensei_llm::GEMMA4_E2B_Q4.filename);
     assert!(
         path.exists(),
         "model file missing at {} — run scripts/fetch-model.sh first",
@@ -80,7 +84,7 @@ fn load_model() -> ModelManager {
     eprintln!(
         "model loaded in {:.1}s on {}",
         t0.elapsed().as_secs_f32(),
-        mentor_llm::model::device_name()
+        device_name()
     );
     manager
 }
@@ -191,11 +195,12 @@ fn ungrounded_squares(output: &str, prompt: &str) -> Vec<String> {
 }
 
 fn generate(prompt: &str) -> (String, Duration) {
-    static GEN_LOCK: Mutex<()> = Mutex::new(());
     let _guard = GEN_LOCK.lock().expect("generation lock");
     let t0 = Instant::now();
+    // The exact options the production inference channel uses.
+    let opts = coaching_generate_options(MAX_TOKENS, FREE_TEXT_GRAMMAR);
     let text = model()
-        .generate_streaming_with_grammar(prompt, MAX_TOKENS, FREE_TEXT_GRAMMAR, |_| {})
+        .generate_streaming(prompt, &opts, |_| {})
         .expect("generation succeeds");
     (text, t0.elapsed())
 }
@@ -211,6 +216,56 @@ fn assert_no_markers(output: &str) {
     assert!(
         !output.contains("<|turn>") && !output.contains("<turn|>"),
         "output leaked turn markers: {output:?}"
+    );
+}
+
+/// End-to-end inference smoke test against the real GGUF (ported from the
+/// deleted `mentor-llm` crate). Unconstrained generation with ChessMentor's
+/// pinned sampler, context size, and channel filtering.
+#[test]
+#[ignore = "loads the ~2.9 GiB Gemma 4 E2B model"]
+fn llm_generates_coherent_text() {
+    let _guard = GEN_LOCK.lock().expect("generation lock");
+
+    let prompt = format_chat(
+        "You are a concise chess coach.",
+        "Reply with one short sentence: why is controlling the center important in chess?",
+    );
+    let opts = GenerateOptions {
+        max_tokens: 128,
+        n_ctx: CHESS_N_CTX,
+        sampler: CHESS_SAMPLER,
+        grammar: None,
+        grammar_root: "root".to_string(),
+        filter_channels: true,
+    };
+
+    let mut streamed = String::new();
+    let mut chunks = 0u32;
+    let t1 = Instant::now();
+    let text = model()
+        .generate_streaming(&prompt, &opts, |t| {
+            chunks += 1;
+            streamed.push_str(t);
+        })
+        .expect("generation should succeed");
+    let gen_secs = t1.elapsed().as_secs_f32();
+    eprintln!(
+        "generation took {gen_secs:.1}s for {chunks} chunks ({:.2} chunks/s)",
+        chunks as f32 / gen_secs
+    );
+    eprintln!("output: {text}");
+
+    assert!(text.len() > 20, "suspiciously short output: {text:?}");
+    assert_no_markers(&text);
+    assert!(
+        !text.contains("<|channel>") && !text.contains("<channel|>"),
+        "output leaked channel markers: {text:?}"
+    );
+    assert_eq!(
+        streamed.trim(),
+        text,
+        "streamed text should match final text"
     );
 }
 

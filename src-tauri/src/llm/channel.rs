@@ -1,10 +1,11 @@
 use std::path::Path;
 
-use mentor_llm::model::ModelManager;
+use sensei_llm::ModelManager;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
 use super::LlmError;
+use super::llm_support::coaching_generate_options;
 
 /// Maximum tokens generated per request (coaching text is 1-4 sentences).
 const MAX_TOKENS: u32 = 128;
@@ -53,7 +54,7 @@ impl InferenceChannel {
         let (request_tx, mut request_rx) = mpsc::channel::<InferenceJob>(4);
 
         let model_path = model_path.to_path_buf();
-        let device_name = mentor_llm::model::device_name().to_string();
+        let device_name = sensei_llm::device_name().to_string();
         let worker_device = device_name.clone();
 
         tokio::spawn(async move {
@@ -92,10 +93,10 @@ impl InferenceChannel {
                 // clone to the blocking task.
                 let manager = manager.clone();
                 let result = tokio::task::spawn_blocking(move || {
-                    manager.generate_cancellable_with_grammar(
+                    let opts = coaching_generate_options(MAX_TOKENS, FREE_TEXT_GRAMMAR);
+                    manager.generate_cancellable(
                         &prompt,
-                        MAX_TOKENS,
-                        Some(FREE_TEXT_GRAMMAR),
+                        &opts,
                         |text| {
                             if let Some(ref tx) = token_tx {
                                 let _ = tx.send(text.to_string());
@@ -105,9 +106,7 @@ impl InferenceChannel {
                     )
                 })
                 .await
-                .unwrap_or_else(|_| {
-                    Err(LlmError::InferenceError("Worker task panicked".to_string()))
-                });
+                .unwrap_or_else(|_| Err(LlmError::Inference("Worker task panicked".to_string())));
 
                 let _ = job.response_tx.send(result);
             }
@@ -144,9 +143,7 @@ impl InferenceChannel {
                         return;
                     }
                 }
-                let _ = proxy_tx.send(Err(LlmError::InferenceError(
-                    "Dedup channel closed".to_string(),
-                )));
+                let _ = proxy_tx.send(Err(LlmError::Inference("Dedup channel closed".to_string())));
             });
             // Dedup'd requests skip streaming — return a closed token receiver
             let (_dummy_tx, dummy_rx) = mpsc::unbounded_channel();
@@ -192,7 +189,7 @@ impl InferenceChannel {
         self.request_tx
             .send(job)
             .await
-            .map_err(|_| LlmError::InferenceError("Worker channel closed".to_string()))?;
+            .map_err(|_| LlmError::Inference("Worker channel closed".to_string()))?;
 
         Ok(SubmitResult {
             response_rx,

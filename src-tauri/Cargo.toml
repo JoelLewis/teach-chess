@@ -34,15 +34,16 @@ toml = "0.8"
 # System info (sandbox-compatible memory detection)
 sysinfo = "0.33"
 
-# LLM coaching (llama.cpp via the mentor-llm crate; the crate's heavy
-# dependencies only compile when its `llm` feature is enabled below)
-mentor-llm = { path = "../crates/mentor-llm" }
+# LLM coaching (shared sensei-llm runtime; llama.cpp / hf-hub only compile
+# when the app's `llm` feature is enabled below). Metal is automatic on
+# macOS via sensei-llm's target-specific llama-cpp-2 dependency.
+sensei-llm = { git = "https://github.com/JoelLewis/sensei-kit", rev = "ae29011c9328cff46eb9a0c8866731066c13782f", default-features = false }
 
 [dev-dependencies]
 tempfile = "3"
 
 [features]
 default = ["llm"]
-llm = ["mentor-llm/llm"]
-llm-cuda = ["llm", "mentor-llm/llm-cuda"]
-llm-metal = ["llm", "mentor-llm/llm-metal"]
+llm = ["sensei-llm/llm", "sensei-llm/download"]
+llm-cuda = ["llm", "sensei-llm/cuda"]
+llm-metal = ["llm", "sensei-llm/metal"]

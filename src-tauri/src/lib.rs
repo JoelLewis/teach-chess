@@ -170,6 +170,10 @@ pub fn run() {
             // Initialize LLM state (feature-gated)
             #[cfg(feature = "llm")]
             {
+                // Honor the deprecated CHESS_MENTOR_DEVICE variable before
+                // any inference thread reads SENSEI_LLM_DEVICE.
+                llm::llm_support::apply_legacy_device_env_fallback();
+
                 let app_data_dir = app.handle().path().app_data_dir().expect("app data dir");
                 let resource_dir = app
                     .handle()
@@ -185,7 +189,7 @@ pub fn run() {
                 let warm_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let llm_state = warm_handle.state::<llm::LlmState>();
-                    if llm_state.store.is_available(&llm::GEMMA4_E2B) {
+                    if llm_state.store.is_available(llm::GEMMA4_E2B.spec) {
                         match llm_state.ensure_channel().await {
                             Ok(()) => tracing::info!("LLM warm-up started at app startup"),
                             Err(e) => tracing::warn!("LLM warm-up failed (non-fatal): {e}"),

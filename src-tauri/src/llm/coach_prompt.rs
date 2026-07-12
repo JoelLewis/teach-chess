@@ -2,7 +2,7 @@
 //! fact-grounded user prompt built from [`position_facts::MoveFacts`].
 //!
 //! All prompt *content* lives app-side by design (sensei-kit split);
-//! `mentor_llm::prompts` only supplies the Gemma chat format.
+//! `sensei_llm::format_chat` only supplies the Gemma chat format.
 
 use crate::llm::PlayerLevel;
 use crate::llm::position_facts::MoveFacts;
@@ -66,7 +66,7 @@ pub fn system_prompt(level: PlayerLevel) -> &'static str {
 
 /// Build the complete Gemma-formatted coaching prompt.
 pub fn build_coaching_prompt(level: PlayerLevel, facts: &MoveFacts) -> String {
-    mentor_llm::prompts::format_chat(system_prompt(level), &build_user_prompt(facts))
+    sensei_llm::format_chat(system_prompt(level), &build_user_prompt(facts))
 }
 
 /// Fact section, ordered by display position with a truncation rank.
@@ -247,7 +247,7 @@ pub fn build_game_summary_prompt(
         inaccuracies
     );
 
-    mentor_llm::prompts::format_chat(system, &context)
+    sensei_llm::format_chat(system, &context)
 }
 
 #[cfg(test)]
