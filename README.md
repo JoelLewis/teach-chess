@@ -68,7 +68,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed overview of the 
 
 ## LLM Coaching
 
-The `llm` feature is on by default. The model is **Gemma 4 E2B (Q4_K_M GGUF)** running locally via [llama.cpp](https://github.com/ggml-org/llama.cpp) (the `mentor-llm` crate in `crates/`) — either bundled with the app (see Build) or downloaded on first use from Settings > Model Manager. To fetch it for development:
+The `llm` feature is on by default. The model is **Gemma 4 E2B (Q4_K_M GGUF)** running locally via [llama.cpp](https://github.com/ggml-org/llama.cpp) (the shared [`sensei-llm`](https://github.com/JoelLewis/sensei-kit) crate) — either bundled with the app (see Build) or downloaded on first use from Settings > Model Manager. To fetch it for development:
 
 ```bash
 ./scripts/fetch-model.sh    # ~3.1 GB GGUF into src-tauri/models/
@@ -84,7 +84,7 @@ On macOS the default inference device is **Metal** (llama.cpp's Metal backend is
 | default (macOS) | Apple GPU (Metal) | compiled in on macOS; all layers offloaded |
 | default (Linux/Windows) | CPU | llama.cpp's optimized CPU backend |
 | `llm-cuda` feature | NVIDIA GPU | [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) with `nvcc` on PATH |
-| `CHESS_MENTOR_DEVICE=cpu` | CPU | force CPU everywhere |
+| `SENSEI_LLM_DEVICE=cpu` | CPU | force CPU everywhere (`CHESS_MENTOR_DEVICE` still works but is deprecated) |
 
 The active device is shown in Settings > Model Manager.
 

@@ -71,8 +71,8 @@ src-tauri/src/
 ├── llm/                 # Local LLM glue (feature-gated: "llm")
 │   ├── channel.rs       # Bounded inference channel with deduplication
 │   └── cache.rs         # DB-backed coaching cache
-│   # Inference, model download, and prompts live in crates/mentor-llm
-│   # (llama.cpp via llama-cpp-2; designed to be shared with sibling apps)
+│   # Inference, model download, and the chat format live in the shared
+│   # sensei-llm crate (sensei-kit); llm_support.rs pins app-side policy
 ├── puzzle/              # Tactical puzzle system
 │   ├── session.rs       # PuzzleSessionState — solve flow
 │   ├── srs.rs           # SM-2 spaced repetition algorithm

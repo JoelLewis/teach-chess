@@ -32,7 +32,7 @@
 - Use parameterized queries — never string interpolation for SQL.
 
 ## Testing
-- `cargo test --workspace` for Rust unit tests (Cargo workspace: `src-tauri` + `crates/mentor-llm`)
+- `cargo test --workspace` for Rust unit tests (Cargo workspace: `src-tauri`; the LLM runtime is the shared `sensei-llm` crate from sensei-kit)
 - `svelte-check` for TypeScript type checking
 - `pnpm run tauri dev` for integration testing
 

@@ -5,14 +5,16 @@ pub mod position_facts;
 
 #[cfg(feature = "llm")]
 pub mod channel;
+#[cfg(feature = "llm")]
+pub mod llm_support;
 
 use serde::{Deserialize, Serialize};
 
-pub use mentor_llm::LlmError;
 pub use player_level::PlayerLevel;
+pub use sensei_llm::LlmError;
 
 #[cfg(feature = "llm")]
-pub use mentor_llm::download::GEMMA4_E2B;
+pub use llm_support::GEMMA4_E2B;
 
 #[cfg(feature = "llm")]
 use std::path::PathBuf;
@@ -20,7 +22,7 @@ use std::path::PathBuf;
 /// Managed state for the LLM subsystem. Lazily initializes the inference channel.
 #[cfg(feature = "llm")]
 pub struct LlmState {
-    pub store: mentor_llm::download::ModelStore,
+    pub store: sensei_llm::ModelStore,
     /// Lazy-initialized: None until the first coaching request with a downloaded model.
     pub channel: tokio::sync::Mutex<Option<channel::InferenceChannel>>,
     /// Which compute device the inference channel is using (e.g. "cpu", "cuda", "metal").
@@ -30,7 +32,7 @@ pub struct LlmState {
 #[cfg(feature = "llm")]
 impl LlmState {
     pub fn new(app_data_dir: PathBuf, resource_dir: Option<PathBuf>) -> Self {
-        let store = mentor_llm::download::ModelStore::new(&app_data_dir, resource_dir);
+        let store = llm_support::model_store(&app_data_dir, resource_dir);
         Self {
             store,
             channel: tokio::sync::Mutex::new(None),
@@ -46,7 +48,7 @@ impl LlmState {
     pub async fn ensure_channel(&self) -> Result<(), LlmError> {
         let mut channel_guard = self.channel.lock().await;
         if channel_guard.is_none() {
-            let model_path = self.store.model_path(&GEMMA4_E2B);
+            let model_path = self.store.model_path(GEMMA4_E2B.spec);
             let (ch, dev_name) = channel::InferenceChannel::spawn(&model_path);
             let _ = self.device_name.set(dev_name.clone());
             *channel_guard = Some(ch);

@@ -93,8 +93,8 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
         use crate::llm::GEMMA4_E2B;
 
         let llm_state = app.state::<crate::llm::LlmState>();
-        let model_available = llm_state.store.is_available(&GEMMA4_E2B);
-        let model_bundled = llm_state.store.is_bundled(&GEMMA4_E2B);
+        let model_available = llm_state.store.is_available(GEMMA4_E2B.spec);
+        let model_bundled = llm_state.store.is_bundled(GEMMA4_E2B.spec);
         let channel_guard = llm_state.channel.lock().await;
         let model_loaded = channel_guard
             .as_ref()
@@ -144,9 +144,9 @@ pub async fn get_available_models(
         Ok(vec![ModelStatus {
             id: GEMMA4_E2B.id.to_string(),
             display_name: GEMMA4_E2B.display_name.to_string(),
-            downloaded: llm_state.store.is_available(&GEMMA4_E2B),
-            bundled: llm_state.store.is_bundled(&GEMMA4_E2B),
-            file_size_mb: GEMMA4_E2B.file_size_mb,
+            downloaded: llm_state.store.is_available(GEMMA4_E2B.spec),
+            bundled: llm_state.store.is_bundled(GEMMA4_E2B.spec),
+            file_size_mb: GEMMA4_E2B.file_size_mb(),
             ram_requirement_mb: GEMMA4_E2B.ram_requirement_mb,
             system_memory_mb: sys_mem,
             available_memory_mb: avail_mem,
@@ -170,7 +170,7 @@ pub async fn download_model(
     {
         use tauri::Emitter;
 
-        let config = mentor_llm::download::get_config(&model_id)
+        let info = crate::llm::llm_support::get_model_info(&model_id)
             .ok_or(crate::llm::LlmError::ModelNotFound(model_id))?;
 
         let llm_state = app.state::<crate::llm::LlmState>();
@@ -181,7 +181,7 @@ pub async fn download_model(
         // throttled so the frontend isn't flooded.
         tokio::task::spawn_blocking(move || {
             let mut throttle = ProgressThrottle::new();
-            store.download(config, |downloaded, total| {
+            store.download(info.spec, |downloaded, total| {
                 if throttle.should_emit(downloaded, total) {
                     let _ = progress_handle.emit(
                         "llm-download-progress",
@@ -194,9 +194,7 @@ pub async fn download_model(
             })
         })
         .await
-        .map_err(|e| {
-            crate::llm::LlmError::DownloadError(format!("download task panicked: {e}"))
-        })??;
+        .map_err(|e| crate::llm::LlmError::Download(format!("download task panicked: {e}")))??;
 
         Ok(())
     }
@@ -317,8 +315,8 @@ pub async fn generate_coaching(
     #[cfg(feature = "llm")]
     {
         let llm_state = app.state::<crate::llm::LlmState>();
-        if llm_state.store.is_available(&crate::llm::GEMMA4_E2B) {
-            let prompt = mentor_llm::prompts::format_chat(
+        if llm_state.store.is_available(crate::llm::GEMMA4_E2B.spec) {
+            let prompt = sensei_llm::format_chat(
                 crate::llm::coach_prompt::system_prompt(level),
                 &user_prompt,
             );
@@ -418,7 +416,7 @@ async fn try_llm_generation(
     let result = submit_result
         .response_rx
         .await
-        .map_err(|_| crate::llm::LlmError::InferenceError("Channel closed".to_string()))??;
+        .map_err(|_| crate::llm::LlmError::Inference("Channel closed".to_string()))??;
 
     // Emit Done event
     if let Some(rid) = request_id {
@@ -489,7 +487,7 @@ async fn try_generate_summary(
     use crate::llm::GEMMA4_E2B;
 
     let llm_state = app.state::<crate::llm::LlmState>();
-    if !llm_state.store.is_available(&GEMMA4_E2B) {
+    if !llm_state.store.is_available(GEMMA4_E2B.spec) {
         return Err(crate::llm::LlmError::ModelNotFound(
             "Model not available".to_string(),
         ));
@@ -511,7 +509,7 @@ async fn try_generate_summary(
     let result = submit_result
         .response_rx
         .await
-        .map_err(|_| crate::llm::LlmError::InferenceError("Channel closed".to_string()))??;
+        .map_err(|_| crate::llm::LlmError::Inference("Channel closed".to_string()))??;
 
     Ok(result)
 }
