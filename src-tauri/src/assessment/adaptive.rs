@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AdaptivePrompt {
     pub prompt_type: AdaptivePromptType,
@@ -10,7 +10,7 @@ pub struct AdaptivePrompt {
     pub target_category: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum AdaptivePromptType {
     IncreaseChallenge,

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Which side a heuristic applies to
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum Side {
     White,
@@ -18,7 +18,7 @@ impl From<shakmaty::Color> for Side {
 }
 
 /// Game phase classification
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum GamePhase {
     Opening,
@@ -27,7 +27,7 @@ pub enum GamePhase {
 }
 
 /// Material counts for one side
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PieceCounts {
     pub pawns: u8,
@@ -38,7 +38,7 @@ pub struct PieceCounts {
 }
 
 /// Detected material imbalance
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum MaterialImbalance {
     /// One side has the bishop pair
@@ -52,7 +52,7 @@ pub enum MaterialImbalance {
 }
 
 /// Full material analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MaterialBalance {
     pub white: PieceCounts,
@@ -63,7 +63,7 @@ pub struct MaterialBalance {
 }
 
 /// A chain of connected pawns
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PawnChain {
     pub side: Side,
@@ -72,7 +72,7 @@ pub struct PawnChain {
 }
 
 /// Pawn structure analysis for one side
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SidePawnStructure {
     pub isolated: Vec<String>,
@@ -82,7 +82,7 @@ pub struct SidePawnStructure {
 }
 
 /// Full pawn structure analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PawnStructure {
     pub white: SidePawnStructure,
@@ -96,7 +96,7 @@ pub struct PawnStructure {
 }
 
 /// Activity summary for one piece
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PieceActivityDetail {
     pub square: String,
@@ -107,7 +107,7 @@ pub struct PieceActivityDetail {
 }
 
 /// Piece activity for one side
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SideActivity {
     pub total_mobility: u32,
@@ -119,7 +119,7 @@ pub struct SideActivity {
 }
 
 /// Full piece activity analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PieceActivity {
     pub white: SideActivity,
@@ -127,7 +127,7 @@ pub struct PieceActivity {
 }
 
 /// King safety for one side
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SideKingSafety {
     pub king_square: String,
@@ -140,7 +140,7 @@ pub struct SideKingSafety {
 }
 
 /// Full king safety analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct KingSafety {
     pub white: SideKingSafety,
@@ -148,7 +148,7 @@ pub struct KingSafety {
 }
 
 /// Type of tactical motif
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum TacticType {
     Pin,
@@ -160,7 +160,7 @@ pub enum TacticType {
 }
 
 /// A detected tactical motif
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TacticalMotif {
     pub tactic_type: TacticType,
@@ -172,7 +172,7 @@ pub struct TacticalMotif {
 }
 
 /// High-level positional theme labels for template/LLM lookup
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum PositionalTheme {
     KnightOnRim,
@@ -195,7 +195,7 @@ pub enum PositionalTheme {
 }
 
 /// Complete coaching context for a position
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CoachingContext {
     pub fen: String,

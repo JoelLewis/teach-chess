@@ -2,7 +2,7 @@
   import GameCard from "./GameCard.svelte";
   import * as api from "../../api/commands";
   import { errorStore } from "../../stores/error.svelte";
-  import type { GameRecord } from "../../types/game";
+  import type { GameRecord } from "../../api/bindings";
 
   type Props = {
     onReview: (gameId: string) => void;

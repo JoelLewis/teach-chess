@@ -3,7 +3,7 @@
   import { untrack } from "svelte";
   import type { Api } from "@lichess-org/chessground/api";
   import type { Key } from "@lichess-org/chessground/types";
-  import type { Color } from "../../types/chess";
+  import type { Color } from "../../api/bindings";
 
   type Props = {
     fen?: string;

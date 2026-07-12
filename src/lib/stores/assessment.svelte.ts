@@ -1,4 +1,4 @@
-import type { SkillProfile } from "../types/assessment";
+import type { SkillProfile } from "../api/bindings";
 
 class AssessmentStore {
   profile = $state<SkillProfile | null>(null);

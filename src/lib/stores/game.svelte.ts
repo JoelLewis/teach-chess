@@ -1,11 +1,11 @@
-import type { Position, Color } from "../types/chess";
-import type { GameConfig, GameRecord, PersonalityProfile } from "../types/game";
+import type { Position, Color } from "../api/bindings";
+import type { GameConfig, GameRecord, PersonalityProfile } from "../api/bindings";
 import type {
   Score,
   InGameCoachingFeedback,
   PreMoveHint,
   GamePhase as ChessPhase,
-} from "../types/engine";
+} from "../api/bindings";
 
 export type GamePhase = "idle" | "configuring" | "playing" | "game-over" | "reviewing";
 

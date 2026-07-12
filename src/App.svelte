@@ -15,7 +15,7 @@
   import { errorStore } from "./lib/stores/error.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
   import * as api from "./lib/api/commands";
-  import type { GameConfig } from "./lib/types/game";
+  import type { GameConfig } from "./lib/api/bindings";
 
   type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
   let page = $state<Page>("home");
@@ -48,7 +48,7 @@
       const personalityPromise = (async () => {
         try {
           const resolved = await api.resolvePersonality(
-            config.opponentMode,
+            config.opponentMode ?? "choose",
             config.personality ?? undefined,
           );
           gameStore.resolvedPersonality = resolved;

@@ -54,7 +54,7 @@ impl LlmState {
 }
 
 /// Source of a coaching response
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum CoachingSource {
     Cache,
@@ -63,7 +63,7 @@ pub enum CoachingSource {
 }
 
 /// A coaching response returned to the frontend
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CoachingResponse {
     pub text: String,

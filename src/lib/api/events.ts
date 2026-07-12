@@ -1,5 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { Score, InGameCoachingFeedback } from "../types/engine";
+import type { Score, InGameCoachingFeedback } from "./bindings";
 
 export type EngineInfoPayload = {
   depth: number;

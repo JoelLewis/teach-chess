@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SessionStreak } from "../../types/dashboard";
+  import type { SessionStreak } from "../../api/bindings";
 
   type Props = {
     streak: SessionStreak;

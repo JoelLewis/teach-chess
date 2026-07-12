@@ -8,7 +8,7 @@
   import LoadingSpinner from "../ui/LoadingSpinner.svelte";
   import * as api from "../../api/commands";
   import { errorStore } from "../../stores/error.svelte";
-  import type { DashboardData, AdaptivePrompt } from "../../types/dashboard";
+  import type { DashboardData, AdaptivePrompt } from "../../api/bindings";
 
   type Props = {
     onNavigate: (page: string) => void;

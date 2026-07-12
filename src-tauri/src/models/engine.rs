@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::heuristics::{CoachingContext, GamePhase, PositionalTheme, TacticType};
 
 /// Engine evaluation score
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum Score {
     /// Centipawn advantage (positive = white advantage)
@@ -25,7 +25,7 @@ impl Score {
 }
 
 /// Full engine evaluation for a position
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EngineEvaluation {
     pub score: Score,
@@ -38,7 +38,7 @@ pub struct EngineEvaluation {
 }
 
 /// Result of requesting a move from the engine
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EngineMove {
     pub uci: String,
@@ -46,7 +46,7 @@ pub struct EngineMove {
 }
 
 /// Classification of a move's quality
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum MoveClassification {
     Best,
@@ -103,7 +103,7 @@ impl MoveClassification {
 }
 
 /// Per-move evaluation for game review
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MoveEvaluation {
     pub move_number: u32,
@@ -125,7 +125,7 @@ pub struct MoveEvaluation {
 // ─── In-Game Coaching Types ──────────────────────────────────────
 
 /// How much coaching feedback to show during play
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum CoachingLevel {
     /// All feedback: pre-move hints + post-move for every classification
@@ -140,7 +140,7 @@ pub enum CoachingLevel {
 }
 
 /// Post-move coaching feedback during gameplay
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct InGameCoachingFeedback {
     pub classification: MoveClassification,
@@ -153,7 +153,7 @@ pub struct InGameCoachingFeedback {
 }
 
 /// Pre-move hint shown before the player's next move
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PreMoveHint {
     pub hint_text: Option<String>,
@@ -172,7 +172,7 @@ impl Default for PreMoveHint {
 }
 
 /// Category of pre-move hint
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum PreMoveHintType {
     /// Tactic available or hanging piece detected
@@ -188,7 +188,7 @@ pub enum PreMoveHintType {
 // ─── Post-Game Review Enhancement Types ──────────────────────────
 
 /// A pivotal moment in the game where the evaluation swung significantly
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CriticalMoment {
     pub move_index: usize,
@@ -198,7 +198,7 @@ pub struct CriticalMoment {
 }
 
 /// Summary of recurring patterns across a game's errors
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PatternSummary {
     pub total_errors: u32,
@@ -209,7 +209,7 @@ pub struct PatternSummary {
 }
 
 /// A recommended study topic based on game weaknesses
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct StudySuggestion {
     pub topic: String,

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Color } from "../../types/chess";
-  import type { GameConfig, EngineStrength, PersonalityProfile, OpponentMode } from "../../types/game";
-  import type { CoachingLevel } from "../../types/engine";
+  import type { Color } from "../../api/bindings";
+  import type { GameConfig, EngineStrength, PersonalityProfile, OpponentMode } from "../../api/bindings";
+  import type { CoachingLevel } from "../../api/bindings";
   import { ENGINE_PRESETS } from "../../types/game";
   import LoadingSpinner from "../ui/LoadingSpinner.svelte";
   import Button from "../ui/Button.svelte";

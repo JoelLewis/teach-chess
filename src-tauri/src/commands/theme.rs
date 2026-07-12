@@ -3,12 +3,14 @@ use crate::error::AppError;
 use tauri::State;
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_theme(config: State<'_, std::sync::Mutex<AppConfigState>>) -> Result<String, AppError> {
     let lock = config.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     Ok(lock.get_theme().to_string())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_theme(
     theme: String,
     config: State<'_, std::sync::Mutex<AppConfigState>>,

@@ -13,7 +13,7 @@
     CriticalMoment,
     PatternSummary,
     StudySuggestion,
-  } from "../../types/engine";
+  } from "../../api/bindings";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   type Props = {

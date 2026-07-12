@@ -1,4 +1,4 @@
-import type { MoveEvaluation } from "../types/engine";
+import type { MoveEvaluation } from "../api/bindings";
 
 export type GameStats = {
   accuracyPct: number;

@@ -1,59 +1,87 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { Position } from "../types/chess";
+// Thin wrappers around the generated tauri-specta bindings (./bindings.ts).
+// Unwraps the Result envelope so callers keep plain promise semantics:
+// resolved with data, rejected with the serialized backend error.
+import { commands } from "./bindings";
 import type {
-  GameConfig,
-  GameRecord,
-  PersonalityProfile,
-  OpponentMode,
-  SelectedMove,
-} from "../types/game";
-import type {
-  EngineEvaluation,
-  EngineMove,
-  MoveEvaluation,
-  LlmStatus,
-  ModelStatus,
-  CoachingResponse,
+  AdaptivePrompt,
   CoachingContext,
   CoachingLevel,
-  InGameCoachingFeedback,
-  PreMoveHint,
+  CoachingResponse,
   CriticalMoment,
-  PatternSummary,
-  StudySuggestion,
+  DashboardData,
+  DifficultyTarget,
+  DrillMoveResult,
+  DrillState,
+  DrillStats,
+  EngineEvaluation,
+  EngineMove,
+  GameConfig,
   GamePhase,
-} from "../types/engine";
+  GameRecord,
+  InGameCoachingFeedback,
+  LlmStatus,
+  ModelStatus,
+  MoveEvaluation,
+  Opening,
+  OpeningPosition,
+  OpponentMode,
+  PatternSummary,
+  PersonalityProfile,
+  Player,
+  PlayerSettings,
+  Position,
+  PreMoveHint,
+  PuzzleFilter,
+  PuzzleMoveResult,
+  PuzzleSessionStats,
+  PuzzleState,
+  RepertoireEntry,
+  RepertoireFilter,
+  SelectedMove,
+  SkillProfile,
+  SkillRating,
+  StudySuggestion,
+} from "./bindings";
+import type { Theme } from "../types/theme";
+
+type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: string };
+
+async function unwrap<T>(result: Promise<CommandResult<T>>): Promise<T> {
+  const r = await result;
+  if (r.status === "error") throw r.error;
+  return r.data;
+}
 
 // ─── Game Commands ───────────────────────────────────────────
 
 export function newGame(config: GameConfig): Promise<Position> {
-  return invoke<Position>("new_game", { config });
+  return unwrap(commands.newGame(config));
 }
 
 export function makeMove(uci: string): Promise<Position> {
-  return invoke<Position>("make_move", { uci });
+  return unwrap(commands.makeMove(uci));
 }
 
 export function resign(): Promise<GameRecord> {
-  return invoke<GameRecord>("resign");
+  return unwrap(commands.resign());
 }
 
 export function saveCompletedGame(): Promise<GameRecord> {
-  return invoke<GameRecord>("save_completed_game");
+  return unwrap(commands.saveCompletedGame());
 }
 
 export function getPosition(): Promise<Position> {
-  return invoke<Position>("get_position");
+  return unwrap(commands.getPosition());
 }
 
 // ─── Engine Commands ─────────────────────────────────────────
 
 export function startEngine(): Promise<boolean> {
-  return invoke<boolean>("start_engine");
+  return unwrap(commands.startEngine());
 }
 
-export function stopEngine(): Promise<void> {
-  return invoke<void>("stop_engine");
+export async function stopEngine(): Promise<void> {
+  await unwrap(commands.stopEngine());
 }
 
 export function getEngineMove(
@@ -62,19 +90,16 @@ export function getEngineMove(
   elo?: number,
   skillLevel?: number,
 ): Promise<EngineMove> {
-  return invoke<EngineMove>("get_engine_move", {
-    fen,
-    depth: depth ?? null,
-    elo: elo ?? null,
-    skillLevel: skillLevel ?? null,
-  });
+  return unwrap(
+    commands.getEngineMove(fen, depth ?? null, elo ?? null, skillLevel ?? null),
+  );
 }
 
 export function analyzePosition(
   fen: string,
   depth: number,
 ): Promise<EngineEvaluation> {
-  return invoke<EngineEvaluation>("analyze_position", { fen, depth });
+  return unwrap(commands.analyzePosition(fen, depth));
 }
 
 // ─── Opponent Commands ──────────────────────────────────────
@@ -86,40 +111,35 @@ export function getOpponentMove(
   weakCategories?: string[],
   depth?: number,
 ): Promise<SelectedMove> {
-  return invoke<SelectedMove>("get_opponent_move", {
-    fen,
-    depth: depth ?? null,
-    personality,
-    teachingMode,
-    weakCategories: weakCategories ?? null,
-  });
+  return unwrap(
+    commands.getOpponentMove(
+      fen,
+      depth ?? null,
+      personality,
+      teachingMode,
+      weakCategories ?? null,
+    ),
+  );
 }
 
 export function resolvePersonality(
   mode: OpponentMode,
   explicit?: PersonalityProfile,
 ): Promise<PersonalityProfile> {
-  return invoke<PersonalityProfile>("resolve_personality", {
-    mode,
-    explicit: explicit ?? null,
-  });
+  return unwrap(commands.resolvePersonality(mode, explicit ?? null));
 }
 
 // ─── Player Commands ─────────────────────────────────────────
 
-type Player = {
-  id: string;
-  displayName: string;
-  createdAt: string;
-  gamesPlayed: number;
-};
-
 export function getOrCreatePlayer(displayName: string): Promise<Player> {
-  return invoke<Player>("get_or_create_player", { displayName });
+  return unwrap(commands.getOrCreatePlayer(displayName));
 }
 
-export function updatePlayerSettings(playerId: string, settings: unknown) {
-  return invoke("update_player_settings", { playerId, settings });
+export function updatePlayerSettings(
+  playerId: string,
+  settings: PlayerSettings,
+): Promise<Player> {
+  return unwrap(commands.updatePlayerSettings(playerId, settings));
 }
 
 // ─── Review Commands ─────────────────────────────────────────
@@ -128,14 +148,14 @@ export function getGameReview(
   gameId: string,
   depth: number,
 ): Promise<MoveEvaluation[]> {
-  return invoke<MoveEvaluation[]>("get_game_review", { gameId, depth });
+  return unwrap(commands.getGameReview(gameId, depth));
 }
 
 export function getGameHistory(
   limit: number,
   offset: number,
 ): Promise<GameRecord[]> {
-  return invoke<GameRecord[]>("get_game_history", { limit, offset });
+  return unwrap(commands.getGameHistory(limit, offset));
 }
 
 // ─── In-Game Coaching Commands ──────────────────────────────────
@@ -147,13 +167,15 @@ export function evaluatePlayerMove(
   moveNumber: number,
   coachingLevel: CoachingLevel,
 ): Promise<InGameCoachingFeedback> {
-  return invoke<InGameCoachingFeedback>("evaluate_player_move", {
-    fenBefore,
-    fenAfter,
-    isPlayerWhite,
-    moveNumber,
-    coachingLevel,
-  });
+  return unwrap(
+    commands.evaluatePlayerMove(
+      fenBefore,
+      fenAfter,
+      isPlayerWhite,
+      moveNumber,
+      coachingLevel,
+    ),
+  );
 }
 
 export function analyzePreMoveHints(
@@ -163,13 +185,15 @@ export function analyzePreMoveHints(
   isPlayerWhite: boolean,
   opponentPersonality?: PersonalityProfile | null,
 ): Promise<PreMoveHint> {
-  return invoke<PreMoveHint>("analyze_pre_move_hints", {
-    fen,
-    previousPhase,
-    coachingLevel,
-    isPlayerWhite,
-    opponentPersonality: opponentPersonality ?? null,
-  });
+  return unwrap(
+    commands.analyzePreMoveHints(
+      fen,
+      previousPhase,
+      coachingLevel,
+      isPlayerWhite,
+      opponentPersonality ?? null,
+    ),
+  );
 }
 
 // ─── Review Enhancement Commands ────────────────────────────────
@@ -178,63 +202,59 @@ export function getCriticalMoments(
   evaluations: MoveEvaluation[],
   isPlayerWhite: boolean,
 ): Promise<CriticalMoment[]> {
-  return invoke<CriticalMoment[]>("get_critical_moments", {
-    evaluations,
-    isPlayerWhite,
-  });
+  return commands.getCriticalMoments(evaluations, isPlayerWhite);
 }
 
 export function getPatternSummary(
   evaluations: MoveEvaluation[],
   isPlayerWhite: boolean,
 ): Promise<PatternSummary> {
-  return invoke<PatternSummary>("get_pattern_summary", {
-    evaluations,
-    isPlayerWhite,
-  });
+  return commands.getPatternSummary(evaluations, isPlayerWhite);
 }
 
 export function getStudySuggestions(
   summary: PatternSummary,
 ): Promise<StudySuggestion[]> {
-  return invoke<StudySuggestion[]>("get_study_suggestions", { summary });
+  return commands.getStudySuggestions(summary);
 }
 
 // ─── Puzzle Commands ────────────────────────────────────────────
 
-import type {
-  PuzzleState,
-  PuzzleMoveResult,
-  PuzzleFilter,
-  PuzzleSessionStats,
-} from "../types/puzzle";
-
-export function loadNextPuzzle(filter: PuzzleFilter): Promise<PuzzleState> {
-  return invoke<PuzzleState>("load_next_puzzle", { filter });
+export function loadNextPuzzle(
+  filter: Partial<PuzzleFilter>,
+): Promise<PuzzleState> {
+  return unwrap(
+    commands.loadNextPuzzle({
+      category: filter.category ?? null,
+      minDifficulty: filter.minDifficulty ?? null,
+      maxDifficulty: filter.maxDifficulty ?? null,
+      themes: filter.themes ?? null,
+    }),
+  );
 }
 
 export function getPuzzleState(): Promise<PuzzleState | null> {
-  return invoke<PuzzleState | null>("get_puzzle_state");
+  return unwrap(commands.getPuzzleState());
 }
 
 export function submitPuzzleMove(uci: string): Promise<PuzzleMoveResult> {
-  return invoke<PuzzleMoveResult>("submit_puzzle_move", { uci });
+  return unwrap(commands.submitPuzzleMove(uci));
 }
 
 export function requestPuzzleHint(): Promise<string | null> {
-  return invoke<string | null>("request_puzzle_hint");
+  return unwrap(commands.requestPuzzleHint());
 }
 
 export function abandonPuzzle(): Promise<PuzzleMoveResult> {
-  return invoke<PuzzleMoveResult>("abandon_puzzle");
+  return unwrap(commands.abandonPuzzle());
 }
 
-export function savePuzzleResult(solved: boolean): Promise<void> {
-  return invoke<void>("save_puzzle_result", { solved });
+export async function savePuzzleResult(solved: boolean): Promise<void> {
+  await unwrap(commands.savePuzzleResult(solved));
 }
 
 export function getPuzzleStats(): Promise<PuzzleSessionStats> {
-  return invoke<PuzzleSessionStats>("get_puzzle_stats");
+  return unwrap(commands.getPuzzleStats());
 }
 
 export function importPuzzlesFromCsv(
@@ -242,138 +262,117 @@ export function importPuzzlesFromCsv(
   minRating: number,
   maxRating: number,
 ): Promise<number> {
-  return invoke<number>("import_puzzles_from_csv", {
-    path,
-    minRating,
-    maxRating,
-  });
+  return unwrap(commands.importPuzzlesFromCsv(path, minRating, maxRating));
 }
 
 export function getPuzzleThemes(): Promise<string[]> {
-  return invoke<string[]>("get_puzzle_themes");
+  return unwrap(commands.getPuzzleThemes());
 }
 
 // ─── Repertoire Commands ──────────────────────────────────────────
 
-import type {
-  Opening,
-  OpeningPosition,
-  RepertoireEntry,
-  RepertoireFilter,
-  DrillState,
-  DrillMoveResult,
-  DrillStats,
-} from "../types/repertoire";
-
-export function getOpenings(filter: RepertoireFilter): Promise<Opening[]> {
-  return invoke<Opening[]>("get_openings", { filter });
+export function getOpenings(
+  filter: Partial<RepertoireFilter>,
+): Promise<Opening[]> {
+  return unwrap(
+    commands.getOpenings({
+      color: filter.color ?? null,
+      ecoPrefix: filter.ecoPrefix ?? null,
+      minDifficulty: filter.minDifficulty ?? null,
+      maxDifficulty: filter.maxDifficulty ?? null,
+    }),
+  );
 }
 
 export function getOpeningDetail(
   openingId: string,
 ): Promise<[Opening, OpeningPosition[]]> {
-  return invoke<[Opening, OpeningPosition[]]>("get_opening_detail", {
-    openingId,
-  });
+  return unwrap(commands.getOpeningDetail(openingId));
 }
 
 export function getRepertoire(openingId: string): Promise<RepertoireEntry[]> {
-  return invoke<RepertoireEntry[]>("get_repertoire", { openingId });
+  return unwrap(commands.getRepertoire(openingId));
 }
 
-export function addToRepertoire(
+export async function addToRepertoire(
   openingId: string,
   positionFen: string,
   moveUci: string,
   moveSan: string,
 ): Promise<void> {
-  return invoke<void>("add_to_repertoire", {
-    openingId,
-    positionFen,
-    moveUci,
-    moveSan,
-  });
+  await unwrap(
+    commands.addToRepertoire(openingId, positionFen, moveUci, moveSan),
+  );
 }
 
-export function removeFromRepertoire(entryId: string): Promise<void> {
-  return invoke<void>("remove_from_repertoire", { entryId });
+export async function removeFromRepertoire(entryId: string): Promise<void> {
+  await unwrap(commands.removeFromRepertoire(entryId));
 }
 
 export function startRepertoireDrill(openingId: string): Promise<DrillState> {
-  return invoke<DrillState>("start_repertoire_drill", { openingId });
+  return unwrap(commands.startRepertoireDrill(openingId));
 }
 
 export function submitDrillMove(uci: string): Promise<DrillMoveResult> {
-  return invoke<DrillMoveResult>("submit_drill_move", { uci });
+  return unwrap(commands.submitDrillMove(uci));
 }
 
 export function getDrillStats(): Promise<DrillStats> {
-  return invoke<DrillStats>("get_drill_stats");
+  return unwrap(commands.getDrillStats());
 }
 
 export function importOpeningsFromJson(path: string): Promise<number> {
-  return invoke<number>("import_openings_from_json", { path });
+  return unwrap(commands.importOpeningsFromJson(path));
 }
 
 // ─── Assessment Commands ────────────────────────────────────────
 
-import type {
-  SkillProfile,
-  SkillRating,
-  DifficultyTarget,
-} from "../types/assessment";
-
 export function getSkillProfile(): Promise<SkillProfile> {
-  return invoke<SkillProfile>("get_skill_profile");
+  return unwrap(commands.getSkillProfile());
 }
 
-export function getSkillRating(
-  category: string,
-): Promise<SkillRating | null> {
-  return invoke<SkillRating | null>("get_skill_rating", { category });
+export function getSkillRating(category: string): Promise<SkillRating | null> {
+  return unwrap(commands.getSkillRating(category));
 }
 
 export function getDifficultyTarget(
   category: string,
 ): Promise<DifficultyTarget> {
-  return invoke<DifficultyTarget>("get_difficulty_target", { category });
+  return unwrap(commands.getDifficultyTarget(category));
 }
 
 // ─── Dashboard Commands ──────────────────────────────────────────
 
-import type { DashboardData, AdaptivePrompt } from "../types/dashboard";
-import type { Theme } from "../types/theme";
-
 export function getDashboardData(): Promise<DashboardData> {
-  return invoke<DashboardData>("get_dashboard_data");
+  return unwrap(commands.getDashboardData());
 }
 
 export function checkAdaptiveDifficulty(): Promise<AdaptivePrompt> {
-  return invoke<AdaptivePrompt>("check_adaptive_difficulty");
+  return unwrap(commands.checkAdaptiveDifficulty());
 }
 
 // ─── LLM Commands ───────────────────────────────────────────────
 
 export function getLlmStatus(): Promise<LlmStatus> {
-  return invoke<LlmStatus>("get_llm_status");
+  return unwrap(commands.getLlmStatus());
 }
 
-export function downloadModel(modelId: string): Promise<void> {
-  return invoke<void>("download_model", { modelId });
+export async function downloadModel(modelId: string): Promise<void> {
+  await unwrap(commands.downloadModel(modelId));
 }
 
 export function getAvailableModels(): Promise<ModelStatus[]> {
-  return invoke<ModelStatus[]>("get_available_models");
+  return unwrap(commands.getAvailableModels());
 }
 
 // ─── Theme Commands ─────────────────────────────────────────────
 
-export function getTheme(): Promise<Theme> {
-  return invoke<Theme>("get_theme");
+export async function getTheme(): Promise<Theme> {
+  return (await unwrap(commands.getTheme())) as Theme;
 }
 
-export function setTheme(theme: Theme): Promise<void> {
-  return invoke<void>("set_theme", { theme });
+export async function setTheme(theme: Theme): Promise<void> {
+  await unwrap(commands.setTheme(theme));
 }
 
 export function generateGameSummary(params: {
@@ -386,16 +385,18 @@ export function generateGameSummary(params: {
   mistakes: number;
   inaccuracies: number;
 }): Promise<string> {
-  return invoke<string>("generate_game_summary", {
-    result: params.result,
-    outcomeType: params.outcomeType,
-    moveCount: params.moveCount,
-    accuracyPct: params.accuracyPct,
-    bestMoves: params.bestMoves,
-    blunders: params.blunders,
-    mistakes: params.mistakes,
-    inaccuracies: params.inaccuracies,
-  });
+  return unwrap(
+    commands.generateGameSummary(
+      params.result,
+      params.outcomeType,
+      params.moveCount,
+      params.accuracyPct,
+      params.bestMoves,
+      params.blunders,
+      params.mistakes,
+      params.inaccuracies,
+    ),
+  );
 }
 
 export function generateCoaching(
@@ -406,12 +407,14 @@ export function generateCoaching(
   engineBestSan: string | null,
   requestId?: string,
 ): Promise<CoachingResponse> {
-  return invoke<CoachingResponse>("generate_coaching", {
-    fen,
-    classification,
-    coachingContext,
-    playerMoveSan,
-    engineBestSan,
-    requestId: requestId ?? null,
-  });
+  return unwrap(
+    commands.generateCoaching(
+      fen,
+      classification,
+      coachingContext,
+      playerMoveSan,
+      engineBestSan,
+      requestId ?? null,
+    ),
+  );
 }

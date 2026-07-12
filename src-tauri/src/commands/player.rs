@@ -8,6 +8,7 @@ use crate::error::AppError;
 use crate::models::player::{Player, PlayerSettings};
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_or_create_player(
     display_name: String,
     db: State<'_, Mutex<Database>>,
@@ -23,6 +24,7 @@ pub fn get_or_create_player(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn update_player_settings(
     player_id: String,
     settings: PlayerSettings,

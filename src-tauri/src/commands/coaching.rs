@@ -14,6 +14,7 @@ use crate::models::heuristics::GamePhase;
 
 /// Evaluate a player's move during gameplay: engine analysis + classification + coaching text
 #[tauri::command]
+#[specta::specta]
 pub async fn evaluate_player_move(
     fen_before: String,
     fen_after: String,
@@ -89,6 +90,7 @@ pub async fn evaluate_player_move(
 
 /// Analyze the current position for pre-move hints (heuristic-only, no engine)
 #[tauri::command]
+#[specta::specta]
 pub async fn analyze_pre_move_hints(
     fen: String,
     previous_phase: Option<GamePhase>,

@@ -19,7 +19,7 @@ fn extract_string_array(ctx: &Option<serde_json::Value>, key: &str) -> Vec<Strin
 }
 
 /// Status of the LLM subsystem
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct LlmStatus {
     pub available: bool,
@@ -31,7 +31,7 @@ pub struct LlmStatus {
 }
 
 /// Download/availability status of a single model
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelStatus {
     pub id: String,
@@ -67,6 +67,7 @@ fn get_available_memory_mb() -> u32 {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::error::AppError> {
     #[cfg(not(feature = "llm"))]
     {
@@ -117,6 +118,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_available_models(
     app: tauri::AppHandle,
 ) -> Result<Vec<ModelStatus>, crate::error::AppError> {
@@ -147,6 +149,7 @@ pub async fn get_available_models(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn download_model(
     model_id: String,
     app: tauri::AppHandle,
@@ -231,10 +234,11 @@ impl ProgressThrottle {
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
+#[specta::specta]
 pub async fn generate_coaching(
     fen: String,
     classification: String,
-    coaching_context: Option<serde_json::Value>,
+    coaching_context: Option<crate::models::heuristics::CoachingContext>,
     player_move_san: String,
     engine_best_san: Option<String>,
     request_id: Option<String>,
@@ -242,6 +246,11 @@ pub async fn generate_coaching(
     db: tauri::State<'_, std::sync::Mutex<crate::db::connection::Database>>,
     player_id: tauri::State<'_, crate::CurrentPlayerId>,
 ) -> Result<CoachingResponse, crate::error::AppError> {
+    // The generation pipeline extracts fields dynamically, so convert the
+    // typed context (which is what the frontend sends) back to JSON.
+    let coaching_context: Option<serde_json::Value> = coaching_context
+        .map(|ctx| serde_json::to_value(ctx).expect("CoachingContext serializes to JSON"));
+
     // Determine player level
     let level = determine_player_level(&db, &player_id)?;
     let level_str = match level {
@@ -453,6 +462,7 @@ async fn try_llm_generation(
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
+#[specta::specta]
 pub async fn generate_game_summary(
     result: String,
     outcome_type: String,

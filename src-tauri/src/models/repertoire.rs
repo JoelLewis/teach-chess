@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Opening {
     pub id: String,
@@ -18,7 +18,7 @@ pub struct Opening {
     pub difficulty: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct OpeningPosition {
     pub id: String,
@@ -30,7 +30,7 @@ pub struct OpeningPosition {
     pub move_san: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RepertoireEntry {
     pub id: String,
@@ -42,7 +42,7 @@ pub struct RepertoireEntry {
     pub notes: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DrillState {
     pub opening: Opening,
@@ -55,7 +55,7 @@ pub struct DrillState {
     pub entries_remaining: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DrillMoveResult {
     pub correct: bool,
@@ -65,7 +65,7 @@ pub struct DrillMoveResult {
     pub explanation: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RepertoireFilter {
     pub color: Option<String>,
@@ -74,7 +74,7 @@ pub struct RepertoireFilter {
     pub max_difficulty: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DrillAttempt {
     pub id: String,
@@ -87,7 +87,7 @@ pub struct DrillAttempt {
     pub srs_next_review: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DrillStats {
     pub total_drills: u32,

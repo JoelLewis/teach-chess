@@ -14,6 +14,7 @@ use crate::puzzle::session;
 use crate::puzzle::srs;
 
 #[tauri::command]
+#[specta::specta]
 pub fn load_next_puzzle(
     filter: PuzzleFilter,
     db: State<'_, Mutex<Database>>,
@@ -67,6 +68,7 @@ pub fn load_next_puzzle(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_puzzle_state(
     session: State<'_, Mutex<PuzzleSessionState>>,
 ) -> Result<Option<PuzzleState>, AppError> {
@@ -102,6 +104,7 @@ pub fn get_puzzle_state(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn submit_puzzle_move(
     uci: String,
     session: State<'_, Mutex<PuzzleSessionState>>,
@@ -113,6 +116,7 @@ pub fn submit_puzzle_move(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn request_puzzle_hint(
     session: State<'_, Mutex<PuzzleSessionState>>,
 ) -> Result<Option<String>, AppError> {
@@ -123,6 +127,7 @@ pub fn request_puzzle_hint(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn abandon_puzzle(
     db: State<'_, Mutex<Database>>,
     player_state: State<'_, CurrentPlayerId>,
@@ -187,6 +192,7 @@ pub fn abandon_puzzle(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_puzzle_result(
     solved: bool,
     db: State<'_, Mutex<Database>>,
@@ -245,6 +251,7 @@ pub fn save_puzzle_result(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_puzzle_stats(
     db: State<'_, Mutex<Database>>,
     player_state: State<'_, CurrentPlayerId>,
@@ -257,6 +264,7 @@ pub fn get_puzzle_stats(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn import_puzzles_from_csv(
     path: String,
     min_rating: u32,
@@ -269,6 +277,7 @@ pub fn import_puzzles_from_csv(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_puzzle_themes(db: State<'_, Mutex<Database>>) -> Result<Vec<String>, AppError> {
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
     let themes = db.get_puzzle_themes()?;

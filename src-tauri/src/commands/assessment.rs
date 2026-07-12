@@ -8,6 +8,7 @@ use crate::error::AppError;
 use crate::models::assessment::{DifficultyTarget, SkillProfile, SkillRating};
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_skill_profile(
     db: State<'_, Mutex<Database>>,
     player_state: State<'_, CurrentPlayerId>,
@@ -18,6 +19,7 @@ pub fn get_skill_profile(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_skill_rating(
     category: String,
     db: State<'_, Mutex<Database>>,
@@ -30,6 +32,7 @@ pub fn get_skill_rating(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_difficulty_target(
     category: String,
     db: State<'_, Mutex<Database>>,

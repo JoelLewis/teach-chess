@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AdaptivePrompt } from "../../types/dashboard";
+  import type { AdaptivePrompt } from "../../api/bindings";
 
   type Props = {
     prompt: AdaptivePrompt;

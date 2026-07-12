@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum PuzzleCategory {
     Tactical,
@@ -32,7 +32,7 @@ impl PuzzleCategory {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Puzzle {
     pub id: String,
@@ -49,7 +49,7 @@ pub struct Puzzle {
     pub explanation: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PuzzleAttempt {
     pub id: String,
@@ -65,7 +65,7 @@ pub struct PuzzleAttempt {
 }
 
 /// Sent to the frontend when a puzzle is loaded
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PuzzleState {
     pub puzzle: Puzzle,
@@ -82,7 +82,7 @@ pub struct PuzzleState {
 }
 
 /// Result of submitting a move
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PuzzleMoveResult {
     pub correct: bool,
@@ -100,7 +100,7 @@ pub struct PuzzleMoveResult {
 }
 
 /// Filter criteria for loading puzzles
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PuzzleFilter {
     pub category: Option<PuzzleCategory>,
@@ -110,7 +110,7 @@ pub struct PuzzleFilter {
 }
 
 /// Aggregate stats for the puzzle session
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PuzzleSessionStats {
     pub total_attempts: u32,
