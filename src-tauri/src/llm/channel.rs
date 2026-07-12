@@ -9,6 +9,12 @@ use super::LlmError;
 /// Maximum tokens generated per request (coaching text is 1-4 sentences).
 const MAX_TOKENS: u32 = 128;
 
+/// Free-text GBNF grammar for coaching output: any text without `<` or `>`
+/// (hard-blocks turn/channel-marker leakage) capped at 600 characters
+/// (hard-blocks runaway generation). Chess coaching has no field to extract,
+/// so no tagged shape is forced.
+const FREE_TEXT_GRAMMAR: &str = "root ::= [^<>]{1,600}\n";
+
 /// A job submitted to the inference worker.
 struct InferenceJob {
     prompt: String,
@@ -85,9 +91,10 @@ impl InferenceChannel {
                 // clone to the blocking task.
                 let manager = manager.clone();
                 let result = tokio::task::spawn_blocking(move || {
-                    manager.generate_cancellable(
+                    manager.generate_cancellable_with_grammar(
                         &prompt,
                         MAX_TOKENS,
+                        Some(FREE_TEXT_GRAMMAR),
                         |text| {
                             if let Some(ref tx) = token_tx {
                                 let _ = tx.send(text.to_string());
