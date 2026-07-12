@@ -70,6 +70,14 @@
       eval_.coachingContext,
       eval_.playerMoveSan,
       eval_.engineBestSan,
+      {
+        evalBefore: eval_.evalBefore,
+        evalAfter: eval_.evalAfter,
+        engineBestSan: eval_.engineBestSan,
+        playerMoveUci: eval_.playerMoveUci,
+        pv: eval_.pv,
+        refutationPv: eval_.refutationPv,
+      },
       requestId,
     )
       .then((response) => {

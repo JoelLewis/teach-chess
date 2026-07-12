@@ -5,6 +5,7 @@ import { commands } from "./bindings";
 import type {
   AdaptivePrompt,
   CoachingContext,
+  CoachingEngineData,
   CoachingLevel,
   CoachingResponse,
   CriticalMoment,
@@ -405,6 +406,7 @@ export function generateCoaching(
   coachingContext: CoachingContext | null,
   playerMoveSan: string,
   engineBestSan: string | null,
+  engineData: CoachingEngineData | null,
   requestId?: string,
 ): Promise<CoachingResponse> {
   return unwrap(
@@ -414,6 +416,7 @@ export function generateCoaching(
       coachingContext,
       playerMoveSan,
       engineBestSan,
+      engineData,
       requestId ?? null,
     ),
   );

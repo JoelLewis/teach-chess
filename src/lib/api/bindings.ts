@@ -33,7 +33,16 @@ export const commands = {
 	kingSafety: KingSafety,
 	tactics: TacticalMotif[],
 	themes: PositionalTheme[],
-} | null, playerMoveSan: string, engineBestSan: string | null, requestId: string | null) => typedError<CoachingResponse, string>(__TAURI_INVOKE("generate_coaching", { fen, classification, coachingContext, playerMoveSan, engineBestSan, requestId })),
+} | null, playerMoveSan: string, engineBestSan: string | null, engineData: {
+	evalBefore: Score | null,
+	evalAfter: Score | null,
+	engineBestSan: string | null,
+	playerMoveUci: string | null,
+	/**  Best line from the pre-move position, UCI. */
+	pv?: string[],
+	/**  Refutation line from the post-move position, UCI. */
+	refutationPv?: string[],
+} | null, requestId: string | null) => typedError<CoachingResponse, string>(__TAURI_INVOKE("generate_coaching", { fen, classification, coachingContext, playerMoveSan, engineBestSan, engineData, requestId })),
 	generateGameSummary: (result: string, outcomeType: string, moveCount: number, accuracyPct: number, bestMoves: number, blunders: number, mistakes: number, inaccuracies: number) => typedError<string, string>(__TAURI_INVOKE("generate_game_summary", { result, outcomeType, moveCount, accuracyPct, bestMoves, blunders, mistakes, inaccuracies })),
 	/**  Evaluate a player's move during gameplay: engine analysis + classification + coaching text */
 	evaluatePlayerMove: (fenBefore: string, fenAfter: string, isPlayerWhite: boolean, moveNumber: number, coachingLevel: CoachingLevel) => typedError<InGameCoachingFeedback, string>(__TAURI_INVOKE("evaluate_player_move", { fenBefore, fenAfter, isPlayerWhite, moveNumber, coachingLevel })),
@@ -141,6 +150,21 @@ export type CoachingContext = {
 	kingSafety: KingSafety,
 	tactics: TacticalMotif[],
 	themes: PositionalTheme[],
+};
+
+/**
+ *  Engine evaluation data supplied by the frontend to ground the coaching
+ *  prompt (mirrors the persisted fields of `MoveEvaluation`).
+ */
+export type CoachingEngineData = {
+	evalBefore: Score | null,
+	evalAfter: Score | null,
+	engineBestSan: string | null,
+	playerMoveUci: string | null,
+	/**  Best line from the pre-move position, UCI. */
+	pv?: string[],
+	/**  Refutation line from the post-move position, UCI. */
+	refutationPv?: string[],
 };
 
 /**  How much coaching feedback to show during play */
