@@ -145,6 +145,14 @@
     navigate("home");
   }
 
+  // Dev-only: let playtest drivers ask which screen is showing. The DEV
+  // branch is statically eliminated from production bundles by Vite.
+  if (import.meta.env.DEV) {
+    import("./lib/dev/playtest")
+      .then((p) => p.registerViewGetter(() => page))
+      .catch((err) => console.error("playtest view getter failed:", err));
+  }
+
   // Initialize theme on startup
   $effect(() => {
     themeStore.load();
