@@ -13,37 +13,12 @@ pub struct EngineStrength {
     pub skill_level: u8,
 }
 
-#[allow(dead_code)]
 impl EngineStrength {
     #[cfg(test)]
     pub fn beginner() -> Self {
         Self {
             elo: 1350,
             skill_level: 1,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn intermediate() -> Self {
-        Self {
-            elo: 1800,
-            skill_level: 8,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn advanced() -> Self {
-        Self {
-            elo: 2200,
-            skill_level: 14,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn maximum() -> Self {
-        Self {
-            elo: 3190,
-            skill_level: 20,
         }
     }
 }

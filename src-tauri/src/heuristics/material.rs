@@ -113,10 +113,11 @@ mod tests {
         // White has both bishops, black has only one
         let chess = from_fen("r1bqk2r/pppppppp/2n2n2/8/8/2N2N2/PPPPPPPP/R1BQKB1R w KQkq - 0 1");
         let mat = analyze_material(&chess);
-        assert!(mat
-            .imbalances
-            .iter()
-            .any(|i| matches!(i, MaterialImbalance::BishopPair { side: Side::White })));
+        assert!(
+            mat.imbalances
+                .iter()
+                .any(|i| matches!(i, MaterialImbalance::BishopPair { side: Side::White }))
+        );
     }
 
     #[test]
@@ -124,9 +125,10 @@ mod tests {
         // White has 2R 1N, black has 1R 1B 1N — white up the exchange
         let chess = from_fen("r1bqk3/pppppppp/5n2/8/8/5N2/PPPPPPPP/R2QR1K1 w q - 0 1");
         let mat = analyze_material(&chess);
-        assert!(mat
-            .imbalances
-            .iter()
-            .any(|i| matches!(i, MaterialImbalance::ExchangeUp { side: Side::White })));
+        assert!(
+            mat.imbalances
+                .iter()
+                .any(|i| matches!(i, MaterialImbalance::ExchangeUp { side: Side::White }))
+        );
     }
 }

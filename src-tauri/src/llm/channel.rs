@@ -1,12 +1,10 @@
-#![allow(dead_code)]
-
 use std::path::Path;
 
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-use super::candle_backend::{select_device, CandleBackend};
 use super::LlmError;
+use super::candle_backend::{CandleBackend, select_device};
 
 /// A job submitted to the inference worker.
 struct InferenceJob {
@@ -33,8 +31,6 @@ pub struct InferenceChannel {
     /// Tracks the prompt of the currently in-flight request for deduplication.
     in_flight_prompt: Option<String>,
     in_flight_rx: Option<tokio::sync::watch::Receiver<Option<Result<String, LlmError>>>>,
-    /// Which compute device this channel uses.
-    pub device_name: String,
 }
 
 impl InferenceChannel {
@@ -129,7 +125,6 @@ impl InferenceChannel {
             current_cancel: None,
             in_flight_prompt: None,
             in_flight_rx: None,
-            device_name: device_name.clone(),
         };
 
         Ok((channel, device_name))
@@ -141,30 +136,29 @@ impl InferenceChannel {
     /// Deduplicated requests get a dummy (immediately-closed) token receiver.
     pub async fn submit(&mut self, prompt: String) -> Result<SubmitResult, LlmError> {
         // Deduplication: if the same prompt is already in-flight, return a proxy receiver
-        if let Some(ref existing_prompt) = self.in_flight_prompt {
-            if *existing_prompt == prompt {
-                if let Some(ref rx) = self.in_flight_rx {
-                    let mut watch_rx = rx.clone();
-                    let (proxy_tx, proxy_rx) = oneshot::channel();
-                    tokio::spawn(async move {
-                        while watch_rx.changed().await.is_ok() {
-                            if let Some(result) = watch_rx.borrow().as_ref() {
-                                let _ = proxy_tx.send(result.clone());
-                                return;
-                            }
-                        }
-                        let _ = proxy_tx.send(Err(LlmError::InferenceError(
-                            "Dedup channel closed".to_string(),
-                        )));
-                    });
-                    // Dedup'd requests skip streaming — return a closed token receiver
-                    let (_dummy_tx, dummy_rx) = mpsc::unbounded_channel();
-                    return Ok(SubmitResult {
-                        response_rx: proxy_rx,
-                        token_rx: dummy_rx,
-                    });
+        if let Some(ref existing_prompt) = self.in_flight_prompt
+            && *existing_prompt == prompt
+            && let Some(ref rx) = self.in_flight_rx
+        {
+            let mut watch_rx = rx.clone();
+            let (proxy_tx, proxy_rx) = oneshot::channel();
+            tokio::spawn(async move {
+                while watch_rx.changed().await.is_ok() {
+                    if let Some(result) = watch_rx.borrow().as_ref() {
+                        let _ = proxy_tx.send(result.clone());
+                        return;
+                    }
                 }
-            }
+                let _ = proxy_tx.send(Err(LlmError::InferenceError(
+                    "Dedup channel closed".to_string(),
+                )));
+            });
+            // Dedup'd requests skip streaming — return a closed token receiver
+            let (_dummy_tx, dummy_rx) = mpsc::unbounded_channel();
+            return Ok(SubmitResult {
+                response_rx: proxy_rx,
+                token_rx: dummy_rx,
+            });
         }
 
         // Cancel previous request

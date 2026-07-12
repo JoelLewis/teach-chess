@@ -1,4 +1,4 @@
-use shakmaty::{attacks, Bitboard, Chess, Color, File, Position, Rank, Square};
+use shakmaty::{Bitboard, Chess, Color, File, Position, Rank, Square, attacks};
 
 use crate::models::heuristics::{KingSafety, SideKingSafety};
 
@@ -33,10 +33,10 @@ fn open_files_near_king(chess: &Chess, king_sq: Square) -> u32 {
     let all_pawns = chess.board().pawns();
     let mut count = 0;
     for delta in [-1i32, 0, 1] {
-        if let Some(file) = king_sq.file().offset(delta) {
-            if (all_pawns & Bitboard::from_file(file)).is_empty() {
-                count += 1;
-            }
+        if let Some(file) = king_sq.file().offset(delta)
+            && (all_pawns & Bitboard::from_file(file)).is_empty()
+        {
+            count += 1;
         }
     }
     count

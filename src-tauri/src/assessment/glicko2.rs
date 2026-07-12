@@ -92,9 +92,9 @@ pub fn update_rating(player: &SkillRating, opponent_rating: f64, won: bool) -> S
     }
 }
 
-#[allow(dead_code)]
 /// Decay RD over time when a player hasn't played in a category.
 /// `periods` is the number of rating periods (roughly weeks) since last game.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn decay_rd(current_rd: f64, volatility: f64, periods: f64) -> f64 {
     let phi = rd_to_glicko2(current_rd);
     let new_phi = (phi * phi + periods * volatility * volatility).sqrt();

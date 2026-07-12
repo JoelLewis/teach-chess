@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use shakmaty::{fen::Fen, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
+use shakmaty::{CastlingMode, Chess, EnPassantMode, Position as _, fen::Fen, uci::UciMove};
 
 use crate::error::{AppError, RepertoireError};
 use crate::models::repertoire::{DrillMoveResult, DrillState, Opening, RepertoireEntry};
@@ -135,11 +135,7 @@ pub fn drill_quality(correct: bool, time_ms: u64) -> u8 {
     if !correct {
         return 1;
     }
-    if time_ms < 10_000 {
-        5
-    } else {
-        4
-    }
+    if time_ms < 10_000 { 5 } else { 4 }
 }
 
 #[allow(clippy::type_complexity)]

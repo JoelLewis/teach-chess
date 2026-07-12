@@ -36,31 +36,6 @@ impl From<Color> for shakmaty::Color {
     }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum PieceRole {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
-}
-
-impl From<shakmaty::Role> for PieceRole {
-    fn from(r: shakmaty::Role) -> Self {
-        match r {
-            shakmaty::Role::Pawn => PieceRole::Pawn,
-            shakmaty::Role::Knight => PieceRole::Knight,
-            shakmaty::Role::Bishop => PieceRole::Bishop,
-            shakmaty::Role::Rook => PieceRole::Rook,
-            shakmaty::Role::Queen => PieceRole::Queen,
-            shakmaty::Role::King => PieceRole::King,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum GameOutcome {
@@ -87,15 +62,4 @@ pub struct Position {
     pub outcome: Option<GameOutcome>,
     pub move_number: u32,
     pub san_history: Vec<String>,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LegalMove {
-    pub uci: String,
-    pub san: String,
-    pub from: String,
-    pub to: String,
-    pub promotion: Option<PieceRole>,
 }

@@ -22,25 +22,6 @@ impl Score {
     pub fn mate(moves: i32) -> Self {
         Score::Mate { moves }
     }
-
-    /// Normalize to white's perspective (always positive = good for white)
-    #[allow(dead_code, clippy::wrong_self_convention)]
-    pub fn from_white_perspective(&self) -> Self {
-        self.clone()
-    }
-
-    /// Normalize to a specific side's perspective
-    #[allow(dead_code, clippy::wrong_self_convention)]
-    pub fn from_perspective(&self, is_white: bool) -> Self {
-        if is_white {
-            self.clone()
-        } else {
-            match self {
-                Score::Cp { value } => Score::Cp { value: -value },
-                Score::Mate { moves } => Score::Mate { moves: -moves },
-            }
-        }
-    }
 }
 
 /// Full engine evaluation for a position

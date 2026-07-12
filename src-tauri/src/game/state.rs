@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use shakmaty::{
-    fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
+    CastlingMode, Chess, EnPassantMode, Position as _, fen::Fen, san::San, uci::UciMove,
 };
 
 use crate::error::{AppError, GameError};
@@ -28,7 +28,7 @@ impl Default for GameState {
             san_history: Vec::new(),
             uci_history: Vec::new(),
             fen_history: vec![
-                Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string()
+                Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string(),
             ],
             last_move: None,
             game_id: None,
@@ -203,11 +203,6 @@ impl GameState {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn fen(&self) -> String {
-        Fen::from_position(self.chess.clone(), EnPassantMode::Legal).to_string()
-    }
-
     pub fn pgn(&self) -> String {
         let mut pgn = String::new();
         for (i, san) in self.san_history.iter().enumerate() {
@@ -231,21 +226,6 @@ impl GameState {
         }
 
         pgn.trim().to_string()
-    }
-
-    #[allow(dead_code)]
-    pub fn config(&self) -> Option<&GameConfig> {
-        self.config.as_ref()
-    }
-
-    #[allow(dead_code)]
-    pub fn fen_history(&self) -> &[String] {
-        &self.fen_history
-    }
-
-    #[allow(dead_code)]
-    pub fn san_history(&self) -> &[String] {
-        &self.san_history
     }
 
     fn build_game_record(&self, result: String) -> GameRecord {

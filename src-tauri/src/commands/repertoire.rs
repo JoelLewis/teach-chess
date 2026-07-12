@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use tauri::State;
 
+use crate::CurrentPlayerId;
 use crate::db::connection::Database;
 use crate::error::{AppError, RepertoireError};
 use crate::models::repertoire::{
@@ -9,9 +10,8 @@ use crate::models::repertoire::{
     RepertoireEntry, RepertoireFilter,
 };
 use crate::puzzle::srs;
-use crate::repertoire::session;
 use crate::repertoire::RepertoireSessionState;
-use crate::CurrentPlayerId;
+use crate::repertoire::session;
 
 #[tauri::command]
 pub fn get_openings(

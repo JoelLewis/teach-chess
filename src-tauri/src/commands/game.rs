@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use tauri::State;
 
+use crate::CurrentPlayerId;
 use crate::db::connection::Database;
 use crate::engine::process::EngineProcess;
 use crate::error::AppError;
@@ -9,7 +10,6 @@ use crate::game::state::GameState;
 use crate::models::chess::Position;
 use crate::models::game::GameConfig;
 use crate::models::game::GameRecord;
-use crate::CurrentPlayerId;
 
 #[tauri::command]
 pub async fn new_game(

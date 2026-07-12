@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::path::{Path, PathBuf};
 
 use super::LlmError;
@@ -319,17 +317,6 @@ impl ModelManager {
         );
 
         tracing::info!("Model download complete: {}", config.id);
-        Ok(())
-    }
-
-    /// Delete a downloaded model's files.
-    pub fn delete_model(&self, config: &ModelConfig) -> Result<(), LlmError> {
-        let model_dir = self.models_dir.join(config.repo_id);
-        if model_dir.exists() {
-            std::fs::remove_dir_all(&model_dir)
-                .map_err(|e| LlmError::DownloadError(format!("Delete failed: {e}")))?;
-        }
-        tracing::info!("Deleted model: {}", config.id);
         Ok(())
     }
 

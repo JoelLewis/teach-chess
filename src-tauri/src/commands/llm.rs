@@ -46,7 +46,7 @@ pub struct ModelStatus {
 
 /// Detect total system memory in MB using the sysinfo crate.
 /// This is sandbox-compatible (no subprocess spawning).
-#[allow(dead_code)]
+#[cfg(feature = "llm")]
 fn get_system_memory_mb() -> u32 {
     use sysinfo::System;
     let sys = System::new_with_specifics(
@@ -57,7 +57,7 @@ fn get_system_memory_mb() -> u32 {
 
 /// Detect available (free) system memory in MB using the sysinfo crate.
 /// This is sandbox-compatible (no subprocess spawning).
-#[allow(dead_code)]
+#[cfg(feature = "llm")]
 fn get_available_memory_mb() -> u32 {
     use sysinfo::System;
     let sys = System::new_with_specifics(
@@ -524,18 +524,18 @@ fn generate_template_fallback(
 ) -> String {
     let mc = crate::models::engine::MoveClassification::from_str_loose(classification);
 
-    if let Some(ctx_value) = coaching_context {
-        if let Ok(ctx) =
+    if let Some(ctx_value) = coaching_context
+        && let Ok(ctx) =
             serde_json::from_value::<crate::models::heuristics::CoachingContext>(ctx_value.clone())
-        {
-            return crate::coaching::generate_coaching_text(&mc, &ctx);
-        }
+    {
+        return crate::coaching::generate_coaching_text(&mc, &ctx);
     }
 
     crate::coaching::templates::generic_template(mc).to_string()
 }
 
 /// Emit an LLM error event to the frontend so it can handle the failure gracefully.
+#[cfg(feature = "llm")]
 fn emit_llm_error(app: &tauri::AppHandle, request_id: Option<&str>, message: &str) {
     use tauri::Emitter;
 

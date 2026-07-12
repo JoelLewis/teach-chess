@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use shakmaty::{fen::Fen, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _};
+use shakmaty::{CastlingMode, Chess, EnPassantMode, Position as _, fen::Fen, uci::UciMove};
 
 use crate::error::{AppError, PuzzleError};
 use crate::models::puzzle::{Puzzle, PuzzleMoveResult, PuzzleState};

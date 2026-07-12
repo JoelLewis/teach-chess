@@ -3,13 +3,13 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::State;
 
-use crate::assessment::adaptive::{check_adaptive_triggers, AdaptivePrompt, AdaptiveTriggerData};
+use crate::CurrentPlayerId;
+use crate::assessment::adaptive::{AdaptivePrompt, AdaptiveTriggerData, check_adaptive_triggers};
 use crate::db::connection::Database;
 use crate::error::AppError;
 use crate::models::assessment::SkillProfile;
 use crate::models::game::GameRecord;
 use crate::models::puzzle::PuzzleSessionStats;
-use crate::CurrentPlayerId;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,26 +59,26 @@ fn compute_recommendation(
     // Weakest category with < 5 games → focus there
     if let Some(weak_cat) = weakest {
         let weak_rating = profile.ratings.iter().find(|r| r.category == weak_cat);
-        if let Some(r) = weak_rating {
-            if r.games_count < 5 {
-                return DailyRecommendation {
-                    text: format!("Focus on {} puzzles to strengthen your weak area", weak_cat),
-                    target_activity: "problems".to_string(),
-                    target_category: Some(weak_cat.to_string()),
-                };
-            }
+        if let Some(r) = weak_rating
+            && r.games_count < 5
+        {
+            return DailyRecommendation {
+                text: format!("Focus on {} puzzles to strengthen your weak area", weak_cat),
+                target_activity: "problems".to_string(),
+                target_category: Some(weak_cat.to_string()),
+            };
         }
     }
 
     // No game in 3+ days → play a game
-    if let Some(days) = days_since_last_game {
-        if days >= 3 {
-            return DailyRecommendation {
-                text: "Play a game to stay sharp — it's been a few days".to_string(),
-                target_activity: "play".to_string(),
-                target_category: None,
-            };
-        }
+    if let Some(days) = days_since_last_game
+        && days >= 3
+    {
+        return DailyRecommendation {
+            text: "Play a game to stay sharp — it's been a few days".to_string(),
+            target_activity: "play".to_string(),
+            target_category: None,
+        };
     }
 
     // Only puzzles recently (has puzzles but no games today) → openings

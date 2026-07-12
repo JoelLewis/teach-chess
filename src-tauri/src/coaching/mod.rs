@@ -24,10 +24,10 @@ pub fn generate_coaching_text(
     context: &CoachingContext,
 ) -> String {
     // For error moves, prioritize tactic descriptions
-    if classification.is_error() {
-        if let Some(tactic) = context.tactics.first() {
-            return templates::tactic_template(&tactic.tactic_type).to_string();
-        }
+    if classification.is_error()
+        && let Some(tactic) = context.tactics.first()
+    {
+        return templates::tactic_template(&tactic.tactic_type).to_string();
     }
 
     // For error moves, look for theme-specific templates
