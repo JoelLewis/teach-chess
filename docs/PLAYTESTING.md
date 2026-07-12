@@ -84,3 +84,64 @@ Only meaningful when the model is NOT bundled (dev with `src-tauri/models/` empt
 - First coaching response can take a few extra seconds if it beats the startup warm-up.
 - Game-over stats wait on a quick engine review; the dialog is interactive meanwhile.
 - Identical positions return cached coaching instantly with no streaming animation.
+
+## Appendix: Automated playtesting (dev-only MCP socket)
+
+Agents (or humans) can drive a dev build over a Unix socket instead of clicking
+by hand. The capability is compiled in only with the `mcp` cargo feature —
+**never** part of default features, so release/App Store builds exclude it.
+
+### Start the app
+
+```bash
+pnpm playtest          # = tauri dev --features mcp
+```
+
+This serves `tauri-plugin-mcp`'s socket at `/tmp/chessmentor-mcp.sock`
+(newline-delimited JSON: `{"command","payload","id"}` → `{"success","data","error","id"}`).
+The frontend (dev builds only) also:
+
+- calls `setupPluginListeners()` from the `tauri-plugin-mcp` npm package, which
+  answers the plugin's correlation-ID events — without it `execute_js` and the
+  DOM tools time out;
+- installs `window.__playtest` (`src/lib/dev/playtest.ts`) with
+  `getView / getPhase / getFen / getCoachingText / squareCenter / clickSquare`.
+
+Both are loaded behind `import.meta.env.DEV`, so production bundles contain
+neither (`pnpm run build && grep -r "__playtest" dist/` → empty).
+
+### Drive it
+
+`scripts/playtest-driver.mjs` is a zero-dependency node ≥ 18 client:
+
+```bash
+node scripts/playtest-driver.mjs ping
+node scripts/playtest-driver.mjs pt 'getFen()'
+node scripts/playtest-driver.mjs move e2 e4          # native clicks via squareCenter
+node scripts/playtest-driver.mjs screenshot my-shot  # → .playtest/shots/my-shot.jpg
+node scripts/playtest-driver.mjs run .playtest/steps/*.mjs
+```
+
+Or import `createDriver()` from the script for programmatic use. Env knobs:
+`PLAYTEST_SOCKET`, `PLAYTEST_WINDOW`, `PLAYTEST_OFFSET_X/Y` (click calibration).
+
+### Smoke-test steps
+
+Checked-in step files under `.playtest/steps/` (the rest of `.playtest/` is
+gitignored) cover: onboarding skip, new game, `1. e4` + engine reply, coaching
+panel, resign → review screen, puzzles, and a no-error-toast sweep:
+
+```bash
+node scripts/playtest-driver.mjs run .playtest/steps/00-onboarding.mjs \
+  .playtest/steps/10-new-game.mjs .playtest/steps/20-move.mjs \
+  .playtest/steps/30-coaching.mjs .playtest/steps/40-review.mjs \
+  .playtest/steps/50-puzzle.mjs .playtest/steps/90-housekeeping.mjs
+```
+
+Steps 20–40 assume the game started in 10 — run them in order.
+
+### Release exclusion
+
+- `cargo tree -i tauri-plugin-mcp` fails (not in graph) without `--features mcp`.
+- `pnpm run build && grep -r "__playtest\|setupPluginListeners" dist/` → empty.
+- The App Store workflow builds default features only.
