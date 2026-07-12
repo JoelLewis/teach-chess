@@ -5,10 +5,12 @@ pub mod config;
 mod db;
 mod engine;
 mod error;
-mod game;
-mod heuristics;
-mod llm;
-mod models;
+// `game`, `heuristics`, `llm`, and `models` are public so integration tests
+// (e.g. the real-model grounding suite) can build prompts from positions.
+pub mod game;
+pub mod heuristics;
+pub mod llm;
+pub mod models;
 mod opponent;
 mod puzzle;
 mod repertoire;

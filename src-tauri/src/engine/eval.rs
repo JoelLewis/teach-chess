@@ -147,6 +147,7 @@ mod tests {
             classification: Some(classify_move(&before, &after, is_white)),
             depth: 18,
             pv: vec![],
+            refutation_pv: vec![],
             coaching_context: None,
             coaching_text: None,
         }

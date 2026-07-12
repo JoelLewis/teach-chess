@@ -518,6 +518,7 @@ mod tests {
             classification: Some(classification),
             depth: 18,
             pv: vec![],
+            refutation_pv: vec![],
             coaching_context: Some(ctx),
             coaching_text: None,
         }

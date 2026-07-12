@@ -1,12 +1,15 @@
 pub mod cache;
+pub mod coach_prompt;
+pub mod player_level;
+pub mod position_facts;
 
 #[cfg(feature = "llm")]
 pub mod channel;
 
 use serde::{Deserialize, Serialize};
 
-pub use mentor_llm::prompts;
-pub use mentor_llm::{LlmError, PlayerLevel};
+pub use mentor_llm::LlmError;
+pub use player_level::PlayerLevel;
 
 #[cfg(feature = "llm")]
 pub use mentor_llm::download::GEMMA4_E2B;

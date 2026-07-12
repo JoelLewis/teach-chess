@@ -26,7 +26,7 @@ const TOP_P: f32 = 0.9;
 const REPEAT_PENALTY_LAST_N: i32 = 64;
 const REPEAT_PENALTY: f32 = 1.1;
 const SEED: u32 = 42;
-const N_CTX: u32 = 1024;
+const N_CTX: u32 = 2048;
 
 /// Number of GPU layers to offload plus a display name for the device.
 ///
@@ -119,6 +119,22 @@ impl ModelManager {
         self.generate_cancellable(prompt, max_tokens, on_token, || false)
     }
 
+    /// Generate text constrained by a GBNF grammar, with per-token streaming
+    /// callback. Blocking.
+    ///
+    /// The grammar's root rule must be named `root`.
+    pub fn generate_streaming_with_grammar(
+        &self,
+        prompt: &str,
+        max_tokens: u32,
+        grammar: &str,
+        on_token: impl FnMut(&str),
+    ) -> Result<String, LlmError> {
+        self.generate_cancellable_with_grammar(prompt, max_tokens, Some(grammar), on_token, || {
+            false
+        })
+    }
+
     /// Generate text with streaming callback and cooperative cancellation. Blocking.
     ///
     /// `is_cancelled` is polled between tokens; returns [`LlmError::Cancelled`]
@@ -127,6 +143,19 @@ impl ModelManager {
         &self,
         prompt: &str,
         max_tokens: u32,
+        on_token: impl FnMut(&str),
+        is_cancelled: impl Fn() -> bool,
+    ) -> Result<String, LlmError> {
+        self.generate_cancellable_with_grammar(prompt, max_tokens, None, on_token, is_cancelled)
+    }
+
+    /// Generate text with optional GBNF grammar constraint, streaming
+    /// callback, and cooperative cancellation. Blocking.
+    pub fn generate_cancellable_with_grammar(
+        &self,
+        prompt: &str,
+        max_tokens: u32,
+        grammar: Option<&str>,
         mut on_token: impl FnMut(&str),
         is_cancelled: impl Fn() -> bool,
     ) -> Result<String, LlmError> {
@@ -168,14 +197,7 @@ impl ModelManager {
         ctx.decode(&mut batch)
             .map_err(|e| LlmError::InferenceError(format!("prompt decode: {e}")))?;
 
-        // Sampler chain: temp → top_k → top_p → penalties → dist
-        let mut sampler = LlamaSampler::chain_simple([
-            LlamaSampler::temp(TEMPERATURE),
-            LlamaSampler::top_k(TOP_K),
-            LlamaSampler::top_p(TOP_P, 1),
-            LlamaSampler::penalties(REPEAT_PENALTY_LAST_N, REPEAT_PENALTY, 0.0, 0.0),
-            LlamaSampler::dist(SEED),
-        ]);
+        let mut sampler = self.build_sampler(grammar)?;
 
         let mut output = String::new();
         let mut decoder = encoding_rs::UTF_8.new_decoder();
@@ -187,8 +209,10 @@ impl ModelManager {
                 return Err(LlmError::Cancelled);
             }
 
+            // `sample` already accepts the token into the chain's internal
+            // state (grammar, penalties). Accepting again would advance the
+            // grammar twice and abort inside llama.cpp.
             let token = sampler.sample(&ctx, batch.n_tokens() - 1);
-            sampler.accept(token);
 
             if self.model.is_eog_token(token) {
                 debug!("End of generation token reached");
@@ -226,6 +250,31 @@ impl ModelManager {
         }
 
         Ok(output.trim().to_string())
+    }
+
+    /// Build the sampler chain: `[grammar →] temp → top_k → top_p →
+    /// penalties → dist`.
+    ///
+    /// The grammar sampler runs first so truncation samplers only ever see
+    /// grammar-legal tokens and can never empty the candidate set.
+    fn build_sampler(&self, grammar: Option<&str>) -> Result<LlamaSampler, LlmError> {
+        let mut samplers = Vec::with_capacity(6);
+
+        if let Some(grammar) = grammar {
+            samplers.push(
+                LlamaSampler::grammar(&self.model, grammar, "root")
+                    .map_err(|e| LlmError::InferenceError(format!("grammar init: {e}")))?,
+            );
+        }
+        samplers.extend([
+            LlamaSampler::temp(TEMPERATURE),
+            LlamaSampler::top_k(TOP_K),
+            LlamaSampler::top_p(TOP_P, 1),
+            LlamaSampler::penalties(REPEAT_PENALTY_LAST_N, REPEAT_PENALTY, 0.0, 0.0),
+            LlamaSampler::dist(SEED),
+        ]);
+
+        Ok(LlamaSampler::chain_simple(samplers))
     }
 }
 
