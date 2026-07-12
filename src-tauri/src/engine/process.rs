@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use tauri::AppHandle;
-use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 
@@ -507,7 +507,7 @@ struct ReplayStep {
 /// Replay a PGN string to extract positions and moves
 fn replay_pgn(pgn: &str) -> Result<Vec<ReplayStep>, AppError> {
     use shakmaty::{
-        fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
+        CastlingMode, Chess, EnPassantMode, Position as _, fen::Fen, san::San, uci::UciMove,
     };
 
     let mut chess = Chess::default();

@@ -3,13 +3,13 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::State;
 
-use crate::assessment::adaptive::{check_adaptive_triggers, AdaptivePrompt, AdaptiveTriggerData};
+use crate::CurrentPlayerId;
+use crate::assessment::adaptive::{AdaptivePrompt, AdaptiveTriggerData, check_adaptive_triggers};
 use crate::db::connection::Database;
 use crate::error::AppError;
 use crate::models::assessment::SkillProfile;
 use crate::models::game::GameRecord;
 use crate::models::puzzle::PuzzleSessionStats;
-use crate::CurrentPlayerId;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

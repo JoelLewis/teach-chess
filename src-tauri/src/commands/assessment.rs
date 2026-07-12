@@ -2,10 +2,10 @@ use std::sync::Mutex;
 
 use tauri::State;
 
+use crate::CurrentPlayerId;
 use crate::db::connection::Database;
 use crate::error::AppError;
 use crate::models::assessment::{DifficultyTarget, SkillProfile, SkillRating};
-use crate::CurrentPlayerId;
 
 #[tauri::command]
 pub fn get_skill_profile(

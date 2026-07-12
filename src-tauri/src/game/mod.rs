@@ -1,6 +1,6 @@
 pub mod state;
 
-use shakmaty::{fen::Fen, CastlingMode, Chess};
+use shakmaty::{CastlingMode, Chess, fen::Fen};
 
 use crate::error::AppError;
 

@@ -29,11 +29,7 @@ pub fn score_to_cp(score: &Score, is_white: bool) -> i32 {
         }
     };
 
-    if is_white {
-        raw
-    } else {
-        -raw
-    }
+    if is_white { raw } else { -raw }
 }
 
 /// Identify the most pivotal positions in a game by eval swing magnitude.

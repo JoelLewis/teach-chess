@@ -1,5 +1,5 @@
 use rusqlite::params;
-use shakmaty::{fen::Fen, san::San, uci::UciMove, Chess, EnPassantMode, Position};
+use shakmaty::{Chess, EnPassantMode, Position, fen::Fen, san::San, uci::UciMove};
 
 use super::OptionalRow;
 use crate::db::connection::Database;

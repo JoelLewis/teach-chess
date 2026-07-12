@@ -1,4 +1,4 @@
-use shakmaty::{attacks, Bitboard, Chess, Color, File, Position, Rank, Square};
+use shakmaty::{Bitboard, Chess, Color, File, Position, Rank, Square, attacks};
 
 use crate::models::heuristics::{KingSafety, SideKingSafety};
 

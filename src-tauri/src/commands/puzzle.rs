@@ -3,15 +3,15 @@ use std::sync::Mutex;
 
 use tauri::State;
 
+use crate::CurrentPlayerId;
 use crate::db::connection::Database;
 use crate::error::{AppError, PuzzleError};
 use crate::models::puzzle::{
     PuzzleAttempt, PuzzleFilter, PuzzleMoveResult, PuzzleSessionStats, PuzzleState,
 };
+use crate::puzzle::PuzzleSessionState;
 use crate::puzzle::session;
 use crate::puzzle::srs;
-use crate::puzzle::PuzzleSessionState;
-use crate::CurrentPlayerId;
 
 #[tauri::command]
 pub fn load_next_puzzle(

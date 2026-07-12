@@ -3,8 +3,8 @@ use std::path::Path;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-use super::candle_backend::{select_device, CandleBackend};
 use super::LlmError;
+use super::candle_backend::{CandleBackend, select_device};
 
 /// A job submitted to the inference worker.
 struct InferenceJob {

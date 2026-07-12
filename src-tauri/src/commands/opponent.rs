@@ -1,5 +1,5 @@
 use serde::Serialize;
-use shakmaty::{uci::UciMove, Position};
+use shakmaty::{Position, uci::UciMove};
 use tauri::State;
 use tokio::sync::Mutex;
 use tracing::debug;

@@ -144,9 +144,7 @@ fn analyze_side(chess: &Chess, color: Color) -> SidePawnStructure {
         // is controlled by an enemy pawn
         let support_zone = behind_span_adjacent(sq, color);
         let can_be_supported = !(our_pawns & support_zone).is_empty();
-        if !can_be_supported
-            && let Some(stop) = stop_square(sq, color)
-        {
+        if !can_be_supported && let Some(stop) = stop_square(sq, color) {
             let enemy_control = shakmaty::attacks::pawn_attacks(!color, stop);
             if !(enemy_pawns & enemy_control).is_empty() {
                 backward.push(sq_name(sq));

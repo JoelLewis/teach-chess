@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use shakmaty::{
-    fen::Fen, san::San, uci::UciMove, CastlingMode, Chess, EnPassantMode, Position as _,
+    CastlingMode, Chess, EnPassantMode, Position as _, fen::Fen, san::San, uci::UciMove,
 };
 
 use crate::error::{AppError, GameError};
@@ -28,7 +28,7 @@ impl Default for GameState {
             san_history: Vec::new(),
             uci_history: Vec::new(),
             fen_history: vec![
-                Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string()
+                Fen::from_position(Chess::default(), EnPassantMode::Legal).to_string(),
             ],
             last_move: None,
             game_id: None,

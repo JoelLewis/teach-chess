@@ -1,4 +1,4 @@
-use shakmaty::{attacks, Bitboard, Chess, Color, Position, Role, Square};
+use shakmaty::{Bitboard, Chess, Color, Position, Role, Square, attacks};
 
 use crate::models::heuristics::{Side, TacticType, TacticalMotif};
 
