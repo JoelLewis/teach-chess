@@ -35,6 +35,8 @@
   const reviewShortcuts = [
     { key: "\u2190", description: "Previous move" },
     { key: "\u2192", description: "Next move" },
+    { key: "\u2318[ / Alt+\u2190", description: "Back to previous view" },
+    { key: "\u2318] / Alt+\u2192", description: "Forward to next view" },
     { key: "?", description: "Show this help" },
   ];
 
@@ -95,6 +97,8 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    // Modified arrows belong to global view navigation (Alt+Left/Right)
+    if (event.altKey || event.metaKey || event.ctrlKey) return;
     if (event.key === "ArrowLeft") navigateMove(-1);
     if (event.key === "ArrowRight") navigateMove(1);
     if (event.key === "?" && !showShortcuts) {
