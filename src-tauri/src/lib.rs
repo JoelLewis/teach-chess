@@ -12,6 +12,7 @@ mod models;
 mod opponent;
 mod puzzle;
 mod repertoire;
+mod srs;
 
 use tauri::Manager;
 

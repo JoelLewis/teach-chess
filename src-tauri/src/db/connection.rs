@@ -84,6 +84,24 @@ impl Database {
             }
         }
 
+        // 008: FSRS card table + SM-2 → FSRS backfill. The SQL is not
+        // idempotent on its own (it backfills and drops columns), so it is
+        // guarded: it only runs while the srs_card table does not exist.
+        let has_srs_card: bool = self
+            .conn
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'srs_card')",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(DatabaseError::Sqlite)?;
+        if !has_srs_card {
+            let m008 = include_str!("../../migrations/008_fsrs.sql");
+            self.conn
+                .execute_batch(m008)
+                .map_err(DatabaseError::Sqlite)?;
+        }
+
         info!("Database migrations applied");
         Ok(())
     }

@@ -48,4 +48,5 @@ CREATE TABLE IF NOT EXISTS repertoire_drill_attempt (
   srs_next_review TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_drill_attempt_entry ON repertoire_drill_attempt(repertoire_entry_id);
-CREATE INDEX IF NOT EXISTS idx_drill_attempt_review ON repertoire_drill_attempt(srs_next_review);
+-- idx_drill_attempt_review was dropped in 008 along with the SM-2 columns;
+-- it must not be recreated here because this file re-runs on every startup.

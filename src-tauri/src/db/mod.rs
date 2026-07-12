@@ -5,6 +5,7 @@ pub mod game;
 pub mod player;
 pub mod puzzle;
 pub mod repertoire;
+pub mod srs;
 
 /// Extension trait to convert `QueryReturnedNoRows` into `Ok(None)`.
 pub(crate) trait OptionalRow {

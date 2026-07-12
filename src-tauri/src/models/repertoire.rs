@@ -82,9 +82,6 @@ pub struct DrillAttempt {
     pub repertoire_entry_id: String,
     pub correct: bool,
     pub time_ms: u64,
-    pub srs_interval: f64,
-    pub srs_ease: f64,
-    pub srs_next_review: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]

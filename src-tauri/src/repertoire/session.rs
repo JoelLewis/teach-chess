@@ -127,17 +127,6 @@ pub fn get_entry_elapsed_ms(active: &ActiveDrill) -> u64 {
     now_ms.saturating_sub(active.entry_start_time_ms)
 }
 
-/// Map drill outcome to SRS quality.
-/// 5: Correct, < 10s
-/// 4: Correct, >= 10s
-/// 1: Incorrect
-pub fn drill_quality(correct: bool, time_ms: u64) -> u8 {
-    if !correct {
-        return 1;
-    }
-    if time_ms < 10_000 { 5 } else { 4 }
-}
-
 #[allow(clippy::type_complexity)]
 fn setup_position(
     fen_str: &str,
@@ -289,13 +278,6 @@ mod tests {
         let result = validate_drill_move(&mut active, "g1f3").unwrap();
         assert!(result.correct);
         assert!(result.is_complete);
-    }
-
-    #[test]
-    fn drill_quality_mapping() {
-        assert_eq!(drill_quality(true, 5_000), 5);
-        assert_eq!(drill_quality(true, 15_000), 4);
-        assert_eq!(drill_quality(false, 5_000), 1);
     }
 
     #[test]

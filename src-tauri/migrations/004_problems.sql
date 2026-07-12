@@ -28,4 +28,5 @@ CREATE TABLE IF NOT EXISTS puzzle_attempt (
 );
 
 CREATE INDEX IF NOT EXISTS idx_puzzle_attempt_player ON puzzle_attempt(player_id);
-CREATE INDEX IF NOT EXISTS idx_puzzle_attempt_review ON puzzle_attempt(player_id, puzzle_id, srs_next_review);
+-- idx_puzzle_attempt_review was dropped in 008 along with the SM-2 columns;
+-- it must not be recreated here because this file re-runs on every startup.

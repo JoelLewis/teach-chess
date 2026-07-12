@@ -22,7 +22,7 @@ fn row_to_puzzle(row: &rusqlite::Row) -> Result<Puzzle, rusqlite::Error> {
 }
 
 impl Database {
-    /// Get the next puzzle due for SRS review (earliest next_review in the past).
+    /// Get the next puzzle due for SRS review (earliest due date in the past).
     pub fn get_next_due_puzzle(
         &self,
         player_id: &str,
@@ -40,12 +40,13 @@ impl Database {
             "SELECT p.id, p.fen, p.solution_moves, p.themes, p.category,
                     p.difficulty, p.source_id, p.hints_json, p.explanation
              FROM puzzle p
-             INNER JOIN puzzle_attempt pa ON pa.puzzle_id = p.id AND pa.player_id = ?1
+             INNER JOIN srs_card sc ON sc.item_id = p.id
+               AND sc.player_id = ?1 AND sc.item_type = 'puzzle'
              WHERE p.category = ?2
                AND p.difficulty >= ?3
                AND p.difficulty <= ?4
-               AND pa.srs_next_review <= datetime('now')
-             ORDER BY pa.srs_next_review ASC
+               AND sc.due <= datetime('now')
+             ORDER BY sc.due ASC
              LIMIT 1",
         )?;
 
@@ -82,7 +83,7 @@ impl Database {
                AND p.difficulty >= ?2
                AND p.difficulty <= ?3
                AND p.id NOT IN (
-                   SELECT puzzle_id FROM puzzle_attempt WHERE player_id = ?4
+                   SELECT item_id FROM srs_card WHERE player_id = ?4 AND item_type = 'puzzle'
                )
              ORDER BY ABS(p.difficulty - ?5)
              LIMIT 1",
@@ -98,12 +99,11 @@ impl Database {
         Ok(result)
     }
 
-    /// Save a puzzle attempt with SRS data.
+    /// Save a puzzle attempt (attempted_at defaults to now in the schema).
     pub fn save_puzzle_attempt(&self, attempt: &PuzzleAttempt) -> Result<(), DatabaseError> {
         self.conn().execute(
-            "INSERT INTO puzzle_attempt (id, player_id, puzzle_id, solved, time_ms, hints_used,
-                                         attempted_at, srs_interval, srs_ease, srs_next_review)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            "INSERT INTO puzzle_attempt (id, player_id, puzzle_id, solved, time_ms, hints_used)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
                 attempt.id,
                 attempt.player_id,
@@ -111,10 +111,6 @@ impl Database {
                 attempt.solved as i32,
                 attempt.time_ms as i64,
                 attempt.hints_used as i32,
-                attempt.attempted_at,
-                attempt.srs_interval,
-                attempt.srs_ease,
-                attempt.srs_next_review,
             ],
         )?;
         Ok(())
@@ -222,39 +218,6 @@ impl Database {
             .conn()
             .query_row("SELECT COUNT(*) FROM puzzle", [], |row| row.get(0))?;
         Ok(count as u32)
-    }
-
-    /// Get the previous attempt count for a player on a specific puzzle.
-    pub fn get_attempt_count(
-        &self,
-        player_id: &str,
-        puzzle_id: &str,
-    ) -> Result<u32, DatabaseError> {
-        let count: i64 = self.conn().query_row(
-            "SELECT COUNT(*) FROM puzzle_attempt WHERE player_id = ?1 AND puzzle_id = ?2",
-            params![player_id, puzzle_id],
-            |row| row.get(0),
-        )?;
-        Ok(count as u32)
-    }
-
-    /// Get the latest SRS state for a player/puzzle pair.
-    pub fn get_latest_srs(
-        &self,
-        player_id: &str,
-        puzzle_id: &str,
-    ) -> Result<Option<(f64, f64)>, DatabaseError> {
-        let result = self
-            .conn()
-            .query_row(
-                "SELECT srs_interval, srs_ease FROM puzzle_attempt
-                 WHERE player_id = ?1 AND puzzle_id = ?2
-                 ORDER BY attempted_at DESC LIMIT 1",
-                params![player_id, puzzle_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
-            )
-            .optional()?;
-        Ok(result)
     }
 
     /// Get solve rate for the most recent N puzzle attempts.
