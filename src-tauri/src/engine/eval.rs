@@ -88,7 +88,7 @@ pub fn find_critical_moments(
     }
 
     // Sort by magnitude (largest swing first)
-    moments.sort_by(|a, b| b.eval_swing_cp.cmp(&a.eval_swing_cp));
+    moments.sort_by_key(|m| std::cmp::Reverse(m.eval_swing_cp));
     moments.truncate(MAX_MOMENTS);
     moments
 }

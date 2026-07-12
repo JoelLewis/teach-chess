@@ -1,5 +1,8 @@
 # ChessMentor Playtest Checklist
 
+> Distributing a build to testers? See [RELEASE.md](RELEASE.md) first — local
+> DMGs are ad-hoc signed and need a workaround (or notarization) on other Macs.
+
 A structured pass over every user-facing flow. Run either in dev (`npm run tauri dev`)
 or against the installed app from `npm run build:mac`. Items marked **[installed]**
 only apply to the built .app/DMG.

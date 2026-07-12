@@ -34,3 +34,7 @@ Thumbs.db
 
 # Git worktrees
 .worktrees/
+
+# Test artifacts
+playwright-report/
+test-results/

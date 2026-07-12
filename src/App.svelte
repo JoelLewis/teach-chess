@@ -15,7 +15,6 @@
   import { errorStore } from "./lib/stores/error.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
   import * as api from "./lib/api/commands";
-  import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { GameConfig } from "./lib/types/game";
 
   type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
@@ -112,18 +111,10 @@
     });
   });
 
-  // Clean up engine when window closes
-  $effect(() => {
-    const appWindow = getCurrentWindow();
-    const unlistenPromise = appWindow.onCloseRequested(async () => {
-      // Fire-and-forget cleanup — don't preventDefault, let the window close naturally
-      api.stopEngine().catch(() => {});
-    });
-
-    return () => {
-      unlistenPromise.then((unlisten) => unlisten());
-    };
-  });
+  // Engine cleanup on app exit is handled by the Rust backend (RunEvent::Exit
+  // in lib.rs). Intercepting close-requested here would make the frontend
+  // responsible for destroying the window, which the capability ACL denies —
+  // leaving the close button dead.
 </script>
 
 <a href="#main-content" class="skip-link">Skip to content</a>

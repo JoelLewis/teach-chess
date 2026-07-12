@@ -129,7 +129,7 @@ download_stockfish() {
     if [[ "$filename" == *.tar ]]; then
         tar xf "$tmpdir/$filename" -C "$tmpdir"
         local sf_bin
-        sf_bin="$(find "$tmpdir" -name 'stockfish*' -not -name '*.tar' -not -name '*.txt' -not -name '*.md' -not -name '*.cff' -type f -perm +111 | head -1)"
+        sf_bin="$(find "$tmpdir" -name 'stockfish*' -not -name '*.tar' -not -name '*.txt' -not -name '*.md' -not -name '*.cff' -type f -perm -u+x | head -1)"
         cp "$sf_bin" "$BINARIES_DIR/$sidecar_name"
     elif [[ "$filename" == *.zip ]]; then
         unzip -q "$tmpdir/$filename" -d "$tmpdir"

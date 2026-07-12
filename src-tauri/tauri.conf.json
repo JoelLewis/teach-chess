@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.chessmentor.app",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "pnpm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "pnpm run build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -45,7 +45,6 @@
     "shortDescription": "Learn chess with an adaptive AI coach",
     "longDescription": "ChessMentor is a chess learning app featuring adaptive coaching, tactical puzzles with spaced repetition, opening repertoire training, and game analysis powered by Stockfish.",
     "macOS": {
-      "entitlements": "entitlements/ChessMentor.entitlements",
       "signingIdentity": "-",
       "minimumSystemVersion": "11.0",
       "exceptionDomain": null

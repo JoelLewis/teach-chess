@@ -32,23 +32,23 @@ A desktop chess coach that combines Stockfish analysis with heuristic coaching, 
 
 ```bash
 # Install frontend dependencies
-npm install
+pnpm install
 
 # Download Stockfish sidecar binary for your platform
 ./scripts/fetch-stockfish.sh    # Linux / macOS / Git Bash on Windows
 
 # Start the development server
-npm run tauri dev
+pnpm run tauri dev
 ```
 
 ## Build
 
 ```bash
 # macOS release with the LLM model bundled into the .app (recommended)
-npm run build:mac
+pnpm run build:mac
 
 # Bare build (no bundled model — coaching falls back to in-app download)
-npm run tauri build
+pnpm run tauri build
 ```
 
 Produces platform-specific installers in `src-tauri/target/release/bundle/`. `build:mac` runs `scripts/fetch-model.sh` first so the Gemma 3 1B GGUF (~770 MB) and tokenizer land in `src-tauri/models/`, which `tauri.conf.json` bundles as app resources — the DMG grows by roughly 0.8 GB.
@@ -72,7 +72,7 @@ The `llm` feature is on by default. The model is **Gemma 3 1B (Q4_K_M GGUF)** ru
 
 ```bash
 ./scripts/fetch-model.sh    # ~770 MB GGUF + ~33 MB tokenizer into src-tauri/models/
-npm run tauri dev
+pnpm run tauri dev
 ```
 
 ### Compute Device

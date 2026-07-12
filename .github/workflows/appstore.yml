@@ -45,14 +45,17 @@ jobs:
         with:
           workspaces: src-tauri
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
+          cache: pnpm
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Fetch Stockfish sidecar
         run: ./scripts/fetch-stockfish.sh
@@ -98,7 +101,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           TAURI_SIGNING_PRIVATE_KEY: ""
         run: |
-          npm run tauri build -- --target ${{ matrix.target }}
+          pnpm run tauri build -- --target ${{ matrix.target }}
 
       - name: Sign sidecar binary
         env:
