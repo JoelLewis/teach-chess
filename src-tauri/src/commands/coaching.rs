@@ -13,6 +13,7 @@ use crate::models::engine::{
 use crate::models::heuristics::GamePhase;
 
 /// Evaluate a player's move during gameplay: engine analysis + classification + coaching text
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 #[specta::specta]
 pub async fn evaluate_player_move(
@@ -22,6 +23,8 @@ pub async fn evaluate_player_move(
     move_number: u32,
     coaching_level: CoachingLevel,
     engine_state: State<'_, tokio::sync::Mutex<EngineProcess>>,
+    db: State<'_, std::sync::Mutex<crate::db::connection::Database>>,
+    player_state: State<'_, crate::CurrentPlayerId>,
 ) -> Result<InGameCoachingFeedback, AppError> {
     // Silent mode: skip all engine work, return neutral feedback
     if coaching_level == CoachingLevel::Silent {
@@ -71,7 +74,16 @@ pub async fn evaluate_player_move(
     let coaching_text = if should_show {
         coaching_context
             .as_ref()
-            .map(|ctx| coaching::generate_coaching_text(&classification, ctx))
+            .map(|ctx| {
+                // Rank-calibrate when the player has a trusted Glicko-2
+                // rating for this move's skill category; a failed lookup
+                // logs and falls back to the base template.
+                let rank = lookup_rank_context(&db, &player_state, ctx).unwrap_or_else(|e| {
+                    debug!("Rank context lookup failed, using base template: {e}");
+                    None
+                });
+                coaching::generate_coaching_text_ranked(&classification, ctx, rank.as_ref())
+            })
             .unwrap_or_else(|| templates::generic_template(classification).to_string())
     } else {
         String::new()
@@ -209,6 +221,27 @@ pub async fn analyze_pre_move_hints(
         themes: ctx.themes,
         ..PreMoveHint::default()
     })
+}
+
+/// Look up the player's Glicko-2 rating for the skill category mapped from
+/// this move's coaching context. `None` when the player is unknown or the
+/// category rating has too few games to be trusted.
+fn lookup_rank_context(
+    db: &State<'_, std::sync::Mutex<crate::db::connection::Database>>,
+    player_state: &State<'_, crate::CurrentPlayerId>,
+    ctx: &crate::models::heuristics::CoachingContext,
+) -> Result<Option<crate::assessment::rank::PlayerRankContext>, AppError> {
+    let player_id = player_state.get()?;
+    if player_id.is_empty() {
+        return Ok(None);
+    }
+
+    let category = crate::assessment::rank::category_for_context(ctx);
+    let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
+    let skill = db.get_skill_rating(&player_id, category)?;
+    Ok(skill
+        .as_ref()
+        .and_then(crate::assessment::rank::PlayerRankContext::from_skill_rating))
 }
 
 fn generate_strategic_hint(

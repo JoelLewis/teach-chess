@@ -1,12 +1,13 @@
-mod assessment;
+// `assessment`, `game`, `heuristics`, `llm`, and `models` are public so
+// integration tests (e.g. the real-model grounding suite) can build prompts
+// from positions and rank contexts.
+pub mod assessment;
 mod coaching;
 mod commands;
 pub mod config;
 mod db;
 mod engine;
 mod error;
-// `game`, `heuristics`, `llm`, and `models` are public so integration tests
-// (e.g. the real-model grounding suite) can build prompts from positions.
 pub mod game;
 pub mod heuristics;
 pub mod llm;

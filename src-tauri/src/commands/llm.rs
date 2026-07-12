@@ -283,7 +283,7 @@ pub async fn generate_coaching(
             })
         });
 
-    let facts = build_move_facts(
+    let mut facts = build_move_facts(
         &MoveInput {
             fen_before: &fen,
             player_move_san: &player_move_san,
@@ -295,6 +295,16 @@ pub async fn generate_coaching(
         coaching_context.as_ref(),
         engine_facts.as_ref(),
     );
+
+    // Rank-calibrated player context: the Glicko-2 rating for the skill
+    // category this move's theme/tactic maps to. Feeds both the LLM prompt
+    // (as a low-priority fact section) and the template fallback. The cache
+    // key hashes the user prompt, so rank changes invalidate naturally.
+    let rank_context = lookup_rank_context(&db, &player_id, coaching_context.as_ref())?;
+    facts.player_context = rank_context
+        .as_ref()
+        .map(|r| r.llm_prompt_line(facts.is_positive));
+
     let user_prompt = crate::llm::coach_prompt::build_user_prompt(&facts);
 
     // Check cache (key v2: fen + level + full user prompt)
@@ -364,12 +374,43 @@ pub async fn generate_coaching(
     let _ = (&app, &request_id, &user_prompt, &level);
 
     // Fall back to template
-    let template_text = generate_template_fallback(&classification, coaching_context.as_ref());
+    let template_text = generate_template_fallback(
+        &classification,
+        coaching_context.as_ref(),
+        rank_context.as_ref(),
+    );
 
     Ok(CoachingResponse {
         text: template_text,
         source: CoachingSource::Template,
     })
+}
+
+/// Look up the player's Glicko-2 rating for the skill category mapped from
+/// the move's coaching context. Returns `None` (never an error surface to
+/// the user) when the player is unknown, the context is missing, or the
+/// rating has too few games to be trusted.
+fn lookup_rank_context(
+    db: &tauri::State<'_, std::sync::Mutex<crate::db::connection::Database>>,
+    player_id: &tauri::State<'_, crate::CurrentPlayerId>,
+    coaching_context: Option<&CoachingContext>,
+) -> Result<Option<crate::assessment::rank::PlayerRankContext>, crate::error::AppError> {
+    let Some(ctx) = coaching_context else {
+        return Ok(None);
+    };
+    let pid = player_id.get()?;
+    if pid.is_empty() {
+        return Ok(None);
+    }
+
+    let category = crate::assessment::rank::category_for_context(ctx);
+    let db_lock = db
+        .lock()
+        .map_err(|e| crate::error::AppError::Lock(e.to_string()))?;
+    let skill = db_lock.get_skill_rating(&pid, category)?;
+    Ok(skill
+        .as_ref()
+        .and_then(crate::assessment::rank::PlayerRankContext::from_skill_rating))
 }
 
 /// Attempt LLM-based coaching text generation from a pre-built prompt.
@@ -557,11 +598,12 @@ fn determine_player_level(
 fn generate_template_fallback(
     classification: &str,
     coaching_context: Option<&CoachingContext>,
+    rank_context: Option<&crate::assessment::rank::PlayerRankContext>,
 ) -> String {
     let mc = crate::models::engine::MoveClassification::from_str_loose(classification);
 
     match coaching_context {
-        Some(ctx) => crate::coaching::generate_coaching_text(&mc, ctx),
+        Some(ctx) => crate::coaching::generate_coaching_text_ranked(&mc, ctx, rank_context),
         None => crate::coaching::templates::generic_template(mc).to_string(),
     }
 }

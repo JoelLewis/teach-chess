@@ -94,7 +94,9 @@ fn context_for(fen: &str) -> CoachingContext {
     chess_mentor_lib::heuristics::analyze_position(&pos)
 }
 
-/// Build the production user prompt for a fixture case.
+/// Build the production user prompt for a fixture case, including a
+/// rank-calibrated player-context line as the production command does for a
+/// rated player, so grounding is asserted against the full prompt shape.
 fn case_user_prompt(case: &EvalCase) -> String {
     let engine = EngineData {
         eval_before: Some(case.eval_before.clone()),
@@ -106,7 +108,7 @@ fn case_user_prompt(case: &EvalCase) -> String {
         refutation_pv: case.refutation_pv.clone(),
     };
     let ctx = context_for(&case.fen_before);
-    let facts = build_move_facts(
+    let mut facts = build_move_facts(
         &MoveInput {
             fen_before: &case.fen_before,
             player_move_san: &case.player_move_san,
@@ -116,7 +118,20 @@ fn case_user_prompt(case: &EvalCase) -> String {
         Some(&ctx),
         Some(&engine),
     );
+    facts.player_context = Some(rank_context().llm_prompt_line(facts.is_positive));
     build_user_prompt(&facts)
+}
+
+/// A representative rated player (~1300 in the category the eval cases hit).
+fn rank_context() -> chess_mentor_lib::assessment::rank::PlayerRankContext {
+    use chess_mentor_lib::models::assessment::SkillRating;
+    let skill = SkillRating {
+        rating: 1312.0,
+        games_count: 12,
+        ..SkillRating::default_for("eval-player", "tactical")
+    };
+    chess_mentor_lib::assessment::rank::PlayerRankContext::from_skill_rating(&skill)
+        .expect("rank context from a 12-game rating")
 }
 
 /// Reconstruction of the pre-position-aware prompt (bare enum names in JSON),

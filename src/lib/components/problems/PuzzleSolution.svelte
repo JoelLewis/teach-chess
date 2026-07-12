@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { puzzleStore } from "../../stores/puzzle.svelte";
+  import * as api from "../../api/commands";
+  import { puzzleRatingComparison } from "../../utils/puzzleRating";
 
   type Props = {
     onNextPuzzle: () => void;
@@ -9,6 +12,22 @@
 
   const solved = $derived(puzzleStore.phase === "complete");
   const explanation = $derived(puzzleStore.explanation ?? "");
+
+  // On a failed puzzle, compare its rating against the player's Glicko-2
+  // rating for the puzzle's category. Unrated players see nothing.
+  let ratingNote = $state<string | null>(null);
+
+  onMount(async () => {
+    if (puzzleStore.phase === "complete") return;
+    const puzzle = puzzleStore.currentPuzzle?.puzzle;
+    if (!puzzle) return;
+    try {
+      const skill = await api.getSkillRating(puzzle.category);
+      ratingNote = puzzleRatingComparison(puzzle.difficulty, skill);
+    } catch {
+      // Rating unavailable is non-fatal — just omit the comparison.
+    }
+  });
 </script>
 
 <div class="solution-panel" class:solved class:failed={!solved}>
@@ -21,6 +40,10 @@
       <span class="result-text">Not quite</span>
     {/if}
   </div>
+
+  {#if !solved && ratingNote}
+    <p class="rating-note">{ratingNote}</p>
+  {/if}
 
   {#if explanation}
     <div class="explanation">
@@ -84,6 +107,14 @@
 
   .failed .result-text {
     color: var(--cm-status-error);
+  }
+
+  .rating-note {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--cm-text-secondary);
+    font-style: italic;
   }
 
   .explanation {

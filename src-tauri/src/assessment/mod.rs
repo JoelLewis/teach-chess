@@ -1,5 +1,6 @@
 pub mod adaptive;
 pub mod glicko2;
+pub mod rank;
 
 use crate::models::assessment::DifficultyTarget;
 

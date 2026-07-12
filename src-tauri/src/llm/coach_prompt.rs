@@ -82,8 +82,11 @@ struct Section {
 
 /// Render the user prompt from verbalized facts, enforcing
 /// [`MAX_USER_PROMPT_CHARS`] by dropping sections in truncation-priority
-/// order: piece list → activity → pawns → king safety → eval/lines →
-/// pre-move tactics (post-move tactics and the header always survive).
+/// order: piece list → player context → activity → pawns → king safety →
+/// eval/lines → pre-move tactics (post-move tactics and the header always
+/// survive). Player context is nice-to-have color: it outlives only the
+/// piece list, so truncation never sacrifices engine or position facts
+/// to keep it.
 pub fn build_user_prompt(facts: &MoveFacts) -> String {
     let mut sections = build_sections(facts);
 
@@ -185,9 +188,18 @@ fn build_sections(facts: &MoveFacts) -> Vec<Section> {
         });
     }
 
-    if let Some(ref pieces) = facts.piece_list {
+    // Rank-calibrated player context: dropped before any position or engine
+    // fact (only the piece list goes first).
+    if let Some(ref player) = facts.player_context {
         sections.push(Section {
             drop_rank: 7,
+            text: player.clone(),
+        });
+    }
+
+    if let Some(ref pieces) = facts.piece_list {
+        sections.push(Section {
+            drop_rank: 8,
             text: format!("Pieces - {pieces}"),
         });
     }
@@ -339,6 +351,63 @@ mod tests {
         assert!(
             !prompt.contains("Pieces -"),
             "piece list should drop first:\n{prompt}"
+        );
+        // The highest-priority facts survive.
+        assert!(prompt.contains("What your move changed"), "{prompt}");
+        assert!(prompt.contains(&facts.header), "{prompt}");
+    }
+
+    const PLAYER_LINE: &str = "Player context: rated about 1300 in tactical skill - this kind of oversight is a frequent miss at this level.";
+
+    #[test]
+    fn player_context_appears_when_set() {
+        let mut facts = hanging_queen_facts();
+        facts.player_context = Some(PLAYER_LINE.to_string());
+
+        let prompt = build_user_prompt(&facts);
+        assert!(prompt.contains(PLAYER_LINE), "{prompt}");
+        // Under the cap nothing else is sacrificed for it.
+        assert!(prompt.contains("Pieces -"), "{prompt}");
+        assert!(prompt.contains("Best line:"), "{prompt}");
+    }
+
+    #[test]
+    fn slight_overflow_drops_piece_list_before_player_context() {
+        let mut facts = hanging_queen_facts();
+        facts.player_context = Some(PLAYER_LINE.to_string());
+
+        // Push the prompt just barely over the cap: dropping the piece list
+        // alone brings it back under, so the player context must survive.
+        let base_len = build_user_prompt(&facts).chars().count();
+        assert!(base_len <= MAX_USER_PROMPT_CHARS, "fixture no longer fits");
+        let filler_len = MAX_USER_PROMPT_CHARS - base_len + 10;
+        facts.pre_move_tactics.push("x".repeat(filler_len));
+
+        let prompt = build_user_prompt(&facts);
+        assert!(prompt.chars().count() <= MAX_USER_PROMPT_CHARS);
+        assert!(
+            !prompt.contains("Pieces -"),
+            "piece list should drop first:\n{prompt}"
+        );
+        assert!(
+            prompt.contains(PLAYER_LINE),
+            "player context outlives the piece list:\n{prompt}"
+        );
+    }
+
+    #[test]
+    fn heavy_overflow_drops_player_context_before_facts() {
+        let mut facts = hanging_queen_facts();
+        facts.player_context = Some(PLAYER_LINE.to_string());
+        facts.pre_move_tactics = (0..40)
+            .map(|i| format!("filler tactical fact number {i} that goes on and on and on"))
+            .collect();
+
+        let prompt = build_user_prompt(&facts);
+        assert!(prompt.chars().count() <= MAX_USER_PROMPT_CHARS);
+        assert!(
+            !prompt.contains("Player context:"),
+            "player context must be sacrificed before facts:\n{prompt}"
         );
         // The highest-priority facts survive.
         assert!(prompt.contains("What your move changed"), "{prompt}");

@@ -63,6 +63,10 @@ pub struct MoveFacts {
     pub material: Option<String>,
     /// "White: Kg1 Qd1 ..., pawns a2 b2 ...\nBlack: ..."
     pub piece_list: Option<String>,
+    /// Rank-calibrated one-liner ("Player context: rated about 1300 in
+    /// tactical skill - ..."). Not derived from the position — the caller
+    /// fills it from the player's Glicko-2 category rating when available.
+    pub player_context: Option<String>,
 }
 
 /// New tactical motifs created by a move, split by beneficiary.
