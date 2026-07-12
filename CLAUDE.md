@@ -34,11 +34,11 @@
 ## Testing
 - `cargo test` for Rust unit tests
 - `svelte-check` for TypeScript type checking
-- `npm run tauri dev` for integration testing
+- `pnpm run tauri dev` for integration testing
 
 ## Build & Run
-- Dev: `npm run tauri dev`
-- Build: `npm run tauri build`
+- Dev: `pnpm run tauri dev`
+- Build: `pnpm run tauri build`
 - Stockfish: `./scripts/fetch-stockfish.sh` (downloads platform binary to `src-tauri/binaries/`)
 
 ## Sidecar Convention
