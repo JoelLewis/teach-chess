@@ -353,6 +353,11 @@ export type MoveEvaluation = {
 	classification: MoveClassification | null,
 	depth: number,
 	pv: string[],
+	/**
+	 *  Refutation line: the engine's PV for the position *after* the played
+	 *  move (i.e. how the opponent punishes it), as UCI moves.
+	 */
+	refutationPv?: string[],
 	coachingContext: CoachingContext | null,
 	coachingText: string | null,
 };

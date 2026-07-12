@@ -21,7 +21,8 @@ impl PuzzleCategory {
         }
     }
 
-    pub fn from_str(s: &str) -> Self {
+    /// Parse from a lowercase string, defaulting to `Tactical`.
+    pub fn from_str_loose(s: &str) -> Self {
         match s {
             "positional" => Self::Positional,
             "endgame" => Self::Endgame,

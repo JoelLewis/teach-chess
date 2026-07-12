@@ -378,6 +378,7 @@ impl EngineProcess {
 
             // Analyze position after the move
             let eval_after = self.analyze(&step.fen_after, depth).await?;
+            let refutation_pv = eval_after.pv.clone();
             cached_eval = Some(eval_after.clone());
 
             let is_white = step.is_white;
@@ -400,12 +401,13 @@ impl EngineProcess {
                 player_move_uci: step.uci.clone(),
                 player_move_san: step.san.clone(),
                 engine_best_uci: Some(eval_before.best_move.clone()),
-                engine_best_san: None, // Would need shakmaty to convert
+                engine_best_san: uci_to_san(&step.fen_before, &eval_before.best_move),
                 eval_before: Some(eval_before.score),
                 eval_after: Some(eval_after.score),
                 classification: Some(classification),
                 depth,
                 pv: eval_before.pv,
+                refutation_pv,
                 coaching_context,
                 coaching_text,
             });
@@ -495,6 +497,19 @@ struct ReviewProgressPayload {
     total: u32,
 }
 
+/// Convert a UCI move to SAN in the context of a FEN position.
+///
+/// Returns `None` when the FEN or move fails to parse — callers treat that
+/// as "SAN unavailable" rather than an error.
+fn uci_to_san(fen: &str, uci: &str) -> Option<String> {
+    use shakmaty::{san::SanPlus, uci::UciMove};
+
+    let pos = crate::game::parse_fen(fen).ok()?;
+    let uci_move: UciMove = uci.parse().ok()?;
+    let legal_move = uci_move.to_move(&pos).ok()?;
+    Some(SanPlus::from_move(pos, &legal_move).to_string())
+}
+
 struct ReplayStep {
     move_number: u32,
     is_white: bool,
@@ -560,4 +575,37 @@ fn replay_pgn(pgn: &str) -> Result<Vec<ReplayStep>, AppError> {
     }
 
     Ok(steps)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::uci_to_san;
+
+    const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+    #[test]
+    fn uci_to_san_converts_pawn_and_knight_moves() {
+        assert_eq!(uci_to_san(START_FEN, "e2e4").as_deref(), Some("e4"));
+        assert_eq!(uci_to_san(START_FEN, "g1f3").as_deref(), Some("Nf3"));
+    }
+
+    #[test]
+    fn uci_to_san_converts_castling() {
+        let fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4";
+        assert_eq!(uci_to_san(fen, "e1g1").as_deref(), Some("O-O"));
+    }
+
+    #[test]
+    fn uci_to_san_includes_check_suffix() {
+        // Qh5xf7 is checkmate in the Scholar's Mate position
+        let fen = "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4";
+        assert_eq!(uci_to_san(fen, "h5f7").as_deref(), Some("Qxf7#"));
+    }
+
+    #[test]
+    fn uci_to_san_rejects_illegal_or_garbage_input() {
+        assert_eq!(uci_to_san(START_FEN, "e2e5"), None);
+        assert_eq!(uci_to_san("not a fen", "e2e4"), None);
+        assert_eq!(uci_to_san(START_FEN, "zz99"), None);
+    }
 }

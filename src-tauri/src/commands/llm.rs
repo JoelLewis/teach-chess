@@ -4,18 +4,20 @@ use serde::Serialize;
 use tauri::Manager;
 
 use crate::llm::{CoachingResponse, CoachingSource};
+use crate::models::heuristics::CoachingContext;
 
-/// Extract a string array from a JSON object at the given key.
-fn extract_string_array(ctx: &Option<serde_json::Value>, key: &str) -> Vec<String> {
-    ctx.as_ref()
-        .and_then(|c| c.get(key))
-        .and_then(|t| t.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
-        })
-        .unwrap_or_default()
+/// Serialized theme names (camelCase) from a coaching context, for the cache key.
+fn theme_names(ctx: Option<&CoachingContext>) -> Vec<String> {
+    ctx.map(|c| {
+        c.themes
+            .iter()
+            .filter_map(|t| match serde_json::to_value(t) {
+                Ok(serde_json::Value::String(s)) => Some(s),
+                _ => None,
+            })
+            .collect()
+    })
+    .unwrap_or_default()
 }
 
 /// Status of the LLM subsystem
@@ -246,11 +248,6 @@ pub async fn generate_coaching(
     db: tauri::State<'_, std::sync::Mutex<crate::db::connection::Database>>,
     player_id: tauri::State<'_, crate::CurrentPlayerId>,
 ) -> Result<CoachingResponse, crate::error::AppError> {
-    // The generation pipeline extracts fields dynamically, so convert the
-    // typed context (which is what the frontend sends) back to JSON.
-    let coaching_context: Option<serde_json::Value> = coaching_context
-        .map(|ctx| serde_json::to_value(ctx).expect("CoachingContext serializes to JSON"));
-
     // Determine player level
     let level = determine_player_level(&db, &player_id)?;
     let level_str = match level {
@@ -260,7 +257,7 @@ pub async fn generate_coaching(
     };
 
     // Extract themes from coaching context for cache key
-    let themes = extract_string_array(&coaching_context, "themes");
+    let themes = theme_names(coaching_context.as_ref());
 
     // Check cache
     let cache_key = crate::llm::cache::compute_cache_key(&fen, level_str, &classification, &themes);
@@ -282,11 +279,12 @@ pub async fn generate_coaching(
         let llm_state = app.state::<crate::llm::LlmState>();
         if llm_state.store.is_available(&crate::llm::GEMMA4_E2B) {
             let params = LlmCoachingParams {
-                level: &level,
+                level,
+                fen: &fen,
                 classification: &classification,
-                coaching_context: &coaching_context,
+                coaching_context: coaching_context.as_ref(),
                 player_move_san: &player_move_san,
-                engine_best_san: &engine_best_san,
+                engine_best_san: engine_best_san.as_deref(),
             };
             match tokio::time::timeout(
                 std::time::Duration::from_secs(30),
@@ -329,15 +327,10 @@ pub async fn generate_coaching(
     }
 
     #[cfg(not(feature = "llm"))]
-    let _ = (&app, &request_id);
+    let _ = (&app, &request_id, &player_move_san, &engine_best_san);
 
     // Fall back to template
-    let template_text = generate_template_fallback(
-        &classification,
-        &coaching_context,
-        &player_move_san,
-        &engine_best_san,
-    );
+    let template_text = generate_template_fallback(&classification, coaching_context.as_ref());
 
     Ok(CoachingResponse {
         text: template_text,
@@ -348,11 +341,12 @@ pub async fn generate_coaching(
 /// Parameters for LLM coaching generation, grouped to keep the function signature clean.
 #[cfg(feature = "llm")]
 struct LlmCoachingParams<'a> {
-    level: &'a crate::llm::PlayerLevel,
+    level: crate::llm::PlayerLevel,
+    fen: &'a str,
     classification: &'a str,
-    coaching_context: &'a Option<serde_json::Value>,
+    coaching_context: Option<&'a CoachingContext>,
     player_move_san: &'a str,
-    engine_best_san: &'a Option<String>,
+    engine_best_san: Option<&'a str>,
 }
 
 /// Attempt LLM-based coaching text generation.
@@ -364,52 +358,27 @@ async fn try_llm_generation(
     params: &LlmCoachingParams<'_>,
 ) -> Result<String, crate::llm::LlmError> {
     use crate::llm::LlmTokenEvent;
+    use crate::llm::position_facts::{EngineData, MoveInput, build_move_facts};
     use tauri::Emitter;
 
-    let phase = params
-        .coaching_context
-        .as_ref()
-        .and_then(|ctx| ctx.get("phase"))
-        .and_then(|p| p.as_str())
-        .unwrap_or("middlegame");
+    // Engine data arrives with the full plumbing (CoachingEngineData); until
+    // then the best-move SAN is the only engine fact available here.
+    let engine_data = params.engine_best_san.map(|san| EngineData {
+        best_move_san: Some(san.to_string()),
+        ..EngineData::default()
+    });
 
-    let themes = extract_string_array(params.coaching_context, "themes");
-
-    let tactics: Vec<String> = params
-        .coaching_context
-        .as_ref()
-        .and_then(|ctx| ctx.get("tactics"))
-        .and_then(|t| t.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| {
-                    v.as_object()
-                        .and_then(|o| o.get("tacticType"))
-                        .and_then(|tt| tt.as_str())
-                        .map(String::from)
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let material_balance = params
-        .coaching_context
-        .as_ref()
-        .and_then(|ctx| ctx.get("material"))
-        .and_then(|m| m.get("balanceCp"))
-        .and_then(|b| b.as_i64())
-        .unwrap_or(0) as i32;
-
-    let prompt = crate::llm::prompts::build_prompt(
-        params.level,
-        params.classification,
-        phase,
-        params.player_move_san,
-        params.engine_best_san.as_deref(),
-        &themes,
-        &tactics,
-        material_balance,
+    let facts = build_move_facts(
+        &MoveInput {
+            fen_before: params.fen,
+            player_move_san: params.player_move_san,
+            player_move_uci: None,
+            classification: params.classification,
+        },
+        params.coaching_context,
+        engine_data.as_ref(),
     );
+    let prompt = crate::llm::coach_prompt::build_coaching_prompt(params.level, &facts);
 
     // Spawn the inference channel if not yet created (normally warmed at startup)
     llm_state.ensure_channel().await?;
@@ -474,7 +443,7 @@ pub async fn generate_game_summary(
     inaccuracies: usize,
     app: tauri::AppHandle,
 ) -> Result<String, crate::error::AppError> {
-    let prompt = crate::llm::prompts::build_game_summary_prompt(
+    let prompt = crate::llm::coach_prompt::build_game_summary_prompt(
         &result,
         &outcome_type,
         move_count,
@@ -584,20 +553,14 @@ fn determine_player_level(
 
 fn generate_template_fallback(
     classification: &str,
-    coaching_context: &Option<serde_json::Value>,
-    _player_move_san: &str,
-    _engine_best_san: &Option<String>,
+    coaching_context: Option<&CoachingContext>,
 ) -> String {
     let mc = crate::models::engine::MoveClassification::from_str_loose(classification);
 
-    if let Some(ctx_value) = coaching_context
-        && let Ok(ctx) =
-            serde_json::from_value::<crate::models::heuristics::CoachingContext>(ctx_value.clone())
-    {
-        return crate::coaching::generate_coaching_text(&mc, &ctx);
+    match coaching_context {
+        Some(ctx) => crate::coaching::generate_coaching_text(&mc, ctx),
+        None => crate::coaching::templates::generic_template(mc).to_string(),
     }
-
-    crate::coaching::templates::generic_template(mc).to_string()
 }
 
 /// Emit an LLM error event to the frontend so it can handle the failure gracefully.

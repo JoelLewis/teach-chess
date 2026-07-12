@@ -13,7 +13,7 @@ fn row_to_puzzle(row: &rusqlite::Row) -> Result<Puzzle, rusqlite::Error> {
         fen: row.get(1)?,
         solution_moves: row.get(2)?,
         themes: row.get(3)?,
-        category: PuzzleCategory::from_str(&row.get::<_, String>(4)?),
+        category: PuzzleCategory::from_str_loose(&row.get::<_, String>(4)?),
         difficulty: row.get::<_, i64>(5)? as u32,
         source_id: row.get(6)?,
         hints_json: row.get(7)?,

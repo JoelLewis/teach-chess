@@ -1,3 +1,5 @@
+//! Player skill level — app-side prompt content (sensei-kit split).
+
 use serde::{Deserialize, Serialize};
 
 /// Player skill level for coaching tone adaptation.

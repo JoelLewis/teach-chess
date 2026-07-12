@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::heuristics::{CoachingContext, GamePhase, PositionalTheme, TacticType};
 
 /// Engine evaluation score
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum Score {
     /// Centipawn advantage (positive = white advantage)
@@ -118,6 +118,10 @@ pub struct MoveEvaluation {
     pub classification: Option<MoveClassification>,
     pub depth: u32,
     pub pv: Vec<String>,
+    /// Refutation line: the engine's PV for the position *after* the played
+    /// move (i.e. how the opponent punishes it), as UCI moves.
+    #[serde(default)]
+    pub refutation_pv: Vec<String>,
     pub coaching_context: Option<CoachingContext>,
     pub coaching_text: Option<String>,
 }
