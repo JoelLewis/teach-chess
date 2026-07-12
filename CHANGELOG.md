@@ -4,6 +4,29 @@ All notable changes to ChessMentor will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-07-12
+
+### Added
+
+- **Position-aware coaching** — LLM coaching prompts are now grounded in verified position facts (tactical motif descriptions, a post-move tactic diff, SAN best line and refutation, bucketed evaluation swing) instead of bare theme labels, with grammar-constrained decoding to prevent format leakage.
+- **Rank-calibrated feedback** — coaching and puzzle results adapt to the player's skill level (rating bands from the per-category Glicko-2 ratings), with qualitative phrasing and a puzzle-difficulty comparison. New players see unchanged feedback until they have a rated history.
+- **Back/forward view navigation** — Cmd+[ / Cmd+], Alt+Left/Right, and mouse buttons 3/4, with a capped view-history stack.
+- **Dev-only MCP playtest capability** — an opt-in socket (`pnpm playtest`) that lets tooling drive the app (screenshots, clicks, `window.__playtest` hooks), plus a checked-in driver script. Excluded from release builds.
+
+### Changed
+
+- **Local LLM coaching now runs on Gemma 4 E2B** (Apache 2.0) via llama.cpp, replacing the candle/Gemma 3 stack. Metal acceleration is enabled by default on macOS.
+- **Shared `sensei-llm` crate** — the LLM inference, download, and streaming layer is now consumed from the shared sensei-kit repository rather than vendored.
+- **Spaced repetition migrated from SM-2 to FSRS** (`rs-fsrs`), unifying puzzle and opening-drill scheduling; existing review state is preserved.
+- Rust edition 2024; dependency alignment; dead-code cleanup.
+
+### Fixed
+
+- Puzzle attempt timestamps recorded the next-review date instead of the attempt time, skewing dashboard counts.
+- The coaching response cache could return the wrong explanation when two different mistakes shared a position and classification.
+- Draw outcomes threw a runtime error in the game-over dialog due to a wire-format mismatch (surfaced and fixed by generated IPC bindings).
+- CI: the release build workflow failed at startup because signing steps referenced the `secrets` context in `if:` conditions.
+
 ## [0.1.0] - 2026-03-03
 
 Initial release.
