@@ -14,10 +14,10 @@
   import { playerStore } from "./lib/stores/player.svelte";
   import { errorStore } from "./lib/stores/error.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
+  import { navHistory, type Page } from "./lib/stores/navHistory.svelte";
   import * as api from "./lib/api/commands";
   import type { GameConfig } from "./lib/api/bindings";
 
-  type Page = "home" | "play" | "problems" | "openings" | "history" | "review" | "settings";
   let page = $state<Page>("home");
 
   let onboardingComplete = $state(
@@ -38,7 +38,56 @@
   let screenKey = $derived(page === "play" ? `play-${gameStore.phase}` : page);
 
   function navigate(target: Page) {
+    if (target === page) return;
+    navHistory.push({ page, reviewGameId });
     page = target;
+  }
+
+  function goBack() {
+    const entry = navHistory.goBack({ page, reviewGameId });
+    if (!entry) return;
+    reviewGameId = entry.reviewGameId;
+    page = entry.page;
+  }
+
+  function goForward() {
+    const entry = navHistory.goForward({ page, reviewGameId });
+    if (!entry) return;
+    reviewGameId = entry.reviewGameId;
+    page = entry.page;
+  }
+
+  function isTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+  }
+
+  function isDialogOpen(): boolean {
+    return document.querySelector('[role="dialog"], dialog[open]') !== null;
+  }
+
+  function handleNavKeydown(e: KeyboardEvent) {
+    if (isTypingTarget(e.target) || isDialogOpen()) return;
+    const cmd = e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey;
+    const alt = e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey;
+    if ((cmd && e.key === "[") || (alt && e.key === "ArrowLeft")) {
+      e.preventDefault();
+      goBack();
+    } else if ((cmd && e.key === "]") || (alt && e.key === "ArrowRight")) {
+      e.preventDefault();
+      goForward();
+    }
+  }
+
+  function handleNavMousedown(e: MouseEvent) {
+    if (isDialogOpen()) return;
+    if (e.button === 3) {
+      e.preventDefault();
+      goBack();
+    } else if (e.button === 4) {
+      e.preventDefault();
+      goForward();
+    }
   }
 
   async function startGame(config: GameConfig) {
@@ -75,7 +124,7 @@
       gameStore.config = config;
       gameStore.position = position;
       gameStore.phase = "playing";
-      page = "play";
+      navigate("play");
     } catch (err) {
       console.error("Failed to start game:", err);
       errorStore.show(`Failed to start game: ${err}`);
@@ -85,13 +134,15 @@
   }
 
   function handleReview(gameId: string) {
+    if (page === "review" && reviewGameId === gameId) return;
+    navHistory.push({ page, reviewGameId });
     reviewGameId = gameId;
     page = "review";
   }
 
   function handleNewGame() {
     gameStore.reset();
-    page = "home";
+    navigate("home");
   }
 
   // Initialize theme on startup
@@ -116,6 +167,8 @@
   // responsible for destroying the window, which the capability ACL denies —
   // leaving the close button dead.
 </script>
+
+<svelte:window onkeydown={handleNavKeydown} onmousedown={handleNavMousedown} />
 
 <a href="#main-content" class="skip-link">Skip to content</a>
 <div class="app-layout">
