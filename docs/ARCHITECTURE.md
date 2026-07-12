@@ -20,7 +20,7 @@ ChessMentor is a Tauri 2 desktop application with a Rust backend and Svelte 5 fr
 │  └──────────┘ └──────────┘ └──────────┘     │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
 │  │Heuristics│ │ Coaching │ │  LLM     │     │
-│  │(analysis)│ │(templates)│ │ (candle) │     │
+│  │(analysis)│ │(templates)│ │(llama.cpp)│    │
 │  └──────────┘ └──────────┘ └──────────┘     │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
 │  │  Puzzle   │ │Repertoire│ │Assessment│     │
@@ -68,13 +68,11 @@ src-tauri/src/
 ├── coaching/            # Coaching text generation
 │   ├── mod.rs           # generate_coaching_text + pattern summaries
 │   └── templates.rs     # 37 tiered coaching templates
-├── llm/                 # Local LLM inference (feature-gated: "llm")
-│   ├── candle_backend.rs # GGUF model loading + token generation
+├── llm/                 # Local LLM glue (feature-gated: "llm")
 │   ├── channel.rs       # Bounded inference channel with deduplication
-│   ├── model_manager.rs # Model download + management
-│   ├── prompts.rs       # Coaching prompt construction
-│   ├── cache.rs         # DB-backed coaching cache
-│   └── player_level.rs  # Derive player level from game stats
+│   └── cache.rs         # DB-backed coaching cache
+│   # Inference, model download, and prompts live in crates/mentor-llm
+│   # (llama.cpp via llama-cpp-2; designed to be shared with sibling apps)
 ├── puzzle/              # Tactical puzzle system
 │   ├── session.rs       # PuzzleSessionState — solve flow
 │   ├── srs.rs           # SM-2 spaced repetition algorithm
@@ -169,7 +167,7 @@ Position + Move
     → match (classification, context.themes) → coaching_text
 
   → LLM Enhancement (optional, ~2-5s)
-    → cache check → prompt construction → candle inference → cache store
+    → cache check → prompt construction → llama.cpp inference → cache store
     → Replaces template text with LLM-generated coaching
 ```
 

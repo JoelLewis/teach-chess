@@ -1,15 +1,15 @@
 pub mod cache;
-pub mod player_level;
-pub mod prompts;
 
-#[cfg(feature = "llm")]
-pub mod candle_backend;
 #[cfg(feature = "llm")]
 pub mod channel;
-#[cfg(feature = "llm")]
-pub mod model_manager;
 
 use serde::{Deserialize, Serialize};
+
+pub use mentor_llm::prompts;
+pub use mentor_llm::{LlmError, PlayerLevel};
+
+#[cfg(feature = "llm")]
+pub use mentor_llm::download::GEMMA4_E2B;
 
 #[cfg(feature = "llm")]
 use std::path::PathBuf;
@@ -17,7 +17,7 @@ use std::path::PathBuf;
 /// Managed state for the LLM subsystem. Lazily initializes the inference channel.
 #[cfg(feature = "llm")]
 pub struct LlmState {
-    pub model_manager: model_manager::ModelManager,
+    pub store: mentor_llm::download::ModelStore,
     /// Lazy-initialized: None until the first coaching request with a downloaded model.
     pub channel: tokio::sync::Mutex<Option<channel::InferenceChannel>>,
     /// Which compute device the inference channel is using (e.g. "cpu", "cuda", "metal").
@@ -27,9 +27,9 @@ pub struct LlmState {
 #[cfg(feature = "llm")]
 impl LlmState {
     pub fn new(app_data_dir: PathBuf, resource_dir: Option<PathBuf>) -> Self {
-        let model_manager = model_manager::ModelManager::new(&app_data_dir, resource_dir);
+        let store = mentor_llm::download::ModelStore::new(&app_data_dir, resource_dir);
         Self {
-            model_manager,
+            store,
             channel: tokio::sync::Mutex::new(None),
             device_name: std::sync::OnceLock::new(),
         }
@@ -43,47 +43,14 @@ impl LlmState {
     pub async fn ensure_channel(&self) -> Result<(), LlmError> {
         let mut channel_guard = self.channel.lock().await;
         if channel_guard.is_none() {
-            let config = &model_manager::GEMMA3_1B;
-            let model_path = self.model_manager.get_model_path(config);
-            let tokenizer_path = self.model_manager.get_tokenizer_path(config);
-            let (ch, dev_name) = channel::InferenceChannel::spawn(&model_path, &tokenizer_path)?;
+            let model_path = self.store.model_path(&GEMMA4_E2B);
+            let (ch, dev_name) = channel::InferenceChannel::spawn(&model_path);
             let _ = self.device_name.set(dev_name.clone());
             *channel_guard = Some(ch);
             tracing::info!("Inference channel initialized on {dev_name}");
         }
         Ok(())
     }
-}
-
-/// Player skill level for coaching tone adaptation
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum PlayerLevel {
-    Beginner,
-    Intermediate,
-    UpperIntermediate,
-}
-
-/// Errors from the LLM subsystem
-#[derive(Debug, Clone, thiserror::Error)]
-pub enum LlmError {
-    #[error("Model not loaded")]
-    ModelNotLoaded,
-
-    #[error("Model not found: {0}")]
-    ModelNotFound(String),
-
-    #[error("Inference error: {0}")]
-    InferenceError(String),
-
-    #[error("Download error: {0}")]
-    DownloadError(String),
-
-    #[error("Inference cancelled")]
-    Cancelled,
-
-    #[error("Tokenizer error: {0}")]
-    TokenizerError(String),
 }
 
 /// Source of a coaching response

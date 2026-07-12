@@ -88,7 +88,7 @@ echo "==> Building Tauri app..."
 npm run tauri build -- --target "$TARGET"
 
 # Step 4: Find the built .app
-APP_PATH=$(find "$PROJECT_ROOT/src-tauri/target/$TARGET/release/bundle/macos" -name "*.app" -maxdepth 1 | head -1)
+APP_PATH=$(find "$PROJECT_ROOT/target/$TARGET/release/bundle/macos" -name "*.app" -maxdepth 1 | head -1)
 if [ -z "$APP_PATH" ]; then
     echo "Error: Could not find built .app bundle" >&2
     exit 1
@@ -117,7 +117,7 @@ echo "==> Verifying signature..."
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
 # Step 8: Build the .pkg for App Store upload
-PKG_PATH="$PROJECT_ROOT/src-tauri/target/$TARGET/release/bundle/ChessMentor.pkg"
+PKG_PATH="$PROJECT_ROOT/target/$TARGET/release/bundle/ChessMentor.pkg"
 echo "==> Creating App Store package..."
 productbuild \
     --sign "$APPLE_INSTALLER_IDENTITY" \

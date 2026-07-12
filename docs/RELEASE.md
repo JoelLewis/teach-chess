@@ -47,13 +47,13 @@ browser downloads, AirDrop, and most chat apps set the quarantine flag.
 - **Apple Silicon only** — only the `aarch64-apple-darwin` Stockfish sidecar is
   fetched. Intel support needs `./scripts/fetch-stockfish.sh` for
   `x86_64-apple-darwin` plus a universal build.
-- **DMG is ~850 MB** — the Gemma model (806 MB) and tokenizer are bundled as
-  resources by design (offline coaching).
+- **DMG is ~3 GB** — the Gemma 4 E2B model (~3.1 GB GGUF) is bundled as a
+  resource by design (offline coaching).
 
 ## Build paths
 
 - **Playtest / direct distribution:** `npm run tauri build` →
-  `src-tauri/target/release/bundle/dmg/`. Not sandboxed; entitlements are
+  `target/release/bundle/dmg/`. Not sandboxed; entitlements are
   intentionally not applied to this build.
 - **Mac App Store:** `./scripts/build-appstore.sh` — re-signs with the App
   Sandbox entitlements in `src-tauri/entitlements/` and builds a `.pkg`.

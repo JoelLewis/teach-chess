@@ -83,11 +83,11 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
 
     #[cfg(feature = "llm")]
     {
-        use crate::llm::model_manager::GEMMA3_1B;
+        use crate::llm::GEMMA4_E2B;
 
         let llm_state = app.state::<crate::llm::LlmState>();
-        let model_available = llm_state.model_manager.is_available(&GEMMA3_1B);
-        let model_bundled = llm_state.model_manager.is_bundled(&GEMMA3_1B);
+        let model_available = llm_state.store.is_available(&GEMMA4_E2B);
+        let model_bundled = llm_state.store.is_bundled(&GEMMA4_E2B);
         let channel_guard = llm_state.channel.lock().await;
         let model_loaded = channel_guard
             .as_ref()
@@ -105,7 +105,7 @@ pub async fn get_llm_status(app: tauri::AppHandle) -> Result<LlmStatus, crate::e
             available: model_available,
             model_loaded,
             model_id: if model_available {
-                Some(GEMMA3_1B.id.to_string())
+                Some(GEMMA4_E2B.id.to_string())
             } else {
                 None
             },
@@ -128,18 +128,18 @@ pub async fn get_available_models(
 
     #[cfg(feature = "llm")]
     {
-        use crate::llm::model_manager::GEMMA3_1B;
+        use crate::llm::GEMMA4_E2B;
 
         let llm_state = app.state::<crate::llm::LlmState>();
         let sys_mem = get_system_memory_mb();
         let avail_mem = get_available_memory_mb();
         Ok(vec![ModelStatus {
-            id: GEMMA3_1B.id.to_string(),
-            display_name: GEMMA3_1B.display_name.to_string(),
-            downloaded: llm_state.model_manager.is_available(&GEMMA3_1B),
-            bundled: llm_state.model_manager.is_bundled(&GEMMA3_1B),
-            file_size_mb: GEMMA3_1B.file_size_mb,
-            ram_requirement_mb: GEMMA3_1B.ram_requirement_mb,
+            id: GEMMA4_E2B.id.to_string(),
+            display_name: GEMMA4_E2B.display_name.to_string(),
+            downloaded: llm_state.store.is_available(&GEMMA4_E2B),
+            bundled: llm_state.store.is_bundled(&GEMMA4_E2B),
+            file_size_mb: GEMMA4_E2B.file_size_mb,
+            ram_requirement_mb: GEMMA4_E2B.ram_requirement_mb,
             system_memory_mb: sys_mem,
             available_memory_mb: avail_mem,
         }])
@@ -159,14 +159,73 @@ pub async fn download_model(
 
     #[cfg(feature = "llm")]
     {
-        use crate::llm::model_manager::ModelManager;
+        use tauri::Emitter;
 
-        let config = ModelManager::get_config(&model_id)
+        let config = mentor_llm::download::get_config(&model_id)
             .ok_or(crate::llm::LlmError::ModelNotFound(model_id))?;
 
         let llm_state = app.state::<crate::llm::LlmState>();
-        llm_state.model_manager.download(config, &app).await?;
+        let store = llm_state.store.clone();
+        let progress_handle = app.clone();
+
+        // The download is blocking (hf-hub sync API); progress events are
+        // throttled so the frontend isn't flooded.
+        tokio::task::spawn_blocking(move || {
+            let mut throttle = ProgressThrottle::new();
+            store.download(config, |downloaded, total| {
+                if throttle.should_emit(downloaded, total) {
+                    let _ = progress_handle.emit(
+                        "llm-download-progress",
+                        serde_json::json!({
+                            "downloadedBytes": downloaded,
+                            "totalBytes": total,
+                        }),
+                    );
+                }
+            })
+        })
+        .await
+        .map_err(|e| {
+            crate::llm::LlmError::DownloadError(format!("download task panicked: {e}"))
+        })??;
+
         Ok(())
+    }
+}
+
+/// Throttles download progress emissions to every 256KB or 200ms.
+///
+/// Completion events (`downloaded == total`) are always emitted.
+#[cfg(feature = "llm")]
+struct ProgressThrottle {
+    last_emitted_bytes: u64,
+    last_emit: std::time::Instant,
+}
+
+#[cfg(feature = "llm")]
+impl ProgressThrottle {
+    const BYTE_THRESHOLD: u64 = 256 * 1024;
+    const TIME_THRESHOLD: std::time::Duration = std::time::Duration::from_millis(200);
+
+    fn new() -> Self {
+        Self {
+            last_emitted_bytes: 0,
+            last_emit: std::time::Instant::now(),
+        }
+    }
+
+    fn should_emit(&mut self, downloaded: u64, total: u64) -> bool {
+        let done = total > 0 && downloaded >= total;
+        if done
+            || downloaded.saturating_sub(self.last_emitted_bytes) >= Self::BYTE_THRESHOLD
+            || self.last_emit.elapsed() >= Self::TIME_THRESHOLD
+        {
+            self.last_emitted_bytes = downloaded;
+            self.last_emit = std::time::Instant::now();
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -212,10 +271,7 @@ pub async fn generate_coaching(
     #[cfg(feature = "llm")]
     {
         let llm_state = app.state::<crate::llm::LlmState>();
-        if llm_state
-            .model_manager
-            .is_available(&crate::llm::model_manager::GEMMA3_1B)
-        {
+        if llm_state.store.is_available(&crate::llm::GEMMA4_E2B) {
             let params = LlmCoachingParams {
                 level: &level,
                 classification: &classification,
@@ -446,10 +502,10 @@ async fn try_generate_summary(
     app: &tauri::AppHandle,
     prompt: &str,
 ) -> Result<String, crate::llm::LlmError> {
-    use crate::llm::model_manager::GEMMA3_1B;
+    use crate::llm::GEMMA4_E2B;
 
     let llm_state = app.state::<crate::llm::LlmState>();
-    if !llm_state.model_manager.is_available(&GEMMA3_1B) {
+    if !llm_state.store.is_available(&GEMMA4_E2B) {
         return Err(crate::llm::LlmError::ModelNotFound(
             "Model not available".to_string(),
         ));

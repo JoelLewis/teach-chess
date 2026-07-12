@@ -1,7 +1,6 @@
-use super::PlayerLevel;
+use crate::types::PlayerLevel;
 
 /// System prompt tailored to the player's skill level.
-#[cfg_attr(not(feature = "llm"), allow(dead_code))]
 pub fn system_prompt(level: &PlayerLevel) -> &'static str {
     match level {
         PlayerLevel::Beginner => {
@@ -25,10 +24,21 @@ pub fn system_prompt(level: &PlayerLevel) -> &'static str {
     }
 }
 
-/// Build a full prompt in Gemma 2 instruction format.
+/// Format a system + user message pair in Gemma 4 instruction format.
 ///
-/// Format: `<start_of_turn>user\n{system}\n\n{json_context}<end_of_turn>\n<start_of_turn>model\n`
-#[cfg_attr(not(feature = "llm"), allow(dead_code))]
+/// Gemma 4 replaced Gemma 2/3's `<start_of_turn>` markers with
+/// `<|turn>{role}\n{content}<turn|>\n` turns and a `<|turn>model\n` generation
+/// prompt (see `common_chat_params_init_gemma4` in llama.cpp's `common/chat.cpp`).
+/// llama.cpp's C-side `llama_chat_apply_template` heuristics do not know this
+/// template (only its Jinja engine does, which llama-cpp-2 does not expose),
+/// so the format is applied here instead of via the model's chat template.
+///
+/// The BOS token is intentionally omitted — tokenization adds it (`AddBos::Always`).
+pub fn format_chat(system: &str, user: &str) -> String {
+    format!("<|turn>system\n{system}<turn|>\n<|turn>user\n{user}<turn|>\n<|turn>model\n")
+}
+
+/// Build a full coaching prompt in Gemma 4 instruction format.
 #[allow(clippy::too_many_arguments)]
 pub fn build_prompt(
     level: &PlayerLevel,
@@ -43,12 +53,12 @@ pub fn build_prompt(
     let system = system_prompt(level);
 
     let better_move_json = match better_move {
-        Some(m) => format!("\"{}\"", m),
+        Some(m) => format!("\"{m}\""),
         None => "null".to_string(),
     };
 
-    let themes_json: Vec<String> = themes.iter().map(|t| format!("\"{}\"", t)).collect();
-    let tactics_json: Vec<String> = tactics.iter().map(|t| format!("\"{}\"", t)).collect();
+    let themes_json: Vec<String> = themes.iter().map(|t| format!("\"{t}\"")).collect();
+    let tactics_json: Vec<String> = tactics.iter().map(|t| format!("\"{t}\"")).collect();
 
     let context_json = format!(
         r#"{{"classification":"{}","phase":"{}","player_move":"{}","better_move":{},"themes":[{}],"tactics":[{}],"material_balance_cp":{}}}"#,
@@ -61,13 +71,10 @@ pub fn build_prompt(
         material_balance_cp,
     );
 
-    format!(
-        "<start_of_turn>user\n{}\n\n{}<end_of_turn>\n<start_of_turn>model\n",
-        system, context_json
-    )
+    format_chat(system, &context_json)
 }
 
-/// Build a prompt for generating a one-sentence post-game summary in Gemma 2 instruction format.
+/// Build a prompt for generating a one-sentence post-game summary.
 #[allow(clippy::too_many_arguments)]
 pub fn build_game_summary_prompt(
     result: &str,
@@ -79,6 +86,12 @@ pub fn build_game_summary_prompt(
     mistakes: usize,
     inaccuracies: usize,
 ) -> String {
+    let system = "You are a chess coach writing a brief, encouraging one-sentence summary \
+                  of a student's game. Be specific about what went well or what to improve. \
+                  Reference concrete aspects like tactical play, endgame technique, or \
+                  opening preparation. Keep it under 30 words. \
+                  Do not start with \"Great\" or \"Good\".";
+
     let context = format!(
         r#"{{"result":"{}","outcome":"{}","moves":{},"accuracy":{:.0},"bestMoves":{},"blunders":{},"mistakes":{},"inaccuracies":{}}}"#,
         result,
@@ -91,16 +104,7 @@ pub fn build_game_summary_prompt(
         inaccuracies
     );
 
-    format!(
-        "<start_of_turn>user\n\
-         You are a chess coach writing a brief, encouraging one-sentence summary of a student's game. \
-         Be specific about what went well or what to improve. \
-         Reference concrete aspects like tactical play, endgame technique, or opening preparation. \
-         Keep it under 30 words. Do not start with \"Great\" or \"Good\".\n\n\
-         {}<end_of_turn>\n\
-         <start_of_turn>model\n",
-        context
-    )
+    format_chat(system, &context)
 }
 
 #[cfg(test)]
@@ -129,7 +133,15 @@ mod tests {
     }
 
     #[test]
-    fn build_prompt_has_gemma_format_markers() {
+    fn format_chat_has_gemma4_markers() {
+        let prompt = format_chat("system text", "user text");
+        assert!(prompt.starts_with("<|turn>system\nsystem text<turn|>\n"));
+        assert!(prompt.contains("<|turn>user\nuser text<turn|>\n"));
+        assert!(prompt.ends_with("<|turn>model\n"));
+    }
+
+    #[test]
+    fn build_prompt_has_gemma4_format_markers() {
         let prompt = build_prompt(
             &PlayerLevel::Beginner,
             "blunder",
@@ -140,9 +152,10 @@ mod tests {
             &["fork".to_string()],
             -150,
         );
-        assert!(prompt.contains("<start_of_turn>user"));
-        assert!(prompt.contains("<end_of_turn>"));
-        assert!(prompt.contains("<start_of_turn>model"));
+        assert!(prompt.contains("<|turn>system"));
+        assert!(prompt.contains("<|turn>user"));
+        assert!(prompt.contains("<turn|>"));
+        assert!(prompt.ends_with("<|turn>model\n"));
     }
 
     #[test]
@@ -157,7 +170,7 @@ mod tests {
             &[],
             0,
         );
-        // Extract the JSON portion (between system prompt and end_of_turn)
+        // Extract the JSON portion (the user turn content)
         let json_start = prompt.find('{').unwrap();
         let json_end = prompt.rfind('}').unwrap();
         let json_str = &prompt[json_start..=json_end];
@@ -182,6 +195,15 @@ mod tests {
         assert!(prompt.contains("openFile"));
         assert!(prompt.contains("pin"));
         assert!(prompt.contains("200"));
+    }
+
+    #[test]
+    fn game_summary_prompt_contains_stats() {
+        let prompt = build_game_summary_prompt("1-0", "checkmate", 34, 87.5, 10, 1, 2, 3);
+        assert!(prompt.contains("checkmate"));
+        assert!(prompt.contains("\"moves\":34"));
+        assert!(prompt.contains("\"accuracy\":88"));
+        assert!(prompt.ends_with("<|turn>model\n"));
     }
 
     #[test]

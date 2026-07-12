@@ -1,4 +1,13 @@
-use super::PlayerLevel;
+use serde::{Deserialize, Serialize};
+
+/// Player skill level for coaching tone adaptation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PlayerLevel {
+    Beginner,
+    Intermediate,
+    UpperIntermediate,
+}
 
 impl PlayerLevel {
     /// Derive player level from game statistics.
@@ -95,6 +104,18 @@ mod tests {
         assert_eq!(
             PlayerLevel::from_game_stats(10, 0.15, 0.05),
             PlayerLevel::Intermediate
+        );
+    }
+
+    #[test]
+    fn serializes_to_camel_case() {
+        assert_eq!(
+            serde_json::to_string(&PlayerLevel::UpperIntermediate).unwrap(),
+            "\"upperIntermediate\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PlayerLevel::Beginner).unwrap(),
+            "\"beginner\""
         );
     }
 }
