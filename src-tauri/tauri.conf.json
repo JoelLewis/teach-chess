@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/schemas/master/tauri/tauri.conf.json",
   "productName": "ChessMentor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.chessmentor.app",
   "build": {
     "beforeDevCommand": "pnpm run dev",
