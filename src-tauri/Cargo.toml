@@ -37,7 +37,7 @@ sysinfo = "0.33"
 # LLM coaching (shared sensei-llm runtime; llama.cpp / hf-hub only compile
 # when the app's `llm` feature is enabled below). Metal is automatic on
 # macOS via sensei-llm's target-specific llama-cpp-2 dependency.
-sensei-llm = { git = "https://github.com/JoelLewis/sensei-kit", rev = "967f594175ac4682e52b07aa7b2671581439ecbc", default-features = false }
+sensei-llm = { git = "https://github.com/JoelLewis/sensei-kit", rev = "95ef866a28b034c43e3c28dd1226f40e548912c0", default-features = false }
 
 # Dev-only agent-driving socket server; NEVER in default features — release
 # builds (App Store included) must not ship the unauthenticated socket.
