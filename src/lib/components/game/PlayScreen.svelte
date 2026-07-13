@@ -43,6 +43,7 @@
 
   let showPersonalityBadge = $state(false);
   let confirmingResign = $state(false);
+  let coachingGeneration = 0;
 
   $effect(() => {
     if (personalityLabel) {
@@ -72,41 +73,96 @@
         return;
       }
 
-      // Evaluate the player's move (coaching — never blocks the game)
-      try {
-        if (config.coachingLevel !== "silent") {
-          const isPlayerWhite = config.playerColor === "white";
-          const moveNumber = Math.ceil(newPosition.sanHistory.length / 2);
+      // Start the engine request first so its command gets the engine lock
+      // before background coaching can begin its deeper analysis.
+      const engineMove = requestEngineMove(newPosition);
+      // Invalidate any stream still finishing for the previous player move.
+      gameStore.coachingRequestId = null;
+      gameStore.coachingStreaming = false;
+      gameStore.coachingStreamingText = "";
 
-          const feedback = await api.evaluatePlayerMove(
-            fenBefore,
-            newPosition.fen,
-            isPlayerWhite,
-            moveNumber,
-            config.coachingLevel ?? "fullCoach",
-          );
-
-          gameStore.latestCoaching = feedback;
-          // Keep only the last 20 coaching entries to avoid unbounded memory growth
-          const history = [...gameStore.coachingHistory, feedback];
-          gameStore.coachingHistory = history.length > 20 ? history.slice(-20) : history;
-
-          // Track game phase from coaching context
-          if (feedback.coachingContext?.phase) {
-            gameStore.currentChessPhase = feedback.coachingContext.phase;
-          }
-        }
-      } catch (err) {
-        console.error("Coaching evaluation failed (non-blocking):", err);
+      // Start coaching in the background. Engine play must not wait for
+      // analysis, prompt construction, cache lookup, or model generation.
+      if (config.coachingLevel !== "silent") {
+        void evaluateAndGenerateCoaching(
+          fenBefore,
+          newPosition.fen,
+          newPosition.sanHistory.at(-1) ?? "",
+          newPosition.sanHistory.length,
+          config.playerColor === "white",
+          config.coachingLevel ?? "fullCoach",
+        );
       }
 
-      // Request engine move
-      await requestEngineMove(newPosition);
+      await engineMove;
     } catch (err) {
       console.error("Move failed:", err);
       errorStore.show(`Move failed: ${err}`);
       const currentPos = await api.getPosition();
       gameStore.position = currentPos;
+    }
+  }
+
+  async function evaluateAndGenerateCoaching(
+    fenBefore: string,
+    fenAfter: string,
+    playerMoveSan: string,
+    moveCount: number,
+    isPlayerWhite: boolean,
+    coachingLevel: NonNullable<typeof config>['coachingLevel'],
+  ) {
+    const generation = ++coachingGeneration;
+    try {
+      const feedback = await api.evaluatePlayerMove(
+        fenBefore,
+        fenAfter,
+        isPlayerWhite,
+        Math.ceil(moveCount / 2),
+        coachingLevel ?? "fullCoach",
+      );
+
+      if (generation !== coachingGeneration || !feedback.coachingText) return;
+
+      const requestId = crypto.randomUUID();
+      gameStore.coachingRequestId = requestId;
+      gameStore.coachingStreaming = false;
+      gameStore.coachingStreamingText = "";
+      gameStore.latestCoaching = feedback;
+      const history = [...gameStore.coachingHistory, feedback];
+      gameStore.coachingHistory = history.length > 20 ? history.slice(-20) : history;
+
+      if (feedback.coachingContext?.phase) {
+        gameStore.currentChessPhase = feedback.coachingContext.phase;
+      }
+
+      const response = await api.generateCoaching(
+        fenBefore,
+        feedback.classification,
+        feedback.coachingContext,
+        playerMoveSan,
+        feedback.engineBestSan,
+        {
+          evalBefore: feedback.evalBefore,
+          evalAfter: feedback.evalAfter,
+          engineBestSan: feedback.engineBestSan,
+          playerMoveUci: null,
+          pv: feedback.pv,
+          refutationPv: feedback.refutationPv,
+        },
+        requestId,
+      );
+
+      if (generation !== coachingGeneration) return;
+      gameStore.coachingStreaming = false;
+      if (response.source !== "template") {
+        gameStore.latestCoaching = {
+          ...gameStore.latestCoaching!,
+          coachingText: response.text,
+        };
+      }
+    } catch (err) {
+      console.error("Coaching evaluation failed (non-blocking):", err);
+      gameStore.coachingStreaming = false;
     }
   }
 

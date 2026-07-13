@@ -313,6 +313,20 @@ pub fn generate_study_suggestions(summary: &PatternSummary) -> Vec<StudySuggesti
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn good_classification_keeps_neutral_text_when_theme_is_present() {
+        let position =
+            crate::game::parse_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1")
+                .unwrap();
+        let mut context = crate::heuristics::analyze_position(&position);
+        context.themes = vec![PositionalTheme::KnightOnRim];
+
+        assert_eq!(
+            generate_coaching_text(&MoveClassification::Good, &context),
+            templates::generic_template(MoveClassification::Good)
+        );
+    }
     use crate::models::heuristics::*;
 
     fn default_context() -> CoachingContext {

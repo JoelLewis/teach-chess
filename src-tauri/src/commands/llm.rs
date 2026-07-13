@@ -374,7 +374,7 @@ pub async fn generate_coaching(
     let _ = (&app, &request_id, &user_prompt, &level);
 
     // Fall back to template
-    let template_text = generate_template_fallback(
+    let template_text = template_fallback_for_classification(
         &classification,
         coaching_context.as_ref(),
         rank_context.as_ref(),
@@ -589,7 +589,7 @@ fn determine_player_level(
     Ok(crate::llm::PlayerLevel::from_game_stats(games, 0.10, 0.10))
 }
 
-fn generate_template_fallback(
+fn template_fallback_for_classification(
     classification: &str,
     coaching_context: Option<&CoachingContext>,
     rank_context: Option<&crate::assessment::rank::PlayerRankContext>,
@@ -615,5 +615,30 @@ fn emit_llm_error(app: &tauri::AppHandle, request_id: Option<&str>, message: &st
                 request_id: rid.to_string(),
             },
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn template_fallback_maps_every_classification_to_matching_text() {
+        let classifications = [
+            ("best", "strongest move"),
+            ("excellent", "playing accurately"),
+            ("good", "keeps the position balanced"),
+            ("inaccuracy", "stronger option"),
+            ("mistake", "gives your opponent an advantage"),
+            ("blunder", "serious error"),
+        ];
+
+        for (classification, expected_fragment) in classifications {
+            let text = template_fallback_for_classification(classification, None, None);
+            assert!(
+                text.contains(expected_fragment),
+                "{classification} fallback did not match its classification: {text}"
+            );
+        }
     }
 }

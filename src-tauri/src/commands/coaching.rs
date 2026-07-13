@@ -34,18 +34,25 @@ pub async fn evaluate_player_move(
             eval_before: Score::cp(0),
             eval_after: Score::cp(0),
             engine_best_uci: String::new(),
+            engine_best_san: None,
+            pv: vec![],
+            refutation_pv: vec![],
             coaching_context: None,
             move_number,
         });
     }
 
-    debug!("Evaluating player move {move_number} at depth 10");
+    // Keep the classification source identical to the review screen. This
+    // command runs in the background, so the deeper review depth does not
+    // delay the opponent's move.
+    const REVIEW_DEPTH: u32 = 18;
+    debug!("Evaluating player move {move_number} at depth {REVIEW_DEPTH}");
 
     let mut engine = engine_state.lock().await;
 
-    // Analyze position before and after the move at depth 10 for speed
-    let eval_before = engine.analyze(&fen_before, 10).await?;
-    let eval_after = engine.analyze(&fen_after, 10).await?;
+    // Analyze position before and after at the same depth used by review.
+    let eval_before = engine.analyze(&fen_before, REVIEW_DEPTH).await?;
+    let eval_after = engine.analyze(&fen_after, REVIEW_DEPTH).await?;
 
     drop(engine);
 
@@ -89,15 +96,31 @@ pub async fn evaluate_player_move(
         String::new()
     };
 
+    let engine_best_san = uci_to_san(&fen_before, &eval_before.best_move);
+    let pv = eval_before.pv.clone();
+    let refutation_pv = eval_after.pv.clone();
+
     Ok(InGameCoachingFeedback {
         classification,
         coaching_text,
         eval_before: eval_before.score,
         eval_after: eval_after.score,
         engine_best_uci: eval_before.best_move,
+        engine_best_san,
+        pv,
+        refutation_pv,
         coaching_context,
         move_number,
     })
+}
+
+fn uci_to_san(fen: &str, uci: &str) -> Option<String> {
+    use shakmaty::{san::SanPlus, uci::UciMove};
+
+    let position = crate::game::parse_fen(fen).ok()?;
+    let uci_move: UciMove = uci.parse().ok()?;
+    let legal_move = uci_move.to_move(&position).ok()?;
+    Some(SanPlus::from_move(position, &legal_move).to_string())
 }
 
 /// Analyze the current position for pre-move hints (heuristic-only, no engine)

@@ -309,6 +309,9 @@ export type InGameCoachingFeedback = {
 	evalBefore: Score,
 	evalAfter: Score,
 	engineBestUci: string,
+	engineBestSan: string | null,
+	pv: string[],
+	refutationPv: string[],
 	coachingContext: CoachingContext | null,
 	moveNumber: number,
 };

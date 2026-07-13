@@ -59,4 +59,20 @@ mod tests {
         let k2 = compute_cache_key("fen", "beginner", "you played Rxb7 - a blunder");
         assert_ne!(k1, k2);
     }
+
+    #[test]
+    fn identical_position_and_prompt_reuses_cached_response_key() {
+        let first = compute_cache_key(
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+            "beginner",
+            "You played e4 and the move was good.",
+        );
+        let repeat = compute_cache_key(
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+            "beginner",
+            "You played e4 and the move was good.",
+        );
+
+        assert_eq!(first, repeat);
+    }
 }

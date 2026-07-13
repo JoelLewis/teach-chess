@@ -152,6 +152,9 @@ pub struct InGameCoachingFeedback {
     pub eval_before: Score,
     pub eval_after: Score,
     pub engine_best_uci: String,
+    pub engine_best_san: Option<String>,
+    pub pv: Vec<String>,
+    pub refutation_pv: Vec<String>,
     pub coaching_context: Option<CoachingContext>,
     pub move_number: u32,
 }
