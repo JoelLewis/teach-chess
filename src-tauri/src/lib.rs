@@ -88,6 +88,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::llm::get_llm_status,
             commands::llm::get_available_models,
             commands::llm::download_model,
+            commands::llm::cancel_download,
             commands::llm::generate_coaching,
             commands::llm::generate_game_summary,
             commands::coaching::evaluate_player_move,
@@ -170,6 +171,8 @@ pub fn run() {
                 engine::process::EngineProcess::default(),
             ));
             app.manage(CurrentPlayerId::new());
+            #[cfg(feature = "llm")]
+            app.manage(llm::DownloadState::default());
 
             // Load app config (theme, audio preferences)
             let app_data_dir = app.handle().path().app_data_dir().expect("app data dir");

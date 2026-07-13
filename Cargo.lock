@@ -3912,7 +3912,7 @@ dependencies = [
 [[package]]
 name = "sensei-llm"
 version = "0.1.0"
-source = "git+https://github.com/JoelLewis/sensei-kit?rev=ae29011c9328cff46eb9a0c8866731066c13782f#ae29011c9328cff46eb9a0c8866731066c13782f"
+source = "git+https://github.com/JoelLewis/sensei-kit?rev=967f594175ac4682e52b07aa7b2671581439ecbc#967f594175ac4682e52b07aa7b2671581439ecbc"
 dependencies = [
  "encoding_rs",
  "hf-hub",

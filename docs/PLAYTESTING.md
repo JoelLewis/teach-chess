@@ -124,6 +124,8 @@ node scripts/playtest-driver.mjs run .playtest/steps/*.mjs
 
 Or import `createDriver()` from the script for programmatic use. Env knobs:
 `PLAYTEST_SOCKET`, `PLAYTEST_WINDOW`, `PLAYTEST_OFFSET_X/Y` (click calibration).
+`createDriver()` automatically shows and focuses the target window before
+returning, so native clicks and screenshots also work against hidden dev windows.
 
 ### Smoke-test steps
 

@@ -54,7 +54,11 @@
   }
 
   function cancelDownload() {
+    void api.cancelDownload().catch((err) => {
+      console.error("Failed to cancel model download:", err);
+    });
     downloading = null;
+    downloadProgress = { downloaded: 0, total: 0 };
     downloadSpeed = 0;
     lastProgressTime = 0;
     lastProgressBytes = 0;

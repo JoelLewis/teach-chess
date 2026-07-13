@@ -6,6 +6,7 @@
   import PuzzleSolution from "./PuzzleSolution.svelte";
   import PuzzleFilter from "./PuzzleFilter.svelte";
   import SkillProfilePanel from "../assessment/SkillProfilePanel.svelte";
+  import { humanizeLabel } from "../../utils/format";
 
   type Props = {
     onLoadNext: () => void;
@@ -73,7 +74,7 @@
       {#if themes.length > 0}
         <div class="theme-tags">
           {#each themes as theme}
-            <span class="theme-tag">{theme}</span>
+            <span class="theme-tag">{humanizeLabel(theme)}</span>
           {/each}
         </div>
       {/if}

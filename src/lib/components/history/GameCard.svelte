@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GameRecord } from "../../api/bindings";
+  import { opponentName } from "../../utils/gameSummary";
 
   type Props = {
     game: GameRecord;
@@ -30,7 +31,7 @@
   <div class="card-header">
     <div>
       <span class="result-label {resultClass}">{resultLabel}</span>
-      <span class="opponent-info">vs Engine ({game.engineElo})</span>
+      <span class="opponent-info">vs {opponentName(game.opponentPersonality) ?? "Engine"} ({game.engineElo} ELO)</span>
     </div>
     <span class="result-raw">{game.result}</span>
   </div>

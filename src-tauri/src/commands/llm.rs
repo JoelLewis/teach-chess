@@ -174,12 +174,27 @@ pub async fn download_model(
             .ok_or(crate::llm::LlmError::ModelNotFound(model_id))?;
 
         let llm_state = app.state::<crate::llm::LlmState>();
+        let download_state = app.state::<crate::llm::DownloadState>();
         let store = llm_state.store.clone();
+        let cleanup_store = store.clone();
         let progress_handle = app.clone();
+        let cancellation = std::sync::Arc::new(crate::llm::DownloadCancellation::default());
+        {
+            let mut active = download_state
+                .active
+                .lock()
+                .map_err(|e| crate::llm::LlmError::Download(format!("download state lock: {e}")))?;
+            if active.is_some() {
+                return Err(
+                    crate::llm::LlmError::Download("download already in progress".into()).into(),
+                );
+            }
+            *active = Some(cancellation.clone());
+        }
 
         // The download is blocking (hf-hub sync API); progress events are
         // throttled so the frontend isn't flooded.
-        tokio::task::spawn_blocking(move || {
+        let mut task = tokio::task::spawn_blocking(move || {
             let mut throttle = ProgressThrottle::new();
             store.download(info.spec, |downloaded, total| {
                 if throttle.should_emit(downloaded, total) {
@@ -192,10 +207,49 @@ pub async fn download_model(
                     );
                 }
             })
-        })
-        .await
-        .map_err(|e| crate::llm::LlmError::Download(format!("download task panicked: {e}")))??;
+        });
 
+        let result = tokio::select! {
+            joined = &mut task => joined
+                .map_err(|e| crate::llm::LlmError::Download(format!("download task panicked: {e}")))?
+                .map(|_| ()),
+            _ = cancellation.notify.notified() => {
+                // sensei-llm exposes a progress callback but no cancellation
+                // return value; abort the app task and remove stable artifacts.
+                task.abort();
+                let target = cleanup_store.model_path(info.spec);
+                let partial = target.with_file_name(format!(".{}.part", info.spec.filename));
+                let _ = std::fs::remove_file(target);
+                let _ = std::fs::remove_file(partial);
+                Err(crate::llm::LlmError::Cancelled)
+            }
+        };
+        let _ = download_state.active.lock().map(|mut active| active.take());
+        result.map_err(Into::into)
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn cancel_download(
+    #[allow(unused_variables)] app: tauri::AppHandle,
+) -> Result<(), crate::error::AppError> {
+    #[cfg(not(feature = "llm"))]
+    {
+        Err(crate::llm::LlmError::Download("LLM feature not compiled".into()).into())
+    }
+
+    #[cfg(feature = "llm")]
+    {
+        let state = app.state::<crate::llm::DownloadState>();
+        let active = state
+            .active
+            .lock()
+            .map_err(|e| crate::llm::LlmError::Download(format!("download state lock: {e}")))?;
+        if let Some(cancellation) = active.as_ref() {
+            cancellation.cancel();
+            cancellation.notify.notify_waiters();
+        }
         Ok(())
     }
 }
@@ -621,6 +675,16 @@ fn emit_llm_error(app: &tauri::AppHandle, request_id: Option<&str>, message: &st
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "llm")]
+    #[test]
+    fn download_cancellation_transitions_once() {
+        let cancellation = crate::llm::DownloadCancellation::default();
+        assert!(!cancellation.is_cancelled());
+        assert!(cancellation.cancel());
+        assert!(cancellation.is_cancelled());
+        assert!(!cancellation.cancel());
+    }
 
     #[test]
     fn template_fallback_maps_every_classification_to_matching_text() {

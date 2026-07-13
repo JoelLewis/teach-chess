@@ -3,6 +3,7 @@
   import GameSummaryCard from "./GameSummaryCard.svelte";
   import { generateGameSummary, getGameReview } from "../../api/commands";
   import { summarizeEvaluations, type GameStats } from "../../utils/reviewStats";
+  import { gameResult } from "../../utils/gameSummary";
 
   type Props = {
     outcome: GameOutcome | null;
@@ -39,77 +40,14 @@
     mistakes: 0,
     blunders: 0,
   });
+  let statsReady = $state(false);
 
-  // Unit variants of GameOutcome cross the IPC boundary as plain strings
-  // ("stalemate", "draw", …); only checkmate/resignation carry a winner.
-  function decisive(
-    o: GameOutcome,
-  ): { kind: "checkmate" | "resignation"; winner: Color } | null {
-    if (typeof o === "string") return null;
-    if (o.checkmate) return { kind: "checkmate", winner: o.checkmate.winner };
-    if (o.resignation) return { kind: "resignation", winner: o.resignation.winner };
-    return null;
-  }
-
-  let resultText = $derived.by(() => {
-    if (!outcome) return "Game Over";
-
-    const d = decisive(outcome);
-    if (d?.kind === "checkmate") {
-      return d.winner === playerColor
-        ? "You win by checkmate!"
-        : "You lost by checkmate";
-    }
-    if (d?.kind === "resignation") {
-      return d.winner === playerColor
-        ? "Opponent resigned — you win!"
-        : "You resigned";
-    }
-    switch (outcome) {
-      case "stalemate":
-        return "Draw by stalemate";
-      case "insufficientmaterial":
-        return "Draw by insufficient material";
-      case "threefoldrepetition":
-        return "Draw by threefold repetition";
-      case "fiftymoverule":
-        return "Draw by fifty-move rule";
-      default:
-        return "Draw";
-    }
-  });
-
-  let isWin = $derived.by(() => {
-    const d = outcome && decisive(outcome);
-    return d ? d.winner === playerColor : false;
-  });
-
-  let isLoss = $derived.by(() => {
-    const d = outcome && decisive(outcome);
-    return d ? d.winner !== playerColor : false;
-  });
-
-  let cardResult = $derived<"win" | "loss" | "draw">(
-    isWin ? "win" : isLoss ? "loss" : "draw",
-  );
-
-  let outcomeDetail = $derived.by(() => {
-    if (!outcome) return "";
-    const d = decisive(outcome);
-    if (d) return `by ${d.kind}`;
-    switch (outcome) {
-      case "stalemate":
-        return "by stalemate";
-      case "insufficientmaterial":
-        return "by insufficient material";
-      case "threefoldrepetition":
-        return "by threefold repetition";
-      case "fiftymoverule":
-        return "by fifty-move rule";
-      default:
-        return "by agreement";
-    }
-  });
+  let result = $derived(gameResult(outcome, playerColor));
+  let resultText = $derived(result.text);
+  let isWin = $derived(result.card === "win");
+  let isLoss = $derived(result.card === "loss");
+  let cardResult = $derived(result.card);
+  let outcomeDetail = $derived(result.detail);
 
   // Run a quick review for real stats, then fetch the AI-generated summary.
   // Both steps degrade gracefully: the card renders fine with zero stats
@@ -117,6 +55,7 @@
   $effect(() => {
     if (!outcome) return;
     let cancelled = false;
+    statsReady = false;
 
     (async () => {
       if (gameId) {
@@ -124,6 +63,7 @@
           const evaluations = await getGameReview(gameId, SUMMARY_REVIEW_DEPTH);
           if (cancelled) return;
           stats = summarizeEvaluations(evaluations, playerColor === "white");
+          statsReady = true;
         } catch (err) {
           console.error("Post-game review failed (non-blocking):", err);
         }
@@ -187,7 +127,7 @@
 
 <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
   <div class="dialog" bind:this={dialogEl}>
-    <div id="game-over-title" class="result" class:win={isWin} class:loss={!isWin} aria-live="assertive">
+    <div id="game-over-title" class="result" class:win={isWin} class:loss={isLoss} aria-live="assertive">
       {resultText}
     </div>
     <p class="move-count">Game lasted {moveCount} moves</p>
@@ -201,6 +141,7 @@
         {outcomeDetail}
         {opponentInfo}
         {moveCount}
+        statsReady={statsReady}
         accuracy={stats.accuracyPct}
         bestMoves={stats.bestMoves}
         inaccuracies={stats.inaccuracies}

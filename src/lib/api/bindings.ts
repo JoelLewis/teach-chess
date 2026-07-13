@@ -25,6 +25,7 @@ export const commands = {
 	getLlmStatus: () => typedError<LlmStatus, string>(__TAURI_INVOKE("get_llm_status")),
 	getAvailableModels: () => typedError<ModelStatus[], string>(__TAURI_INVOKE("get_available_models")),
 	downloadModel: (modelId: string) => typedError<null, string>(__TAURI_INVOKE("download_model", { modelId })),
+	cancelDownload: () => typedError<null, string>(__TAURI_INVOKE("cancel_download")),
 	generateCoaching: (fen: string, classification: string, coachingContext: {
 	fen: string,
 	phase: GamePhase,

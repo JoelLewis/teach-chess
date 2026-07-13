@@ -19,6 +19,41 @@ pub use llm_support::GEMMA4_E2B;
 #[cfg(feature = "llm")]
 use std::path::PathBuf;
 
+#[cfg(feature = "llm")]
+#[derive(Default)]
+pub struct DownloadState {
+    pub active: std::sync::Mutex<Option<std::sync::Arc<DownloadCancellation>>>,
+}
+
+#[cfg(feature = "llm")]
+pub struct DownloadCancellation {
+    cancelled: std::sync::atomic::AtomicBool,
+    pub notify: tokio::sync::Notify,
+}
+
+#[cfg(feature = "llm")]
+impl Default for DownloadCancellation {
+    fn default() -> Self {
+        Self {
+            cancelled: std::sync::atomic::AtomicBool::new(false),
+            notify: tokio::sync::Notify::new(),
+        }
+    }
+}
+
+#[cfg(feature = "llm")]
+impl DownloadCancellation {
+    pub fn cancel(&self) -> bool {
+        !self
+            .cancelled
+            .swap(true, std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
 /// Managed state for the LLM subsystem. Lazily initializes the inference channel.
 #[cfg(feature = "llm")]
 pub struct LlmState {

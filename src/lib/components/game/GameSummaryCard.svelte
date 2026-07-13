@@ -9,6 +9,7 @@
     inaccuracies: number;
     blunders: number;
     aiQuote: string | null;
+    statsReady: boolean;
   };
 
   let {
@@ -21,6 +22,7 @@
     inaccuracies,
     blunders,
     aiQuote,
+    statsReady,
   }: Props = $props();
 
   let resultLabel = $derived(
@@ -71,19 +73,19 @@
 
     <div class="stat-row">
       <div class="stat">
-        <span class="stat-value">{accuracy}%</span>
+        <span class="stat-value">{statsReady ? `${accuracy}%` : "—"}</span>
         <span class="stat-label">Accuracy</span>
       </div>
       <div class="stat">
-        <span class="stat-value best">{bestMoves}</span>
+        <span class="stat-value best">{statsReady ? bestMoves : "—"}</span>
         <span class="stat-label">Best</span>
       </div>
       <div class="stat">
-        <span class="stat-value inaccuracy">{inaccuracies}</span>
+        <span class="stat-value inaccuracy">{statsReady ? inaccuracies : "—"}</span>
         <span class="stat-label">Inaccuracies</span>
       </div>
       <div class="stat">
-        <span class="stat-value blunder">{blunders}</span>
+        <span class="stat-value blunder">{statsReady ? blunders : "—"}</span>
         <span class="stat-label">Blunders</span>
       </div>
     </div>

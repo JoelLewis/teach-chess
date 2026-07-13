@@ -75,6 +75,16 @@ export async function createDriver({ socketPath = SOCKET_PATH, windowLabel = WIN
   socket.on("error", (err) => rejectAll(err));
   socket.on("close", () => rejectAll(new Error("socket closed")));
 
+  // Dev-launched Tauri windows may start hidden and unfocused. These calls are
+  // idempotent and make native clicks and screenshots reliable for every driver.
+  for (const operation of ["show", "focus"]) {
+    try {
+      await cmd("manage_window", { window_label: windowLabel, operation });
+    } catch {
+      // Window management is optional; native driving can still work without it.
+    }
+  }
+
   function rejectAll(err) {
     for (const { reject } of pending.values()) reject(err);
     pending.clear();

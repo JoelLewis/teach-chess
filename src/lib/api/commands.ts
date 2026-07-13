@@ -366,6 +366,10 @@ export async function downloadModel(modelId: string): Promise<void> {
   await unwrap(commands.downloadModel(modelId));
 }
 
+export async function cancelDownload(): Promise<void> {
+  await unwrap(commands.cancelDownload());
+}
+
 export function getAvailableModels(): Promise<ModelStatus[]> {
   return unwrap(commands.getAvailableModels());
 }
