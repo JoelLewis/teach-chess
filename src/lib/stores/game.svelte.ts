@@ -22,6 +22,9 @@ class GameStore {
   preMoveHint = $state<PreMoveHint | null>(null);
   currentChessPhase = $state<ChessPhase | null>(null);
   coachingHistory = $state<InGameCoachingFeedback[]>([]);
+  coachingRequestId = $state<string | null>(null);
+  coachingStreaming = $state(false);
+  coachingStreamingText = $state("");
 
   // Opponent personality state (resolved once at game start)
   resolvedPersonality = $state<PersonalityProfile | null>(null);
@@ -49,6 +52,9 @@ class GameStore {
     this.preMoveHint = null;
     this.currentChessPhase = null;
     this.coachingHistory = [];
+    this.coachingRequestId = null;
+    this.coachingStreaming = false;
+    this.coachingStreamingText = "";
     this.resolvedPersonality = null;
     this.weakCategories = [];
   }

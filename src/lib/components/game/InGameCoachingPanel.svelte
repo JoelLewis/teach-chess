@@ -1,15 +1,45 @@
 <script lang="ts">
   import { gameStore } from "../../stores/game.svelte";
   import { CLASSIFICATION_COLORS } from "../../types/engine";
+  import { onLlmToken } from "../../api/events";
 
   let visible = $state(true);
   let expanded = $state(false);
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  let displayText = $derived(gameStore.latestCoaching?.coachingText ?? "");
+  let classification = $derived(gameStore.latestCoaching?.classification ?? "");
+  let moveNumber = $derived(gameStore.latestCoaching?.moveNumber ?? 0);
+  let coachingContext = $derived(gameStore.latestCoaching?.coachingContext);
+
+  $effect(() => {
+    let unlisten: (() => void) | undefined;
+    onLlmToken((event) => {
+      if (!gameStore.coachingRequestId || event.requestId !== gameStore.coachingRequestId) return;
+
+      if (event.type === "token") {
+        gameStore.coachingStreaming = true;
+        gameStore.coachingStreamingText += event.text;
+        gameStore.latestCoaching = gameStore.latestCoaching
+          ? { ...gameStore.latestCoaching, coachingText: gameStore.coachingStreamingText }
+          : null;
+      } else if (event.type === "done") {
+        gameStore.coachingStreaming = false;
+        gameStore.coachingStreamingText = event.fullText;
+        gameStore.latestCoaching = gameStore.latestCoaching
+          ? { ...gameStore.latestCoaching, coachingText: event.fullText }
+          : null;
+      } else {
+        gameStore.coachingStreaming = false;
+      }
+    }).then((fn) => (unlisten = fn));
+
+    return () => unlisten?.();
+  });
 
   // Auto-fade post-move feedback after 15s (unless expanded)
   $effect(() => {
-    const coaching = gameStore.latestCoaching;
-    if (coaching && coaching.coachingText) {
+    const text = displayText;
+    if (text) {
       visible = true;
       expanded = false;
 
@@ -80,13 +110,13 @@
   </div>
 {/if}
 
-{#if gameStore.latestCoaching?.coachingText && visible}
+{#if displayText && visible}
   <div class="coaching-feedback" class:expanded>
     <div class="feedback-header">
       <span class="classification-badge" style="background: {classColor}">
-        {gameStore.latestCoaching.classification}
+        {classification}
       </span>
-      <span class="move-number">Move {gameStore.latestCoaching.moveNumber}</span>
+      <span class="move-number">Move {moveNumber}</span>
       <button
         class="expand-btn"
         onclick={() => {
@@ -100,10 +130,10 @@
         {expanded ? "Show less" : "Show more"}
       </button>
     </div>
-    <p class="feedback-text">{gameStore.latestCoaching.coachingText}</p>
-    {#if expanded && gameStore.latestCoaching.coachingContext?.themes.length}
+    <p class="feedback-text">{displayText}</p>
+    {#if expanded && coachingContext?.themes.length}
       <div class="theme-tags">
-        {#each gameStore.latestCoaching.coachingContext.themes as theme}
+        {#each coachingContext.themes as theme}
           <span class="theme-tag">{THEME_LABELS[theme] ?? theme}</span>
         {/each}
       </div>
