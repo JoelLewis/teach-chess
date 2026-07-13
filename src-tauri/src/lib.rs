@@ -34,12 +34,11 @@ impl CurrentPlayerId {
     }
 
     pub fn get(&self) -> Result<String, crate::error::AppError> {
-        Ok(self
-            .0
+        self.0
             .lock()
             .map_err(|e| crate::error::AppError::Lock(e.to_string()))?
             .clone()
-            .unwrap_or_default())
+            .ok_or(crate::error::AppError::NotInitialized)
     }
 
     pub fn set(&self, id: String) -> Result<(), crate::error::AppError> {
@@ -81,6 +80,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::player::update_player_settings,
             commands::review::get_game_review,
             commands::review::get_game_history,
+            commands::review::get_game,
             commands::review::get_critical_moments,
             commands::review::get_pattern_summary,
             commands::review::get_study_suggestions,
@@ -263,6 +263,18 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::AppError;
+
+    #[test]
+    fn current_player_id_returns_not_initialized_error() {
+        let current_player = super::CurrentPlayerId::new();
+
+        assert!(matches!(
+            current_player.get(),
+            Err(AppError::NotInitialized)
+        ));
+    }
+
     /// Regenerates `src/lib/api/bindings.ts`. Run via `cargo test export_bindings`.
     #[test]
     fn export_bindings() {

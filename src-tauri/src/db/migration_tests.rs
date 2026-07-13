@@ -82,6 +82,63 @@ mod tests {
     }
 
     #[test]
+    fn dashboard_activity_queries_convert_unix_epochs_to_dates() {
+        let db = Database::open_in_memory().expect("migrations should apply");
+        db.conn()
+            .execute(
+                "INSERT INTO player (id, display_name) VALUES (?1, ?2)",
+                rusqlite::params!["epoch-player", "Epoch Player"],
+            )
+            .unwrap();
+
+        db.conn()
+            .execute(
+                "INSERT INTO game (id, player_id, pgn, result, player_color, engine_elo,
+                                   move_count, started_at, ended_at, time_control,
+                                   opponent_personality, teaching_mode)
+                 VALUES (?1, ?2, '', '1-0', 'white', 1350, 1, ?3, NULL, '', NULL, 0)",
+                rusqlite::params!["epoch-game", "epoch-player", 1767225600_i64],
+            )
+            .unwrap();
+
+        db.conn()
+            .execute(
+                "INSERT INTO puzzle (id, fen, solution_moves)
+                 VALUES ('epoch-puzzle', 'fen', 'e2e4')",
+                [],
+            )
+            .unwrap();
+
+        db.conn()
+            .execute(
+                "INSERT INTO puzzle_attempt (id, player_id, puzzle_id, solved, time_ms,
+                                             hints_used, attempted_at)
+                 VALUES (?1, ?2, ?3, 1, 1000, 0, ?4)",
+                rusqlite::params![
+                    "epoch-attempt",
+                    "epoch-player",
+                    "epoch-puzzle",
+                    1767225600_i64
+                ],
+            )
+            .unwrap();
+
+        let local_date: String = db
+            .conn()
+            .query_row(
+                "SELECT date(?1, 'unixepoch', 'localtime')",
+                [1767225600_i64],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let dates = db.get_activity_dates("epoch-player").unwrap();
+        assert_eq!(dates, vec![local_date.as_str()]);
+
+        let counts = db.get_today_counts("epoch-player", &local_date).unwrap();
+        assert_eq!(counts, (1, 1));
+    }
+
+    #[test]
     fn sm2_state_converts_to_fsrs_on_migration() {
         use crate::db::srs::SrsItemKind;
         use rs_fsrs::State;

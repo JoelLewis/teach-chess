@@ -177,6 +177,7 @@
       gameStore.lastGameRecord = record;
     } catch (err) {
       console.error("Failed to save game:", err);
+      errorStore.show(`Failed to save game: ${err}`);
     }
     gameStore.phase = "game-over";
   }
@@ -193,6 +194,8 @@
       gameStore.phase = "game-over";
     } catch (err) {
       console.error("Resign failed:", err);
+      errorStore.show(`Failed to save resignation: ${err}`);
+      gameStore.phase = "game-over";
     }
   }
 

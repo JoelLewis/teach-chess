@@ -75,6 +75,10 @@ export function getPosition(): Promise<Position> {
   return unwrap(commands.getPosition());
 }
 
+export function getGame(gameId: string): Promise<GameRecord> {
+  return unwrap(commands.getGame(gameId));
+}
+
 // ─── Engine Commands ─────────────────────────────────────────
 
 export function startEngine(): Promise<boolean> {

@@ -17,6 +17,7 @@
   import { navHistory, type Page } from "./lib/stores/navHistory.svelte";
   import * as api from "./lib/api/commands";
   import type { GameConfig } from "./lib/api/bindings";
+  import { getVersion } from "@tauri-apps/api/app";
 
   let page = $state<Page>("home");
 
@@ -33,11 +34,15 @@
   let sidebarCollapsed = $derived(["play", "problems", "review"].includes(page));
   let reviewGameId = $state("");
   let gameStarting = $state(false);
+  let appVersion = $state("");
 
   // Unique key for screen transitions — changes when the displayed screen changes
   let screenKey = $derived(page === "play" ? `play-${gameStore.phase}` : page);
 
   function navigate(target: Page) {
+    if (target === "play" && gameStore.phase === "game-over") {
+      gameStore.reset();
+    }
     if (target === page) return;
     navHistory.push({ page, reviewGameId });
     page = target;
@@ -142,7 +147,7 @@
 
   function handleNewGame() {
     gameStore.reset();
-    navigate("home");
+    navigate("play");
   }
 
   // Dev-only: let playtest drivers ask which screen is showing. The DEV
@@ -156,6 +161,14 @@
   // Initialize theme on startup
   $effect(() => {
     themeStore.load();
+  });
+
+  $effect(() => {
+    getVersion().then((version) => {
+      appVersion = version;
+    }).catch((err) => {
+      console.error("Failed to load app version:", err);
+    });
   });
 
   // Initialize player on startup
@@ -180,7 +193,7 @@
 
 <a href="#main-content" class="skip-link">Skip to content</a>
 <div class="app-layout">
-  <Sidebar currentPage={page} onNavigate={navigate} collapsed={sidebarCollapsed} />
+  <Sidebar currentPage={page} onNavigate={navigate} collapsed={sidebarCollapsed} version={appVersion} />
 
   <div class="main-area">
     <Header playerName={playerStore.displayName} />

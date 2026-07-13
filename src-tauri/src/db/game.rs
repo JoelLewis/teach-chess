@@ -99,9 +99,9 @@ impl Database {
     /// Get distinct activity dates (from games and puzzle_attempts) for a player, most recent first.
     pub fn get_activity_dates(&self, player_id: &str) -> Result<Vec<String>, DatabaseError> {
         let mut stmt = self.conn().prepare(
-            "SELECT DISTINCT date(started_at) AS d FROM game WHERE player_id = ?1
+            "SELECT DISTINCT date(started_at, 'unixepoch', 'localtime') AS d FROM game WHERE player_id = ?1
              UNION
-             SELECT DISTINCT date(attempted_at) AS d FROM puzzle_attempt WHERE player_id = ?1
+             SELECT DISTINCT date(attempted_at, 'unixepoch', 'localtime') AS d FROM puzzle_attempt WHERE player_id = ?1
              ORDER BY d DESC",
         )?;
         let dates = stmt
@@ -117,13 +117,13 @@ impl Database {
         today: &str,
     ) -> Result<(u32, u32), DatabaseError> {
         let games: i64 = self.conn().query_row(
-            "SELECT COUNT(*) FROM game WHERE player_id = ?1 AND date(started_at) = ?2",
+            "SELECT COUNT(*) FROM game WHERE player_id = ?1 AND date(started_at, 'unixepoch', 'localtime') = ?2",
             rusqlite::params![player_id, today],
             |row| row.get(0),
         )?;
 
         let puzzles: i64 = self.conn().query_row(
-            "SELECT COUNT(*) FROM puzzle_attempt WHERE player_id = ?1 AND date(attempted_at) = ?2",
+            "SELECT COUNT(*) FROM puzzle_attempt WHERE player_id = ?1 AND date(attempted_at, 'unixepoch', 'localtime') = ?2",
             rusqlite::params![player_id, today],
             |row| row.get(0),
         )?;

@@ -399,9 +399,6 @@ fn lookup_rank_context(
         return Ok(None);
     };
     let pid = player_id.get()?;
-    if pid.is_empty() {
-        return Ok(None);
-    }
 
     let category = crate::assessment::rank::category_for_context(ctx);
     let db_lock = db
@@ -570,10 +567,7 @@ fn determine_player_level(
     db: &tauri::State<'_, std::sync::Mutex<crate::db::connection::Database>>,
     player_id: &tauri::State<'_, crate::CurrentPlayerId>,
 ) -> Result<crate::llm::PlayerLevel, crate::error::AppError> {
-    let pid = player_id.get()?;
-    if pid.is_empty() {
-        return Ok(crate::llm::PlayerLevel::Beginner);
-    }
+    let _player_id = player_id.get()?;
 
     let db_lock = db
         .lock()

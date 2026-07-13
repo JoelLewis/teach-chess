@@ -25,6 +25,9 @@ pub enum AppError {
 
     #[error("Lock poisoned: {0}")]
     Lock(String),
+
+    #[error("Current player is not initialized")]
+    NotInitialized,
 }
 
 #[derive(Debug, thiserror::Error)]

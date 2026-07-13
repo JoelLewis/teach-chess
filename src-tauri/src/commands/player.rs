@@ -18,7 +18,7 @@ pub fn get_or_create_player(
     let player = db.get_or_create_player(&display_name)?;
 
     // Store current player ID for game commands
-    let _ = current_player.set(player.id.clone());
+    current_player.set(player.id.clone())?;
 
     Ok(player)
 }

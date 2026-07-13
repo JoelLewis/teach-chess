@@ -28,7 +28,7 @@ pub struct EngineProcess {
 impl EngineProcess {
     pub async fn start(&mut self, app: &AppHandle) -> Result<(), AppError> {
         if self.is_running {
-            return Err(EngineError::AlreadyRunning.into());
+            return Ok(());
         }
 
         let sidecar = app

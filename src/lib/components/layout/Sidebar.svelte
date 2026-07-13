@@ -5,9 +5,10 @@
     currentPage: Page;
     onNavigate: (page: Page) => void;
     collapsed?: boolean;
+    version?: string;
   };
 
-  let { currentPage, onNavigate, collapsed = false }: Props = $props();
+  let { currentPage, onNavigate, collapsed = false, version = "" }: Props = $props();
 
   const navItems: { page: Page; label: string; icon: string }[] = [
     { page: "home", label: "Home", icon: "\u2302" },
@@ -41,7 +42,7 @@
   </div>
 
   <div class="sidebar-footer">
-    <span class="text-xs opacity-70">v0.1.0</span>
+    {#if version}<span class="text-xs opacity-70">v{version}</span>{/if}
   </div>
 </nav>
 
