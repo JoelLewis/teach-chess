@@ -10,6 +10,7 @@
   import * as api from "../../api/commands";
   import { onEngineInfo } from "../../api/events";
   import type { Position } from "../../api/bindings";
+  import { gameOverOutcome } from "../../utils/gameSummary";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   type Props = {
@@ -21,6 +22,13 @@
 
   let position = $derived(gameStore.position);
   let config = $derived(gameStore.config);
+  let gameOutcome = $derived(
+    gameOverOutcome(
+      position?.outcome ?? null,
+      gameStore.lastGameRecord?.result,
+      config?.playerColor ?? "white",
+    ),
+  );
 
   // Personality feedback badge (for CoachPicks/Surprise modes)
   let personalityLabel = $derived.by(() => {
@@ -37,7 +45,7 @@
       : null;
     const elo = config?.engineStrength.elo;
     if (name && elo) return `vs ${name} (${elo} ELO)`;
-    if (elo) return `vs Engine (${elo} ELO)`;
+    if (elo) return `vs Opponent (${elo} ELO)`;
     return "vs Opponent";
   });
 
@@ -344,7 +352,7 @@
 
   {#if gameStore.phase === "game-over"}
     <GameOverDialog
-      outcome={position?.outcome ?? null}
+      outcome={gameOutcome}
       playerColor={config?.playerColor ?? "white"}
       moveCount={position?.sanHistory.length ?? 0}
       gameId={gameStore.lastGameRecord?.id ?? null}
