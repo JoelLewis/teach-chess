@@ -7,12 +7,13 @@
   import KeyboardShortcutsDialog from "../ui/KeyboardShortcutsDialog.svelte";
   import * as api from "../../api/commands";
   import { onReviewProgress } from "../../api/events";
-  import { gameStore } from "../../stores/game.svelte";
   import type {
     MoveEvaluation,
     CriticalMoment,
     PatternSummary,
     StudySuggestion,
+    Color,
+    GameRecord,
   } from "../../api/bindings";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
@@ -31,6 +32,8 @@
   let patternSummary = $state<PatternSummary | null>(null);
   let studySuggestions = $state<StudySuggestion[]>([]);
   let showShortcuts = $state(false);
+  let gameRecord = $state<GameRecord | null>(null);
+  let reviewPlayerColor = $derived<Color | undefined>(gameRecord?.playerColor);
 
   const reviewShortcuts = [
     { key: "\u2190", description: "Previous move" },
@@ -59,6 +62,7 @@
   async function loadReview() {
     loading = true;
     try {
+      gameRecord = await api.getGame(gameId);
       evaluations = await api.getGameReview(gameId, 18);
       // Load review enhancements after evaluations
       await loadReviewEnhancements();
@@ -72,16 +76,16 @@
   async function loadReviewEnhancements() {
     if (evaluations.length === 0) return;
 
-    const isPlayerWhite = gameStore.config?.playerColor === "white";
+    const isPlayerWhite = gameRecord?.playerColor === "white";
 
     try {
-      criticalMoments = await api.getCriticalMoments(evaluations, isPlayerWhite ?? true);
+      criticalMoments = await api.getCriticalMoments(evaluations, isPlayerWhite);
     } catch (err) {
       console.error("Failed to load critical moments:", err);
     }
 
     try {
-      const summary = await api.getPatternSummary(evaluations, isPlayerWhite ?? true);
+      const summary = await api.getPatternSummary(evaluations, isPlayerWhite);
       patternSummary = summary;
       studySuggestions = await api.getStudySuggestions(summary);
     } catch (err) {
@@ -134,8 +138,8 @@
 
 <div class="review-screen">
   <div class="board-area">
-    <EvalBar score={displayScore} orientation={gameStore.config?.playerColor} />
-    <Chessboard fen={displayFen} viewOnly={true} />
+    <EvalBar score={displayScore} orientation={reviewPlayerColor} />
+    <Chessboard fen={displayFen} orientation={reviewPlayerColor} viewOnly={true} />
   </div>
 
   <div class="review-panel">

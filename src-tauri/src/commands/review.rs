@@ -49,6 +49,13 @@ pub fn get_game_history(
 
 #[tauri::command]
 #[specta::specta]
+pub fn get_game(game_id: String, db: State<'_, Mutex<Database>>) -> Result<GameRecord, AppError> {
+    let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;
+    Ok(db.get_game(&game_id)?)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_critical_moments(
     evaluations: Vec<MoveEvaluation>,
     is_player_white: bool,

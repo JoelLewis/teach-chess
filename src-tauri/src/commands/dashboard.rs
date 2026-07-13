@@ -179,28 +179,12 @@ fn subtract_day(date: &str) -> String {
     format!("{prev_y:04}-{prev_m:02}-{days_in_prev_month:02}")
 }
 
-/// Get today's date as "YYYY-MM-DD" in UTC-like form from a unix timestamp.
-fn today_date_str() -> String {
-    let secs = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-
-    // Simple conversion to date (good enough, same pattern as the rest of the codebase)
-    let days = secs / 86400;
-    // Algorithm from https://howardhinnant.github.io/date_algorithms.html
-    let z = days + 719468;
-    let era = z / 146097;
-    let doe = z - era * 146097;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-
-    format!("{y:04}-{m:02}-{d:02}")
+/// Get today's local date as "YYYY-MM-DD" from the same SQLite timezone
+/// conversion used by the activity queries.
+fn today_date_str(db: &Database) -> Result<String, crate::error::DatabaseError> {
+    db.conn()
+        .query_row("SELECT date('now', 'localtime')", [], |row| row.get(0))
+        .map_err(Into::into)
 }
 
 #[tauri::command]
@@ -216,7 +200,7 @@ pub fn get_dashboard_data(
     let recent_games = db.get_game_history(5, 0)?;
     let puzzle_stats = db.get_puzzle_stats(&player_id)?;
 
-    let today = today_date_str();
+    let today = today_date_str(&db)?;
     let (games_today, puzzles_today) = db.get_today_counts(&player_id, &today)?;
     let activity_dates = db.get_activity_dates(&player_id)?;
 

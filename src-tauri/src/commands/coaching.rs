@@ -232,9 +232,6 @@ fn lookup_rank_context(
     ctx: &crate::models::heuristics::CoachingContext,
 ) -> Result<Option<crate::assessment::rank::PlayerRankContext>, AppError> {
     let player_id = player_state.get()?;
-    if player_id.is_empty() {
-        return Ok(None);
-    }
 
     let category = crate::assessment::rank::category_for_context(ctx);
     let db = db.lock().map_err(|e| AppError::Lock(e.to_string()))?;

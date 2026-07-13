@@ -17,6 +17,7 @@ export const commands = {
 	updatePlayerSettings: (playerId: string, settings: PlayerSettings) => typedError<Player, string>(__TAURI_INVOKE("update_player_settings", { playerId, settings })),
 	getGameReview: (gameId: string, depth: number) => typedError<MoveEvaluation[], string>(__TAURI_INVOKE("get_game_review", { gameId, depth })),
 	getGameHistory: (limit: number, offset: number) => typedError<GameRecord[], string>(__TAURI_INVOKE("get_game_history", { limit, offset })),
+	getGame: (gameId: string) => typedError<GameRecord, string>(__TAURI_INVOKE("get_game", { gameId })),
 	getCriticalMoments: (evaluations: MoveEvaluation[], isPlayerWhite: boolean) => __TAURI_INVOKE<CriticalMoment[]>("get_critical_moments", { evaluations, isPlayerWhite }),
 	getPatternSummary: (evaluations: MoveEvaluation[], isPlayerWhite: boolean) => __TAURI_INVOKE<PatternSummary>("get_pattern_summary", { evaluations, isPlayerWhite }),
 	getStudySuggestions: (summary: PatternSummary) => __TAURI_INVOKE<StudySuggestion[]>("get_study_suggestions", { summary }),
